@@ -464,60 +464,62 @@ export default function BillingModal({ isOpen, onClose, storeId }: BillingModalP
   }, [isOpen]);
 
   return (
+    <>
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[95vh] w-[95vw] sm:w-full overflow-y-auto p-4 sm:p-6">
-        <DialogHeader>
-          <DialogTitle className="flex items-center justify-between text-lg sm:text-xl">
+      <DialogContent className="max-w-7xl max-h-[98vh] w-[98vw] overflow-y-auto p-2 sm:p-4">
+        <DialogHeader className="pb-2">
+          <DialogTitle className="flex items-center justify-between text-xl sm:text-2xl font-bold">
             New Bill
-            <Button variant="ghost" size="sm" onClick={onClose}>
-              <X size={20} />
+            <Button variant="ghost" size="lg" onClick={onClose} className="h-12 w-12 rounded-full">
+              <X size={24} />
             </Button>
           </DialogTitle>
         </DialogHeader>
 
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 lg:gap-6">
-          {/* Left Column - Customer & Services */}
-          <div className="space-y-4">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 lg:gap-6">
+          {/* Left Column - Customer & Quick Actions */}
+          <div className="lg:col-span-1 space-y-4">
             {/* Customer Selection */}
-            <div>
-              <Label className="text-sm font-medium text-gray-700 mb-2">Customer</Label>
-              <div className="space-y-2">
+            <div className="bg-white border-2 border-blue-200 rounded-xl p-4">
+              <Label className="text-lg font-semibold text-gray-800 mb-3 block">Customer</Label>
+              <div className="space-y-3">
                 <Input
-                  placeholder="Search customers by name or mobile..."
+                  placeholder="Search by name or mobile..."
                   value={customerSearch}
                   onChange={(e) => setCustomerSearch(e.target.value)}
+                  className="h-12 text-lg border-2 focus:border-blue-500"
                 />
                 
                 {/* Customer Dropdown */}
                 {customerSearch && (
-                  <div className="max-h-32 overflow-y-auto border rounded-md bg-white shadow-sm">
+                  <div className="max-h-64 overflow-y-auto border-2 border-blue-300 rounded-xl bg-white shadow-lg">
                     {typedCustomers
                       .filter((customer: any) => 
                         customer.firstName.toLowerCase().includes(customerSearch.toLowerCase()) ||
                         customer.lastName?.toLowerCase().includes(customerSearch.toLowerCase()) ||
                         customer.mobile.includes(customerSearch)
                       )
-                      .slice(0, 5)
+                      .slice(0, 8)
                       .map((customer: any) => (
                         <div
                           key={customer.id}
-                          className="p-2 hover:bg-gray-50 cursor-pointer border-b last:border-b-0"
+                          className="p-4 hover:bg-blue-50 cursor-pointer border-b last:border-b-0 touch-manipulation transition-colors"
                           onClick={() => {
                             setSelectedCustomer(customer);
                             setCustomerSearch(`${customer.firstName} ${customer.lastName || ''} - ${customer.mobile}`);
                           }}
                         >
-                          <div className="font-medium">{customer.firstName} {customer.lastName}</div>
-                          <div className="text-sm text-gray-600">{customer.mobile}</div>
+                          <div className="font-semibold text-lg">{customer.firstName} {customer.lastName}</div>
+                          <div className="text-base text-gray-600">{customer.mobile}</div>
                           {customer.loyaltyPoints > 0 && (
-                            <div className="text-xs text-blue-600">{customer.loyaltyPoints} loyalty points</div>
+                            <div className="text-sm text-blue-600 font-medium">{customer.loyaltyPoints} loyalty points</div>
                           )}
                         </div>
                       ))}
                   </div>
                 )}
                 
-                <div className="flex space-x-2">
+                <div className="grid grid-cols-1 gap-3">
                   <Button
                     variant="outline"
                     onClick={() => {
@@ -525,14 +527,14 @@ export default function BillingModal({ isOpen, onClose, storeId }: BillingModalP
                       setCustomerSearch("");
                       setShowNewCustomerForm(false);
                     }}
-                    className="flex-1"
+                    className="h-14 text-lg font-semibold border-2 border-green-300 hover:bg-green-50 touch-manipulation"
                   >
                     Walk-in Customer
                   </Button>
                   <Button
                     variant="outline"
                     onClick={() => setShowNewCustomerForm(!showNewCustomerForm)}
-                    className="flex-1"
+                    className="h-14 text-lg font-semibold border-2 border-blue-300 hover:bg-blue-50 touch-manipulation"
                   >
                     + New Customer
                   </Button>
@@ -684,36 +686,45 @@ export default function BillingModal({ isOpen, onClose, storeId }: BillingModalP
               </Card>
             )}
 
+          </div>
+
+          {/* Middle Column - Services & Products */}
+          <div className="lg:col-span-1 space-y-4">
             {/* Services Section */}
-            <div>
-              <h3 className="text-lg font-medium text-gray-900 mb-3">Services</h3>
-              <div className="space-y-2 max-h-48 overflow-y-auto">
+            <div className="bg-white border-2 border-green-200 rounded-xl p-4">
+              <h3 className="text-xl font-bold text-gray-900 mb-4">Services</h3>
+              <div className="grid grid-cols-1 gap-3 max-h-80 overflow-y-auto">
                 {typedServices.map((service: any) => (
                   <div 
                     key={service.id}
-                    className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50"
+                    className="border-2 border-gray-200 rounded-xl p-4 hover:border-green-400 hover:bg-green-50 transition-all touch-manipulation cursor-pointer"
+                    onClick={() => addServiceToBill(service)}
                   >
-                    <div className="flex items-center space-x-3">
-                      {service.imageUrl && (
-                        <img 
-                          src={service.imageUrl} 
-                          alt={service.name}
-                          className="w-12 h-12 object-cover rounded-lg"
-                        />
-                      )}
-                      <div>
-                        <p className="font-medium">{service.name}</p>
-                        <p className="text-sm text-gray-600">{service.duration} minutes</p>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3 flex-1">
+                        {service.imageUrl && (
+                          <img 
+                            src={service.imageUrl} 
+                            alt={service.name}
+                            className="w-16 h-16 object-cover rounded-lg"
+                          />
+                        )}
+                        <div className="flex-1">
+                          <p className="font-semibold text-lg">{service.name}</p>
+                          <p className="text-base text-gray-600">{service.duration} min</p>
+                        </div>
                       </div>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <span className="font-semibold">Rs. {parseFloat(service.price).toLocaleString()}</span>
-                      <Button 
-                        size="sm" 
-                        onClick={() => addServiceToBill(service)}
-                      >
-                        <Plus size={14} />
-                      </Button>
+                      <div className="text-right">
+                        <span className="text-xl font-bold text-green-600">Rs. {parseFloat(service.price).toLocaleString()}</span>
+                        <div className="mt-2">
+                          <Button 
+                            size="lg" 
+                            className="h-12 w-12 rounded-full bg-green-500 hover:bg-green-600 touch-manipulation"
+                          >
+                            <Plus size={20} />
+                          </Button>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -721,291 +732,297 @@ export default function BillingModal({ isOpen, onClose, storeId }: BillingModalP
             </div>
 
             {/* Products Section */}
-            <div>
-              <h3 className="text-lg font-medium text-gray-900 mb-3">Products</h3>
-              <div className="space-y-2 max-h-48 overflow-y-auto">
+            <div className="bg-white border-2 border-orange-200 rounded-xl p-4">
+              <h3 className="text-xl font-bold text-gray-900 mb-4">Products</h3>
+              <div className="grid grid-cols-1 gap-3 max-h-80 overflow-y-auto">
                 {typedProducts.map((product: any) => (
                   <div 
                     key={product.id}
-                    className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50"
+                    className="border-2 border-gray-200 rounded-xl p-4 hover:border-orange-400 hover:bg-orange-50 transition-all"
                   >
-                    <div className="flex items-center space-x-3">
-                      {product.imageUrl && (
-                        <img 
-                          src={product.imageUrl} 
-                          alt={product.name}
-                          className="w-12 h-12 object-cover rounded-lg"
-                        />
-                      )}
-                      <div>
-                        <p className="font-medium">{product.name}</p>
-                        <p className="text-sm text-gray-600">Stock: {product.stockQuantity}</p>
-                        {product.barcode && (
-                          <p className="text-xs text-gray-500">{product.barcode}</p>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3 flex-1">
+                        {product.imageUrl && (
+                          <img 
+                            src={product.imageUrl} 
+                            alt={product.name}
+                            className="w-16 h-16 object-cover rounded-lg"
+                          />
                         )}
+                        <div className="flex-1">
+                          <p className="font-semibold text-lg">{product.name}</p>
+                          <p className="text-base text-gray-600">Stock: {product.stockQuantity}</p>
+                          {product.barcode && (
+                            <p className="text-sm text-gray-500">{product.barcode}</p>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <span className="font-semibold">Rs. {parseFloat(product.price).toLocaleString()}</span>
-                      <Button 
-                        size="sm" 
-                        onClick={() => addProductToBill(product)}
-                        disabled={product.stockQuantity <= 0}
-                      >
-                        <Plus size={14} />
-                      </Button>
-                      {product.barcode && (
-                        <Button 
-                          size="sm" 
-                          variant="outline"
-                          onClick={() => printBarcode(product.barcode, product.name)}
-                        >
-                          <Printer size={14} />
-                        </Button>
-                      )}
+                      <div className="text-right">
+                        <span className="text-xl font-bold text-orange-600">Rs. {parseFloat(product.price).toLocaleString()}</span>
+                        <div className="flex gap-2 mt-2">
+                          <Button 
+                            size="lg" 
+                            onClick={() => addProductToBill(product)}
+                            disabled={product.stockQuantity <= 0}
+                            className="h-12 w-12 rounded-full bg-orange-500 hover:bg-orange-600 touch-manipulation"
+                          >
+                            <Plus size={20} />
+                          </Button>
+                          {product.barcode && (
+                            <Button 
+                              size="lg" 
+                              variant="outline"
+                              onClick={() => printBarcode(product.barcode, product.name)}
+                              className="h-12 w-12 rounded-full border-2 touch-manipulation"
+                            >
+                              <Printer size={16} />
+                            </Button>
+                          )}
+                        </div>
+                      </div>
                     </div>
                   </div>
                 ))}
               </div>
             </div>
-          </div>
 
-          {/* Right Column - Products & Summary */}
-          <div className="space-y-4">
             {/* Product Scanner */}
-            <div>
-              <Label className="text-sm font-medium text-gray-700 mb-2">Scan Product</Label>
+            <div className="bg-white border-2 border-purple-200 rounded-xl p-4">
+              <Label className="text-lg font-semibold text-gray-800 mb-3 block">Scan Product</Label>
               <div className="flex space-x-2">
                 <Input
-                  placeholder="Scan QR code or enter barcode"
+                  placeholder="Scan or enter barcode..."
                   value={productScan}
                   onChange={(e) => setProductScan(e.target.value)}
                   onKeyPress={(e) => {
-                    if (e.key === 'Enter' && productScan) {
-                      scanProduct.mutate(productScan);
+                    if (e.key === 'Enter' && productScan.trim()) {
+                      scanProduct.mutate(productScan.trim());
                     }
                   }}
+                  className="flex-1 h-12 text-lg border-2 focus:border-purple-500"
                 />
-                <Button 
-                  variant="outline"
-                  onClick={() => productScan && scanProduct.mutate(productScan)}
-                  disabled={scanProduct.isPending}
+                <Button
+                  onClick={() => {
+                    if (productScan.trim()) {
+                      scanProduct.mutate(productScan.trim());
+                    }
+                  }}
+                  disabled={!productScan.trim() || scanProduct.isPending}
+                  className="h-12 px-6 bg-purple-500 hover:bg-purple-600 touch-manipulation"
                 >
-                  <QrCode size={16} />
+                  <QrCode size={20} />
                 </Button>
               </div>
             </div>
+          </div>
 
+          {/* Right Column - Bill Summary & Checkout */}
+          <div className="lg:col-span-1 space-y-4">
             {/* Bill Items */}
-            {billItems.length > 0 && (
-              <div>
-                <h3 className="text-lg font-medium text-gray-900 mb-3">Bill Items</h3>
-                <div className="space-y-2">
+            <div className="bg-white border-2 border-gray-300 rounded-xl p-4">
+              <h3 className="text-xl font-bold text-gray-900 mb-4">Current Bill</h3>
+              
+              {billItems.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  <p className="text-lg">No items added yet</p>
+                  <p className="text-base">Add services or products to start billing</p>
+                </div>
+              ) : (
+                <div className="space-y-3 max-h-96 overflow-y-auto">
                   {billItems.map((item, index) => (
-                    <div key={`${item.type}-${item.id}-${index}`} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                      <div className="flex items-center space-x-3">
-                        {item.imageUrl && (
-                          <img 
-                            src={item.imageUrl} 
-                            alt={item.name}
-                            className="w-10 h-10 object-cover rounded"
-                          />
-                        )}
-                        <div>
-                          <p className="font-medium">{item.name}</p>
-                          <div className="flex items-center space-x-2">
-                            <span className="text-sm text-gray-600">Qty: {item.quantity}</span>
-                            {editingPrice?.id === item.id && editingPrice?.type === item.type ? (
-                              <div className="flex items-center space-x-1">
-                                <span className="text-sm">₹</span>
-                                <Input
-                                  type="number"
-                                  value={customPrice}
-                                  onChange={(e) => setCustomPrice(e.target.value)}
-                                  className="w-16 h-6 text-sm"
-                                  onKeyPress={(e) => {
-                                    if (e.key === 'Enter' && customPrice) {
-                                      updateItemPrice(item.id, item.type, parseFloat(customPrice));
-                                    }
-                                  }}
-                                  autoFocus
-                                />
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  onClick={() => {
-                                    if (customPrice) {
-                                      updateItemPrice(item.id, item.type, parseFloat(customPrice));
-                                    }
-                                  }}
-                                >
-                                  ✓
-                                </Button>
-                              </div>
-                            ) : (
-                              <div className="flex items-center space-x-1">
-                                <span className="text-sm">× ₹{item.price}</span>
-                                {item.type === 'service' && (
+                    <div key={`${item.type}-${item.id}-${index}`} className="border-2 border-gray-200 rounded-xl p-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-3 flex-1">
+                          {item.imageUrl && (
+                            <img 
+                              src={item.imageUrl} 
+                              alt={item.name}
+                              className="w-12 h-12 object-cover rounded-lg"
+                            />
+                          )}
+                          <div className="flex-1">
+                            <p className="font-semibold text-base">{item.name}</p>
+                            <div className="flex items-center space-x-3">
+                              <span className="text-sm text-gray-600">Qty: {item.quantity}</span>
+                              {editingPrice?.id === item.id && editingPrice?.type === item.type ? (
+                                <div className="flex items-center space-x-1">
+                                  <span className="text-sm">Rs.</span>
+                                  <Input
+                                    type="number"
+                                    value={customPrice}
+                                    onChange={(e) => setCustomPrice(e.target.value)}
+                                    className="w-20 h-6 text-sm"
+                                    onKeyPress={(e) => {
+                                      if (e.key === 'Enter') {
+                                        updateItemPrice(item.id, item.type, parseFloat(customPrice));
+                                      }
+                                    }}
+                                  />
                                   <Button
                                     size="sm"
-                                    variant="ghost"
-                                    onClick={() => handlePriceEdit(item)}
-                                    className="p-1 h-auto"
+                                    onClick={() => updateItemPrice(item.id, item.type, parseFloat(customPrice))}
+                                    className="h-6 px-2"
                                   >
-                                    <Edit2 size={12} />
+                                    ✓
                                   </Button>
-                                )}
-                              </div>
-                            )}
-                            {item.isCustomPrice && (
-                              <Badge variant="secondary" className="text-xs">Custom</Badge>
-                            )}
+                                </div>
+                              ) : (
+                                <span className="text-lg font-bold text-blue-600">
+                                  Rs. {(item.price * item.quantity).toLocaleString()}
+                                  {item.isCustomPrice && <span className="text-xs text-orange-500 ml-1">(Custom)</span>}
+                                </span>
+                              )}
+                            </div>
                           </div>
-                          {item.duration && (
-                            <p className="text-xs text-gray-500">{item.duration} minutes</p>
-                          )}
                         </div>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <span className="font-semibold">₹{(item.price * item.quantity).toLocaleString()}</span>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => removeItem(item.id, item.type)}
-                        >
-                          <Trash2 size={16} className="text-red-500" />
-                        </Button>
+                        <div className="flex items-center space-x-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handlePriceEdit(item)}
+                            className="h-10 w-10 rounded-full touch-manipulation"
+                          >
+                            <Edit2 size={14} />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => removeItem(item.id, item.type)}
+                            className="h-10 w-10 rounded-full touch-manipulation"
+                          >
+                            <Trash2 size={14} />
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   ))}
                 </div>
-              </div>
-            )}
+              )}
+            </div>
 
-            {/* Bill Summary */}
-            <Card className="bg-gray-50">
-              <CardContent className="p-4">
-                <h3 className="text-lg font-medium text-gray-900 mb-3">Bill Summary</h3>
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span>Subtotal:</span>
-                    <span>₹{getSubtotal().toLocaleString()}</span>
+            {/* Bill Summary & Checkout */}
+            {billItems.length > 0 && (
+              <div className="bg-gradient-to-br from-blue-50 to-indigo-100 border-2 border-blue-300 rounded-xl p-6">
+                <h3 className="text-2xl font-bold text-gray-900 mb-6">Bill Summary</h3>
+                
+                {/* Totals */}
+                <div className="space-y-4 mb-6">
+                  <div className="flex justify-between items-center text-lg">
+                    <span className="font-medium">Subtotal:</span>
+                    <span className="font-bold">Rs. {getSubtotal().toLocaleString()}</span>
                   </div>
+                  
                   {getDiscount() > 0 && (
-                    <div className="flex justify-between text-green-600">
-                      <span>Discount:</span>
-                      <span>-₹{getDiscount().toLocaleString()}</span>
+                    <div className="flex justify-between items-center text-lg text-green-600">
+                      <span className="font-medium">Discount:</span>
+                      <span className="font-bold">- Rs. {getDiscount().toLocaleString()}</span>
                     </div>
                   )}
-                  <div className="flex justify-between">
-                    <span>GST (18%):</span>
-                    <span>₹{getGST().toLocaleString()}</span>
+                  
+                  <div className="flex justify-between items-center text-lg">
+                    <span className="font-medium">GST (18%):</span>
+                    <span className="font-bold">Rs. {getGST().toLocaleString()}</span>
                   </div>
+                  
                   <Separator />
-                  <div className="flex justify-between font-semibold text-lg">
+                  
+                  <div className="flex justify-between items-center text-2xl font-bold text-blue-600">
                     <span>Total:</span>
-                    <span>₹{getTotal().toLocaleString()}</span>
+                    <span>Rs. {getTotal().toLocaleString()}</span>
                   </div>
+                  
+                  {getPointsEarned() > 0 && (
+                    <div className="text-center text-lg text-orange-600 font-medium">
+                      Points to earn: {getPointsEarned()}
+                    </div>
+                  )}
                 </div>
 
                 {/* Loyalty Points */}
-                {selectedCustomer && (
-                  <div className="mt-4 p-3 bg-primary/10 rounded-lg">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm font-medium">Available Points: {selectedCustomer.loyaltyPoints}</span>
-                      <div className="flex items-center space-x-2">
-                        <Input
-                          type="number"
-                          placeholder="0"
-                          value={pointsToRedeem}
-                          onChange={(e) => {
-                            const points = parseInt(e.target.value) || 0;
-                            const maxPoints = Math.min(selectedCustomer.loyaltyPoints, Math.floor(getSubtotal()));
-                            setPointsToRedeem(Math.min(points, maxPoints));
-                          }}
-                          className="w-20 h-8 text-xs"
-                          max={Math.min(selectedCustomer.loyaltyPoints, Math.floor(getSubtotal()))}
-                        />
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-xs"
-                          onClick={() => {
-                            const maxPoints = Math.min(selectedCustomer.loyaltyPoints, Math.floor(getSubtotal()));
-                            setPointsToRedeem(maxPoints);
-                          }}
-                        >
-                          Use Max
-                        </Button>
-                      </div>
+                {selectedCustomer && selectedCustomer.loyaltyPoints > 0 && (
+                  <div className="mb-6 p-4 bg-white rounded-xl border-2 border-orange-200">
+                    <Label className="text-lg font-semibold text-gray-800 mb-3 block">
+                      Redeem Loyalty Points
+                    </Label>
+                    <div className="flex items-center space-x-3">
+                      <Input
+                        type="number"
+                        value={pointsToRedeem}
+                        onChange={(e) => setPointsToRedeem(Math.min(parseInt(e.target.value) || 0, selectedCustomer.loyaltyPoints, getSubtotal()))}
+                        max={Math.min(selectedCustomer.loyaltyPoints, getSubtotal())}
+                        placeholder="Points to redeem"
+                        className="flex-1 h-12 text-lg border-2"
+                      />
+                      <Button
+                        variant="outline"
+                        onClick={() => setPointsToRedeem(Math.min(selectedCustomer.loyaltyPoints, getSubtotal()))}
+                        className="h-12 px-6 text-lg touch-manipulation"
+                      >
+                        Use All
+                      </Button>
                     </div>
-                    <p className="text-xs text-gray-600">This bill will earn {getPointsEarned()} points</p>
+                    <p className="text-sm text-gray-600 mt-2">
+                      Available: {selectedCustomer.loyaltyPoints} points (Max: Rs. {Math.min(selectedCustomer.loyaltyPoints, getSubtotal())})
+                    </p>
                   </div>
                 )}
-              </CardContent>
-            </Card>
 
-            {/* Payment Actions */}
-            <div className="flex space-x-3">
-              <Button 
-                className="flex-1" 
-                onClick={handlePayment}
-                disabled={createTransaction.isPending || billItems.length === 0}
-              >
-                {createTransaction.isPending ? "Processing..." : "Complete Payment"}
-              </Button>
-              <Button variant="outline" onClick={onClose}>
-                Cancel
-              </Button>
-            </div>
+                {/* Payment Button */}
+                <Button
+                  onClick={handlePayment}
+                  disabled={createTransaction.isPending}
+                  className="w-full h-16 text-2xl font-bold bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white shadow-lg touch-manipulation"
+                >
+                  {createTransaction.isPending ? "Processing..." : `Complete Payment - Rs. ${getTotal().toLocaleString()}`}
+                </Button>
+              </div>
+            )}
           </div>
         </div>
       </DialogContent>
-
-      {/* Receipt Dialog */}
-      <Dialog open={showReceiptDialog} onOpenChange={setShowReceiptDialog}>
-        <DialogContent className="max-w-sm sm:max-w-md mx-4">
-          <DialogHeader>
-            <DialogTitle className="text-lg sm:text-xl">Payment Successful!</DialogTitle>
-            <DialogDescription className="text-sm">
-              Invoice {lastTransaction?.transaction?.invoiceNumber} has been created.
-              Would you like to print a receipt?
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="space-y-4">
-            <div className="flex flex-col space-y-3">
-              <Button 
-                onClick={() => printReceiptFromTransaction(true)} 
-                className="flex items-center justify-center space-x-2 btn-touch py-3"
-              >
-                <Receipt className="h-4 w-4" />
-                <span>Print Thermal Receipt</span>
-              </Button>
-              
-              <Button 
-                variant="outline" 
-                onClick={() => printReceiptFromTransaction(false)}
-                className="flex items-center justify-center space-x-2 btn-touch py-3"
-              >
-                <Printer className="h-4 w-4" />
-                <span>No Receipt (Open Drawer Only)</span>
-              </Button>
-              
-              <Button 
-                variant="ghost" 
-                onClick={() => {
-                  setShowReceiptDialog(false);
-                  onClose();
-                }}
-                className="btn-touch py-3"
-              >
-                Skip
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
     </Dialog>
-  );
+
+    {/* Receipt Print Dialog */}
+    <Dialog open={showReceiptDialog} onOpenChange={setShowReceiptDialog}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Receipt Printed</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4">
+          {lastTransaction && (
+            <div className="text-center">
+              <p className="text-lg">Payment completed successfully!</p>
+              <p className="text-2xl font-bold text-green-600">Rs. {parseFloat(lastTransaction.totalAmount).toLocaleString()}</p>
+            </div>
+          )}
+          <div className="flex gap-3">
+            <Button
+              onClick={() => lastTransaction && printReceiptFromTransaction(lastTransaction)}
+              variant="outline"
+              className="flex-1"
+            >
+              Print Again
+            </Button>
+            <Button
+              onClick={() => lastTransaction && printReceiptFromTransaction(lastTransaction)}
+              className="flex-1"
+            >
+              Print Receipt
+            </Button>
+          </div>
+          <Button
+            onClick={() => {
+              setShowReceiptDialog(false);
+              onClose();
+            }}
+            className="w-full"
+            variant="outline"
+          >
+            Close
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+    </>
+  )
 }
