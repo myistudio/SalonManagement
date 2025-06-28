@@ -8,9 +8,10 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
-import { Settings, Upload, Building, Users, Shield } from "lucide-react";
+import { Settings, Upload, Building, Users, Shield, ArrowLeft } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
+import { Link } from "wouter";
 
 export default function SettingsPage() {
   const { user } = useAuth();
@@ -96,9 +97,16 @@ export default function SettingsPage() {
 
   return (
     <div className="p-6 space-y-6">
-      <div className="flex items-center gap-2">
-        <Settings size={24} />
-        <h1 className="text-2xl font-bold">Settings</h1>
+      <div className="flex items-center gap-4">
+        <Link href="/">
+          <Button variant="ghost" size="icon" className="rounded-full">
+            <ArrowLeft size={20} />
+          </Button>
+        </Link>
+        <div className="flex items-center gap-2">
+          <Settings size={24} />
+          <h1 className="text-2xl font-bold">Settings</h1>
+        </div>
       </div>
 
       <Tabs defaultValue="store" className="space-y-6">
