@@ -80,6 +80,220 @@ export default function Reports() {
     return value >= 0 ? "text-green-500" : "text-red-500";
   };
 
+  const exportToCSV = () => {
+    try {
+      const csvData = [];
+      
+      // Header row
+      csvData.push(['Report Type', 'Period', `${dateRange.startDate} to ${dateRange.endDate}`]);
+      csvData.push(['Generated Date', new Date().toLocaleDateString()]);
+      csvData.push([]);
+      
+      // Summary data
+      csvData.push(['Summary']);
+      csvData.push(['Total Revenue', `Rs. ${salesReport.totalRevenue || '0'}`]);
+      csvData.push(['Total Transactions', salesReport.totalTransactions || 0]);
+      csvData.push(['Total Discounts', `Rs. ${salesReport.totalDiscount || '0'}`]);
+      csvData.push(['Average Transaction', `Rs. ${salesReport.totalTransactions > 0 ? (parseFloat(salesReport.totalRevenue || '0') / salesReport.totalTransactions).toFixed(2) : '0'}`]);
+      csvData.push([]);
+      
+      // Top Services
+      csvData.push(['Top Services']);
+      csvData.push(['Service Name', 'Count', 'Revenue']);
+      (salesReport.topServices || []).forEach((service: any) => {
+        csvData.push([service.name, service.count, `Rs. ${service.revenue}`]);
+      });
+      csvData.push([]);
+      
+      // Top Products
+      csvData.push(['Top Products']);
+      csvData.push(['Product Name', 'Count', 'Revenue']);
+      (salesReport.topProducts || []).forEach((product: any) => {
+        csvData.push([product.name, product.count, `Rs. ${product.revenue}`]);
+      });
+      csvData.push([]);
+      
+      // Analytics data if available
+      if (analytics.productWiseReport) {
+        csvData.push(['Product-wise Performance']);
+        csvData.push(['Product Name', 'Quantity', 'Revenue', 'Discount']);
+        analytics.productWiseReport.forEach((item: any) => {
+          csvData.push([item.name, item.quantity, `Rs. ${item.revenue}`, `Rs. ${item.discount}`]);
+        });
+        csvData.push([]);
+      }
+      
+      if (analytics.serviceWiseReport) {
+        csvData.push(['Service-wise Performance']);
+        csvData.push(['Service Name', 'Quantity', 'Revenue', 'Discount']);
+        analytics.serviceWiseReport.forEach((item: any) => {
+          csvData.push([item.name, item.quantity, `Rs. ${item.revenue}`, `Rs. ${item.discount}`]);
+        });
+      }
+      
+      // Convert to CSV string
+      const csvString = csvData.map(row => 
+        row.map(cell => `"${cell}"`).join(',')
+      ).join('\n');
+      
+      // Download file
+      const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', `salon_report_${dateRange.startDate}_to_${dateRange.endDate}.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      toast({
+        title: "Export Successful",
+        description: "CSV report has been downloaded",
+      });
+    } catch (error) {
+      toast({
+        title: "Export Failed",
+        description: "Failed to export CSV report",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const exportToPDF = async () => {
+    try {
+      const { jsPDF } = await import('jspdf');
+      const doc = new jsPDF();
+      
+      let yPosition = 20;
+      const pageWidth = doc.internal.pageSize.width;
+      
+      // Header
+      doc.setFontSize(20);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Salon Management Report', pageWidth / 2, yPosition, { align: 'center' });
+      yPosition += 10;
+      
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`Period: ${dateRange.startDate} to ${dateRange.endDate}`, pageWidth / 2, yPosition, { align: 'center' });
+      yPosition += 5;
+      doc.text(`Generated: ${new Date().toLocaleDateString()}`, pageWidth / 2, yPosition, { align: 'center' });
+      yPosition += 20;
+      
+      // Summary Section
+      doc.setFontSize(16);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Summary', 20, yPosition);
+      yPosition += 10;
+      
+      doc.setFontSize(11);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`Total Revenue: Rs. ${salesReport.totalRevenue || '0'}`, 20, yPosition);
+      yPosition += 7;
+      doc.text(`Total Transactions: ${salesReport.totalTransactions || 0}`, 20, yPosition);
+      yPosition += 7;
+      doc.text(`Total Discounts: Rs. ${salesReport.totalDiscount || '0'}`, 20, yPosition);
+      yPosition += 7;
+      doc.text(`Average Transaction: Rs. ${salesReport.totalTransactions > 0 ? (parseFloat(salesReport.totalRevenue || '0') / salesReport.totalTransactions).toFixed(2) : '0'}`, 20, yPosition);
+      yPosition += 15;
+      
+      // Top Services
+      if (salesReport.topServices && salesReport.topServices.length > 0) {
+        doc.setFontSize(14);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Top Services', 20, yPosition);
+        yPosition += 10;
+        
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'normal');
+        salesReport.topServices.forEach((service: any, index: number) => {
+          doc.text(`${index + 1}. ${service.name} - Count: ${service.count}, Revenue: Rs. ${service.revenue}`, 25, yPosition);
+          yPosition += 6;
+        });
+        yPosition += 10;
+      }
+      
+      // Top Products
+      if (salesReport.topProducts && salesReport.topProducts.length > 0) {
+        doc.setFontSize(14);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Top Products', 20, yPosition);
+        yPosition += 10;
+        
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'normal');
+        salesReport.topProducts.forEach((product: any, index: number) => {
+          doc.text(`${index + 1}. ${product.name} - Count: ${product.count}, Revenue: Rs. ${product.revenue}`, 25, yPosition);
+          yPosition += 6;
+        });
+        yPosition += 10;
+      }
+      
+      // Add new page if needed
+      if (yPosition > 250) {
+        doc.addPage();
+        yPosition = 20;
+      }
+      
+      // Analytics data
+      if (analytics.weeklyComparison) {
+        doc.setFontSize(14);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Week-on-Week Comparison', 20, yPosition);
+        yPosition += 10;
+        
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'normal');
+        doc.text(`Current Week Revenue: Rs. ${analytics.weeklyComparison.current?.revenue || '0'}`, 25, yPosition);
+        yPosition += 6;
+        doc.text(`Previous Week Revenue: Rs. ${analytics.weeklyComparison.previous?.revenue || '0'}`, 25, yPosition);
+        yPosition += 6;
+        doc.text(`Revenue Change: ${formatPercentageChange(analytics.weeklyComparison.change?.revenue || 0)}`, 25, yPosition);
+        yPosition += 10;
+      }
+      
+      if (analytics.monthlyComparison) {
+        doc.setFontSize(14);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Month-on-Month Comparison', 20, yPosition);
+        yPosition += 10;
+        
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'normal');
+        doc.text(`Current Month Revenue: Rs. ${analytics.monthlyComparison.current?.revenue || '0'}`, 25, yPosition);
+        yPosition += 6;
+        doc.text(`Previous Month Revenue: Rs. ${analytics.monthlyComparison.previous?.revenue || '0'}`, 25, yPosition);
+        yPosition += 6;
+        doc.text(`Revenue Change: ${formatPercentageChange(analytics.monthlyComparison.change?.revenue || 0)}`, 25, yPosition);
+        yPosition += 10;
+      }
+      
+      // Footer
+      const pageCount = doc.internal.getNumberOfPages();
+      doc.setFontSize(8);
+      for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.text(`Page ${i} of ${pageCount}`, pageWidth - 30, doc.internal.pageSize.height - 10);
+        doc.text('Generated by Salon Management System', 20, doc.internal.pageSize.height - 10);
+      }
+      
+      // Save PDF
+      doc.save(`salon_report_${dateRange.startDate}_to_${dateRange.endDate}.pdf`);
+      
+      toast({
+        title: "Export Successful",
+        description: "PDF report has been downloaded",
+      });
+    } catch (error) {
+      toast({
+        title: "Export Failed",
+        description: "Failed to export PDF report",
+        variant: "destructive",
+      });
+    }
+  };
+
   if (isLoading || !isAuthenticated) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -547,13 +761,13 @@ export default function Reports() {
               </CardHeader>
               <CardContent>
                 <div className="flex gap-4">
-                  <Button variant="outline">
+                  <Button variant="outline" onClick={exportToCSV}>
                     Export CSV
                   </Button>
-                  <Button variant="outline">
+                  <Button variant="outline" onClick={exportToPDF}>
                     Export PDF
                   </Button>
-                  <Button variant="outline">
+                  <Button variant="outline" onClick={() => toast({ title: "Coming Soon", description: "Email reports feature will be available soon" })}>
                     Email Report
                   </Button>
                 </div>
