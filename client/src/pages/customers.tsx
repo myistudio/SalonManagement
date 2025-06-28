@@ -85,7 +85,10 @@ export default function Customers() {
                   <DialogHeader>
                     <DialogTitle>Add New Customer</DialogTitle>
                   </DialogHeader>
-                  <CustomerForm onSuccess={() => setShowCustomerForm(false)} />
+                  <CustomerForm 
+                    selectedStoreId={selectedStoreId}
+                    onSuccess={() => setShowCustomerForm(false)} 
+                  />
                 </DialogContent>
               </Dialog>
             </div>

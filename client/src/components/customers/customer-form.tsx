@@ -11,9 +11,10 @@ import { Card, CardContent } from "@/components/ui/card";
 
 interface CustomerFormProps {
   onSuccess: () => void;
+  selectedStoreId: number;
 }
 
-export default function CustomerForm({ onSuccess }: CustomerFormProps) {
+export default function CustomerForm({ onSuccess, selectedStoreId }: CustomerFormProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
@@ -85,6 +86,7 @@ export default function CustomerForm({ onSuccess }: CustomerFormProps) {
 
     const customerData = {
       ...formData,
+      storeId: selectedStoreId,
       dateOfBirth: formData.dateOfBirth || null,
     };
 

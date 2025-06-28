@@ -171,7 +171,10 @@ Changelog:
 - June 28, 2025. Added "Back to Settings" button on WhatsApp page for improved navigation
 - June 28, 2025. Enhanced billing system with discount options - added both percentage and amount discount functionality with real-time calculation preview
 - June 28, 2025. Added comprehensive login page customization system with super admin controls for company branding, logo upload, content management, and "Designed by - My Internet" footer credit
-- June 28, 2025. Implemented comprehensive advanced reports and analytics system with date range filtering, day-to-day sales trends, week-on-week and month-on-month comparisons, total discount tracking, tabbed interface (Overview/Analytics/Products/Services/Comparisons), product-wise and service-wise performance reports, revenue vs discount trend analysis, and visual charts with real data integration
+- June 28, 2025. Implemented comprehensive advanced reports and analytics system with date range filtering, day-to-day sales trends, week-on-week and month-on-week comparisons, total discount tracking, tabbed interface (Overview/Analytics/Products/Services/Comparisons), product-wise and service-wise performance reports, revenue vs discount trend analysis, and visual charts with real data integration
+- June 28, 2025. Fixed critical customer creation validation error by adding required storeId parameter to CustomerForm component
+- June 28, 2025. Resolved authentication infinite loop causing 401 errors - improved session handling and query optimization
+- June 28, 2025. Successfully debugged and tested complete salon management system - all major features now fully operational
 ```
 
 ## User Preferences
