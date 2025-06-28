@@ -10,7 +10,8 @@ import {
   Users, 
   Bus,
   LayoutDashboard,
-  Settings
+  Settings,
+  Building2
 } from "lucide-react";
 
 interface SidebarProps {
@@ -68,6 +69,12 @@ export default function Sidebar({ onOpenBilling }: SidebarProps) {
       active: location === "/staff" 
     },
     { 
+      icon: Building2, 
+      label: "Stores", 
+      path: "/stores", 
+      active: location === "/stores" 
+    },
+    { 
       icon: Settings, 
       label: "Settings", 
       path: "/settings", 
@@ -90,11 +97,15 @@ export default function Sidebar({ onOpenBilling }: SidebarProps) {
               </button>
               
               {menuItems.filter(item => {
-                // Show all items for super_admin and store_manager
-                if (userRole === "super_admin" || userRole === "store_manager") return true;
-                // For cashiers, hide Reports, Staff, and Settings
+                // Show all items for super_admin
+                if (userRole === "super_admin") return true;
+                // For store_manager, hide Stores (only super_admin can manage multiple stores)
+                if (userRole === "store_manager") {
+                  return !["Stores"].includes(item.label);
+                }
+                // For cashiers, hide Reports, Staff, Settings, and Stores
                 if (userRole === "cashier") {
-                  return !["Reports", "Staff", "Settings"].includes(item.label);
+                  return !["Reports", "Staff", "Settings", "Stores"].includes(item.label);
                 }
                 return true;
               }).map((item) => (

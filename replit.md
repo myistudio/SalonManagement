@@ -135,6 +135,9 @@ Changelog:
 - June 28, 2025. Replaced Replit Auth with basic email/password authentication for cPanel hosting
 - June 28, 2025. Created comprehensive login/registration system with proper password hashing
 - June 28, 2025. Updated database schema to support mobile numbers and password authentication
+- June 28, 2025. Implemented complete store management system with role-based access control
+- June 28, 2025. Added staff password creation and change functionality with secure hashing
+- June 28, 2025. Created multi-store management page for super admins to create and view stores
 ```
 
 ## User Preferences

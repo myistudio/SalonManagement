@@ -83,8 +83,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Auth routes
   app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
-      const user = await storage.getUser(userId);
+      const user = req.user; // Direct user object from basic auth
       res.json(user);
     } catch (error) {
       console.error("Error fetching user:", error);
@@ -95,18 +94,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Store routes
   app.get('/api/stores', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
-      const user = await storage.getUser(userId);
+      const user = req.user; // Direct user object from basic auth
       
       if (user?.role === 'super_admin') {
         const stores = await storage.getStores();
         res.json(stores);
       } else {
-        const userStores = await storage.getUserStores(userId);
+        const userStores = await storage.getUserStores(user.id);
         res.json(userStores);
       }
     } catch (error) {
+      console.error("Error fetching stores:", error);
       res.status(500).json({ message: "Failed to fetch stores" });
+    }
+  });
+
+  app.post('/api/stores', isAuthenticated, requireRole(['super_admin']), async (req: any, res) => {
+    try {
+      const storeData = req.body;
+      const newStore = await storage.createStore(storeData);
+      res.status(201).json(newStore);
+    } catch (error) {
+      console.error("Error creating store:", error);
+      res.status(500).json({ message: "Failed to create store" });
     }
   });
 
