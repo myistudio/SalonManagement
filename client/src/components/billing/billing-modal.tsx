@@ -152,6 +152,8 @@ export default function BillingModal({ isOpen, onClose, storeId }: BillingModalP
     gender: "",
     dateOfBirth: "",
   });
+  const [discountType, setDiscountType] = useState<'none' | 'percentage' | 'amount'>('none');
+  const [discountValue, setDiscountValue] = useState(0);
 
   // Queries
   const { data: services = [] } = useQuery({
@@ -395,6 +397,14 @@ export default function BillingModal({ isOpen, onClose, storeId }: BillingModalP
 
   const getDiscount = () => {
     let discount = 0;
+    const subtotal = getSubtotal();
+    
+    // Manual discount
+    if (discountType === 'percentage') {
+      discount += (subtotal * discountValue) / 100;
+    } else if (discountType === 'amount') {
+      discount += discountValue;
+    }
     
     // Membership discount
     if (selectedCustomer?.membership) {
@@ -429,6 +439,8 @@ export default function BillingModal({ isOpen, onClose, storeId }: BillingModalP
     setShowWalkInForm(false);
     setEditingPrice(null);
     setCustomPrice("");
+    setDiscountType('none');
+    setDiscountValue(0);
     setNewCustomer({
       firstName: "",
       lastName: "",
@@ -978,6 +990,81 @@ export default function BillingModal({ isOpen, onClose, storeId }: BillingModalP
                     </p>
                   </div>
                 )}
+
+                {/* Discount Section */}
+                <div className="mb-5 p-4 bg-white rounded-xl border-2 border-purple-200 shadow-sm">
+                  <Label className="text-base font-semibold text-gray-800 mb-3 block">
+                    Apply Discount
+                  </Label>
+                  
+                  <div className="space-y-3">
+                    {/* Discount Type Selection */}
+                    <div className="flex gap-2">
+                      <Button
+                        type="button"
+                        variant={discountType === 'none' ? "default" : "outline"}
+                        onClick={() => {
+                          setDiscountType('none');
+                          setDiscountValue(0);
+                        }}
+                        className="flex-1 h-10 text-sm"
+                      >
+                        No Discount
+                      </Button>
+                      <Button
+                        type="button"
+                        variant={discountType === 'percentage' ? "default" : "outline"}
+                        onClick={() => setDiscountType('percentage')}
+                        className="flex-1 h-10 text-sm"
+                      >
+                        Percentage
+                      </Button>
+                      <Button
+                        type="button"
+                        variant={discountType === 'amount' ? "default" : "outline"}
+                        onClick={() => setDiscountType('amount')}
+                        className="flex-1 h-10 text-sm"
+                      >
+                        Amount
+                      </Button>
+                    </div>
+
+                    {/* Discount Value Input */}
+                    {discountType !== 'none' && (
+                      <div className="flex items-center space-x-3">
+                        <Input
+                          type="number"
+                          value={discountValue}
+                          onChange={(e) => {
+                            const value = parseFloat(e.target.value) || 0;
+                            if (discountType === 'percentage') {
+                              setDiscountValue(Math.min(value, 100));
+                            } else {
+                              setDiscountValue(Math.min(value, getSubtotal()));
+                            }
+                          }}
+                          max={discountType === 'percentage' ? 100 : getSubtotal()}
+                          placeholder={discountType === 'percentage' ? "Enter %" : "Enter amount"}
+                          className="flex-1 h-12 text-base border-2 touch-manipulation"
+                        />
+                        <span className="text-sm font-semibold text-gray-600 min-w-[60px]">
+                          {discountType === 'percentage' ? '%' : 'Rs.'}
+                        </span>
+                      </div>
+                    )}
+
+                    {/* Discount Preview */}
+                    {discountType !== 'none' && discountValue > 0 && (
+                      <div className="text-sm text-purple-600 bg-purple-50 rounded-lg p-2">
+                        Discount: Rs. {(discountType === 'percentage' 
+                          ? (getSubtotal() * discountValue) / 100 
+                          : discountValue
+                        ).toLocaleString()}
+                        {discountType === 'percentage' && ` (${discountValue}%)`}
+                      </div>
+                    )}
+                  </div>
+                </div>
 
                 {/* Payment Button */}
                 <Button

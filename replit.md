@@ -166,6 +166,10 @@ Changelog:
 - June 28, 2025. iPad-optimized billing interface with proper margins, larger touch targets (120px min-height), enhanced spacing, and touch-friendly controls
 - June 28, 2025. Fixed barcode scanning functionality - corrected API endpoint mismatch and enhanced error handling for reliable product scanning
 - June 28, 2025. Implemented comprehensive store allocation system for staff members with role-based access control to restrict cashiers and managers to their assigned stores
+- June 28, 2025. Added comprehensive WhatsApp Business API integration with settings, templates, message history, and campaign management
+- June 28, 2025. Created WhatsApp database tables and API endpoints for automated messaging functionality
+- June 28, 2025. Added "Back to Settings" button on WhatsApp page for improved navigation
+- June 28, 2025. Enhanced billing system with discount options - added both percentage and amount discount functionality with real-time calculation preview
 ```
 
 ## User Preferences
