@@ -803,54 +803,50 @@ export default function BillingModal({ isOpen, onClose, storeId }: BillingModalP
                   <p className="text-sm">No items added yet</p>
                 </div>
               ) : (
-                <div className="space-y-3 max-h-80 overflow-y-auto pr-2">
+                <div className="space-y-2 max-h-80 overflow-y-auto pr-1">
                   {billItems.map((item, index) => (
-                    <div key={`${item.type}-${item.id}-${index}`} className="border border-gray-200 rounded-xl p-3 bg-gray-50">
-                      <div className="flex items-start gap-3">
-                        {/* Item Name Only */}
+                    <div key={`${item.type}-${item.id}-${index}`} className="border border-gray-200 rounded-lg p-2 bg-gray-50">
+                      <div className="flex items-center justify-between gap-2">
+                        {/* Item Name - Compact */}
                         <div className="flex-1 min-w-0">
-                          <p className="font-semibold text-base text-gray-900 mb-1">{item.name}</p>
-                          <p className="text-sm text-gray-600">
-                            Rs. {item.price.toLocaleString()} each
-                          </p>
-                          {item.duration && (
-                            <p className="text-xs text-gray-500">
-                              Duration: {item.duration} min
-                            </p>
-                          )}
+                          <p className="font-semibold text-sm text-gray-900 truncate">{item.name}</p>
+                          <div className="flex items-center gap-2 text-xs text-gray-600">
+                            <span>Rs. {item.price.toLocaleString()}</span>
+                            {item.duration && <span>• {item.duration}min</span>}
+                          </div>
                         </div>
 
-                        {/* Quantity Controls */}
-                        <div className="flex items-center gap-2">
+                        {/* Quantity Controls - Compact */}
+                        <div className="flex items-center gap-1">
                           <Button
                             size="sm"
                             variant="outline"
                             onClick={() => updateItemQuantity(item.id, item.type, -1)}
                             disabled={item.quantity <= 1}
-                            className="h-8 w-8 rounded-lg text-sm p-0 touch-manipulation active:scale-95"
+                            className="h-6 w-6 rounded text-xs p-0 touch-manipulation"
                           >
                             -
                           </Button>
-                          <span className="text-sm font-bold w-8 text-center bg-white rounded px-2 py-1">{item.quantity}</span>
+                          <span className="text-xs font-bold w-6 text-center">{item.quantity}</span>
                           <Button
                             size="sm"
                             variant="outline"
                             onClick={() => updateItemQuantity(item.id, item.type, 1)}
-                            className="h-8 w-8 rounded-lg text-sm p-0 touch-manipulation active:scale-95"
+                            className="h-6 w-6 rounded text-xs p-0 touch-manipulation"
                           >
                             +
                           </Button>
                         </div>
 
-                        {/* Price and Actions */}
-                        <div className="flex items-center gap-2">
+                        {/* Price and Actions - Compact */}
+                        <div className="flex items-center gap-1">
                           {editingPrice?.id === item.id && editingPrice?.type === item.type ? (
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-1">
                               <Input
                                 type="number"
                                 value={customPrice}
                                 onChange={(e) => setCustomPrice(e.target.value)}
-                                className="w-20 h-8 text-sm p-2"
+                                className="w-16 h-6 text-xs p-1"
                                 onKeyPress={(e) => {
                                   if (e.key === 'Enter') {
                                     updateItemPrice(item.id, item.type, parseFloat(customPrice));
@@ -860,17 +856,16 @@ export default function BillingModal({ isOpen, onClose, storeId }: BillingModalP
                               <Button
                                 size="sm"
                                 onClick={() => updateItemPrice(item.id, item.type, parseFloat(customPrice))}
-                                className="h-8 w-8 p-0 text-sm touch-manipulation"
+                                className="h-6 w-6 p-0 text-xs"
                               >
                                 ✓
                               </Button>
                             </div>
                           ) : (
-                            <div className="text-right min-w-[60px]">
-                              <div className="text-sm font-bold text-blue-600">
+                            <div className="text-right min-w-[50px]">
+                              <div className="text-xs font-bold text-blue-600">
                                 Rs. {(item.price * item.quantity).toLocaleString()}
                               </div>
-                              {item.isCustomPrice && <div className="text-xs text-orange-500">(Custom)</div>}
                             </div>
                           )}
                           
@@ -878,19 +873,19 @@ export default function BillingModal({ isOpen, onClose, storeId }: BillingModalP
                             size="sm"
                             variant="ghost"
                             onClick={() => handlePriceEdit(item)}
-                            className="h-8 w-8 p-0 touch-manipulation active:scale-95"
+                            className="h-6 w-6 p-0 touch-manipulation"
                             title="Edit Price"
                           >
-                            <Edit2 size={12} />
+                            <Edit2 size={10} />
                           </Button>
                           <Button
                             size="sm"
                             variant="ghost"
                             onClick={() => removeItem(item.id, item.type)}
-                            className="h-8 w-8 p-0 text-red-500 hover:text-red-700 touch-manipulation active:scale-95"
+                            className="h-6 w-6 p-0 text-red-500 hover:text-red-700 touch-manipulation"
                             title="Remove"
                           >
-                            <Trash2 size={12} />
+                            <Trash2 size={10} />
                           </Button>
                         </div>
                       </div>
