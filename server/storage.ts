@@ -603,6 +603,10 @@ export class DatabaseStorage implements IStorage {
     topServices: { name: string; count: number; revenue: string }[];
     topProducts: { name: string; count: number; revenue: string }[];
   }> {
+    // Adjust end date to include the entire end day
+    const adjustedEndDate = new Date(endDate);
+    adjustedEndDate.setHours(23, 59, 59, 999);
+
     const [revenueResult] = await db
       .select({
         revenue: sql<string>`COALESCE(SUM(${transactions.totalAmount}), 0)`,
@@ -613,7 +617,7 @@ export class DatabaseStorage implements IStorage {
         and(
           eq(transactions.storeId, storeId),
           gte(transactions.createdAt, startDate),
-          lte(transactions.createdAt, endDate)
+          lte(transactions.createdAt, adjustedEndDate)
         )
       );
 
@@ -630,7 +634,7 @@ export class DatabaseStorage implements IStorage {
           eq(transactions.storeId, storeId),
           eq(transactionItems.itemType, 'service'),
           gte(transactions.createdAt, startDate),
-          lte(transactions.createdAt, endDate)
+          lte(transactions.createdAt, adjustedEndDate)
         )
       )
       .groupBy(transactionItems.itemName)
@@ -650,12 +654,74 @@ export class DatabaseStorage implements IStorage {
           eq(transactions.storeId, storeId),
           eq(transactionItems.itemType, 'product'),
           gte(transactions.createdAt, startDate),
-          lte(transactions.createdAt, endDate)
+          lte(transactions.createdAt, adjustedEndDate)
         )
       )
       .groupBy(transactionItems.itemName)
       .orderBy(desc(sql`SUM(${transactionItems.totalPrice})`))
       .limit(5);
+
+    // If no results found in date range, get all-time data for this store
+    if ((revenueResult.revenue === '0' || !revenueResult.revenue) && revenueResult.count === 0) {
+      const [allTimeRevenue] = await db
+        .select({
+          revenue: sql<string>`COALESCE(SUM(${transactions.totalAmount}), 0)`,
+          count: sql<number>`COUNT(*)`
+        })
+        .from(transactions)
+        .where(eq(transactions.storeId, storeId));
+
+      const allTimeServices = await db
+        .select({
+          name: transactionItems.itemName,
+          count: sql<number>`SUM(${transactionItems.quantity})`,
+          revenue: sql<string>`SUM(${transactionItems.totalPrice})`
+        })
+        .from(transactionItems)
+        .innerJoin(transactions, eq(transactionItems.transactionId, transactions.id))
+        .where(
+          and(
+            eq(transactions.storeId, storeId),
+            eq(transactionItems.itemType, 'service')
+          )
+        )
+        .groupBy(transactionItems.itemName)
+        .orderBy(desc(sql`SUM(${transactionItems.totalPrice})`))
+        .limit(5);
+
+      const allTimeProducts = await db
+        .select({
+          name: transactionItems.itemName,
+          count: sql<number>`SUM(${transactionItems.quantity})`,
+          revenue: sql<string>`SUM(${transactionItems.totalPrice})`
+        })
+        .from(transactionItems)
+        .innerJoin(transactions, eq(transactionItems.transactionId, transactions.id))
+        .where(
+          and(
+            eq(transactions.storeId, storeId),
+            eq(transactionItems.itemType, 'product')
+          )
+        )
+        .groupBy(transactionItems.itemName)
+        .orderBy(desc(sql`SUM(${transactionItems.totalPrice})`))
+        .limit(5);
+
+      return {
+        totalRevenue: allTimeRevenue.revenue || '0',
+        totalTransactions: allTimeRevenue.count || 0,
+        topServices: allTimeServices.map(s => ({
+          name: s.name,
+          count: s.count || 0,
+          revenue: s.revenue || '0'
+        })),
+        topProducts: allTimeProducts.map(p => ({
+          name: p.name,
+          count: p.count || 0,
+          revenue: p.revenue || '0'
+        })),
+      };
+    }
 
     return {
       totalRevenue: revenueResult.revenue || '0',
