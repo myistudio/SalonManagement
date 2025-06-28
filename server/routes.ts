@@ -50,17 +50,16 @@ const upload = multer({
   }
 });
 
-// Role-based authentication middleware
+// Role-based authentication middleware for basic auth
 const requireRole = (allowedRoles: string[]) => {
   return async (req: any, res: any, next: any) => {
     try {
-      const userId = req.user?.claims?.sub;
-      if (!userId) {
+      const user = req.user; // Get user directly from basic auth session
+      if (!user) {
         return res.status(401).json({ message: "Unauthorized" });
       }
 
-      const user = await storage.getUser(userId);
-      if (!user || !allowedRoles.includes(user.role)) {
+      if (!allowedRoles.includes(user.role)) {
         return res.status(403).json({ message: "Forbidden: Insufficient permissions" });
       }
 
