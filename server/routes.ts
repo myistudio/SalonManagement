@@ -363,15 +363,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { transaction, items } = req.body;
       const userId = req.user.id; // Use basic auth user id
       
+      console.log('Transaction request data:', { transaction, items, userId });
+      
       // Generate invoice number
       const invoiceNumber = await storage.generateInvoiceNumber(transaction.storeId);
       
-      // Validate transaction data
-      const transactionData = insertTransactionSchema.parse({
+      // Prepare transaction data for validation
+      const transactionForValidation = {
         ...transaction,
         staffId: userId,
         invoiceNumber,
-      });
+      };
+      
+      console.log('Transaction data for validation:', transactionForValidation);
+      
+      // Validate transaction data
+      const transactionData = insertTransactionSchema.parse(transactionForValidation);
       
       // Validate items
       const itemsData = z.array(insertTransactionItemSchema).parse(items);

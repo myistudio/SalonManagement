@@ -378,7 +378,7 @@ export default function BillingModal({ isOpen, onClose, storeId }: BillingModalP
         totalAmount: getTotal().toFixed(2),
         pointsEarned: getPointsEarned(),
         pointsRedeemed: pointsToRedeem,
-        membershipDiscount: selectedCustomer?.membership?.membershipPlan?.discountPercentage || 0,
+        membershipDiscount: ((selectedCustomer?.membership?.membershipPlan?.discountPercentage || 0) / 100 * getSubtotal()).toFixed(2),
         paymentMethod: "cash",
       },
       items: billItems.map(item => ({
