@@ -1013,9 +1013,18 @@ export default function BillingModal({ isOpen, onClose, storeId }: BillingModalP
                 <Button
                   onClick={handlePayment}
                   disabled={createTransaction.isPending}
-                  className="w-full h-16 text-2xl font-bold bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white shadow-lg touch-manipulation"
+                  className="w-full h-16 text-lg sm:text-xl lg:text-2xl font-bold bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white shadow-lg touch-manipulation"
                 >
-                  {createTransaction.isPending ? "Processing..." : `Complete Payment - Rs. ${getTotal().toLocaleString()}`}
+                  <div className="flex flex-col items-center justify-center text-center">
+                    <span className="text-sm sm:text-base lg:text-lg">
+                      {createTransaction.isPending ? "Processing..." : "Complete Payment"}
+                    </span>
+                    {!createTransaction.isPending && (
+                      <span className="text-lg sm:text-xl lg:text-2xl font-bold">
+                        Rs. {getTotal().toLocaleString()}
+                      </span>
+                    )}
+                  </div>
                 </Button>
               </div>
             )}
