@@ -159,6 +159,7 @@ Changelog:
 - June 28, 2025. Redesigned New Bill interface with square box layout for products and services optimized for touch screens
 - June 28, 2025. Added quantity increment logic - duplicate items now increase quantity instead of creating separate entries
 - June 28, 2025. Enhanced bill item controls with +/- quantity buttons and price editing for both services and products
+- June 28, 2025. Expanded services and products display area with 3-column grid layout and increased height for better visibility
 ```
 
 ## User Preferences

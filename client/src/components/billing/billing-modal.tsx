@@ -495,9 +495,9 @@ export default function BillingModal({ isOpen, onClose, storeId }: BillingModalP
           </DialogTitle>
         </DialogHeader>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 lg:gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 lg:gap-6">
           {/* Left Column - Customer & Quick Actions */}
-          <div className="lg:col-span-1 space-y-4">
+          <div className="lg:col-span-3 space-y-4">
             {/* Customer Selection */}
             <div className="bg-white border-2 border-blue-200 rounded-xl p-4">
               <Label className="text-lg font-semibold text-gray-800 mb-3 block">Customer</Label>
@@ -708,11 +708,11 @@ export default function BillingModal({ isOpen, onClose, storeId }: BillingModalP
           </div>
 
           {/* Middle Column - Services & Products */}
-          <div className="lg:col-span-1 space-y-4">
+          <div className="lg:col-span-6 space-y-4">
             {/* Services Section */}
             <div className="bg-white border-2 border-green-200 rounded-xl p-4">
               <h3 className="text-xl font-bold text-gray-900 mb-4">Services</h3>
-              <div className="grid grid-cols-2 gap-3 max-h-80 overflow-y-auto">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 max-h-96 overflow-y-auto">
                 {typedServices.map((service: any) => (
                   <div 
                     key={service.id}
@@ -751,7 +751,7 @@ export default function BillingModal({ isOpen, onClose, storeId }: BillingModalP
             {/* Products Section */}
             <div className="bg-white border-2 border-orange-200 rounded-xl p-4">
               <h3 className="text-xl font-bold text-gray-900 mb-4">Products</h3>
-              <div className="grid grid-cols-2 gap-3 max-h-80 overflow-y-auto">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 max-h-96 overflow-y-auto">
                 {typedProducts.map((product: any) => (
                   <div 
                     key={product.id}
@@ -832,7 +832,7 @@ export default function BillingModal({ isOpen, onClose, storeId }: BillingModalP
           </div>
 
           {/* Right Column - Bill Summary & Checkout */}
-          <div className="lg:col-span-1 space-y-4">
+          <div className="lg:col-span-3 space-y-4">
             {/* Bill Items */}
             <div className="bg-white border-2 border-gray-300 rounded-xl p-4">
               <h3 className="text-xl font-bold text-gray-900 mb-4">Current Bill</h3>
