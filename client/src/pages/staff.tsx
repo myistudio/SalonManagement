@@ -50,7 +50,14 @@ export default function Staff() {
   });
 
   const { data: staff = [], isLoading: staffLoading } = useQuery({
-    queryKey: [`/api/staff?storeId=${selectedStoreId}`],
+    queryKey: ["/api/staff", selectedStoreId],
+    queryFn: async () => {
+      const res = await fetch(`/api/staff?storeId=${selectedStoreId}`, {
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error(`${res.status}: ${res.statusText}`);
+      return res.json();
+    },
     retry: false,
     enabled: !!selectedStoreId,
   });
