@@ -848,6 +848,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get('/api/reports/analytics', isAuthenticated, async (req: any, res) => {
+    try {
+      const storeId = parseInt(req.query.storeId as string);
+      const startDate = new Date(req.query.startDate as string);
+      const endDate = new Date(req.query.endDate as string);
+      
+      if (!storeId || !startDate || !endDate) {
+        return res.status(400).json({ message: "Store ID, start date, and end date are required" });
+      }
+      
+      const analytics = await storage.getAdvancedAnalytics(storeId, startDate, endDate);
+      res.json(analytics);
+    } catch (error) {
+      console.error("Advanced analytics error:", error);
+      res.status(500).json({ message: "Failed to generate advanced analytics" });
+    }
+  });
+
   // WhatsApp Business API routes
   app.get('/api/whatsapp/settings/:storeId', isAuthenticated, hasStoreAccess, async (req: any, res) => {
     try {

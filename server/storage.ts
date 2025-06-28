@@ -139,8 +139,18 @@ export interface IStorage {
   getSalesReport(storeId: number, startDate: Date, endDate: Date): Promise<{
     totalRevenue: string;
     totalTransactions: number;
+    totalDiscount: string;
     topServices: { name: string; count: number; revenue: string }[];
     topProducts: { name: string; count: number; revenue: string }[];
+  }>;
+  
+  // Advanced analytics
+  getAdvancedAnalytics(storeId: number, startDate: Date, endDate: Date): Promise<{
+    dailyAnalytics: { date: string; revenue: string; transactions: number; discount: string }[];
+    weeklyComparison: { current: { revenue: string; transactions: number; discount: string }; previous: { revenue: string; transactions: number; discount: string }; change: { revenue: number; transactions: number; discount: number } };
+    monthlyComparison: { current: { revenue: string; transactions: number; discount: string }; previous: { revenue: string; transactions: number; discount: string }; change: { revenue: number; transactions: number; discount: number } };
+    productWiseReport: { name: string; quantity: number; revenue: string; discount: string }[];
+    serviceWiseReport: { name: string; quantity: number; revenue: string; discount: string }[];
   }>;
 
   // WhatsApp operations
@@ -733,6 +743,7 @@ export class DatabaseStorage implements IStorage {
   async getSalesReport(storeId: number, startDate: Date, endDate: Date): Promise<{
     totalRevenue: string;
     totalTransactions: number;
+    totalDiscount: string;
     topServices: { name: string; count: number; revenue: string }[];
     topProducts: { name: string; count: number; revenue: string }[];
   }> {
@@ -743,7 +754,8 @@ export class DatabaseStorage implements IStorage {
     const [revenueResult] = await db
       .select({
         revenue: sql<string>`COALESCE(SUM(${transactions.totalAmount}), 0)`,
-        count: sql<number>`COUNT(*)`
+        count: sql<number>`COUNT(*)`,
+        discount: sql<string>`COALESCE(SUM(${transactions.discountAmount}), 0)`
       })
       .from(transactions)
       .where(
@@ -803,7 +815,8 @@ export class DatabaseStorage implements IStorage {
       const [allTimeRevenue] = await db
         .select({
           revenue: sql<string>`COALESCE(SUM(${transactions.totalAmount}), 0)`,
-          count: sql<number>`COUNT(*)`
+          count: sql<number>`COUNT(*)`,
+          discount: sql<string>`COALESCE(SUM(${transactions.discountAmount}), 0)`
         })
         .from(transactions)
         .where(eq(transactions.storeId, storeId));
@@ -847,6 +860,7 @@ export class DatabaseStorage implements IStorage {
       return {
         totalRevenue: allTimeRevenue.revenue || '0',
         totalTransactions: allTimeRevenue.count || 0,
+        totalDiscount: allTimeRevenue.discount || '0',
         topServices: allTimeServices.map(s => ({
           name: s.name,
           count: s.count || 0,
@@ -863,6 +877,7 @@ export class DatabaseStorage implements IStorage {
     return {
       totalRevenue: revenueResult.revenue || '0',
       totalTransactions: revenueResult.count || 0,
+      totalDiscount: revenueResult.discount || '0',
       topServices: topServices.map(s => ({
         name: s.name,
         count: s.count || 0,
@@ -873,6 +888,227 @@ export class DatabaseStorage implements IStorage {
         count: p.count || 0,
         revenue: p.revenue || '0'
       })),
+    };
+  }
+
+  // Advanced analytics methods
+  async getAdvancedAnalytics(storeId: number, startDate: Date, endDate: Date): Promise<{
+    dailyAnalytics: { date: string; revenue: string; transactions: number; discount: string }[];
+    weeklyComparison: { current: { revenue: string; transactions: number; discount: string }; previous: { revenue: string; transactions: number; discount: string }; change: { revenue: number; transactions: number; discount: number } };
+    monthlyComparison: { current: { revenue: string; transactions: number; discount: string }; previous: { revenue: string; transactions: number; discount: string }; change: { revenue: number; transactions: number; discount: number } };
+    productWiseReport: { name: string; quantity: number; revenue: string; discount: string }[];
+    serviceWiseReport: { name: string; quantity: number; revenue: string; discount: string }[];
+  }> {
+    const adjustedEndDate = new Date(endDate);
+    adjustedEndDate.setHours(23, 59, 59, 999);
+
+    // Daily analytics
+    const dailyAnalytics = await db
+      .select({
+        date: sql<string>`DATE(${transactions.createdAt})`,
+        revenue: sql<string>`COALESCE(SUM(${transactions.totalAmount}), 0)`,
+        transactions: sql<number>`COUNT(*)`,
+        discount: sql<string>`COALESCE(SUM(${transactions.discountAmount}), 0)`
+      })
+      .from(transactions)
+      .where(
+        and(
+          eq(transactions.storeId, storeId),
+          gte(transactions.createdAt, startDate),
+          lte(transactions.createdAt, adjustedEndDate)
+        )
+      )
+      .groupBy(sql`DATE(${transactions.createdAt})`)
+      .orderBy(sql`DATE(${transactions.createdAt})`);
+
+    // Week-on-week comparison
+    const currentWeekStart = new Date(endDate);
+    currentWeekStart.setDate(currentWeekStart.getDate() - 6);
+    currentWeekStart.setHours(0, 0, 0, 0);
+    
+    const previousWeekStart = new Date(currentWeekStart);
+    previousWeekStart.setDate(previousWeekStart.getDate() - 7);
+    
+    const previousWeekEnd = new Date(currentWeekStart);
+    previousWeekEnd.setDate(previousWeekEnd.getDate() - 1);
+    previousWeekEnd.setHours(23, 59, 59, 999);
+
+    const [currentWeekData] = await db
+      .select({
+        revenue: sql<string>`COALESCE(SUM(${transactions.totalAmount}), 0)`,
+        transactions: sql<number>`COUNT(*)`,
+        discount: sql<string>`COALESCE(SUM(${transactions.discountAmount}), 0)`
+      })
+      .from(transactions)
+      .where(
+        and(
+          eq(transactions.storeId, storeId),
+          gte(transactions.createdAt, currentWeekStart),
+          lte(transactions.createdAt, adjustedEndDate)
+        )
+      );
+
+    const [previousWeekData] = await db
+      .select({
+        revenue: sql<string>`COALESCE(SUM(${transactions.totalAmount}), 0)`,
+        transactions: sql<number>`COUNT(*)`,
+        discount: sql<string>`COALESCE(SUM(${transactions.discountAmount}), 0)`
+      })
+      .from(transactions)
+      .where(
+        and(
+          eq(transactions.storeId, storeId),
+          gte(transactions.createdAt, previousWeekStart),
+          lte(transactions.createdAt, previousWeekEnd)
+        )
+      );
+
+    // Month-on-month comparison
+    const currentMonth = endDate.getMonth();
+    const currentYear = endDate.getFullYear();
+    const currentMonthStart = new Date(currentYear, currentMonth, 1);
+    
+    const previousMonth = currentMonth === 0 ? 11 : currentMonth - 1;
+    const previousYear = currentMonth === 0 ? currentYear - 1 : currentYear;
+    const previousMonthStart = new Date(previousYear, previousMonth, 1);
+    const previousMonthEnd = new Date(currentYear, currentMonth, 0, 23, 59, 59, 999);
+
+    const [currentMonthData] = await db
+      .select({
+        revenue: sql<string>`COALESCE(SUM(${transactions.totalAmount}), 0)`,
+        transactions: sql<number>`COUNT(*)`,
+        discount: sql<string>`COALESCE(SUM(${transactions.discountAmount}), 0)`
+      })
+      .from(transactions)
+      .where(
+        and(
+          eq(transactions.storeId, storeId),
+          gte(transactions.createdAt, currentMonthStart),
+          lte(transactions.createdAt, adjustedEndDate)
+        )
+      );
+
+    const [previousMonthData] = await db
+      .select({
+        revenue: sql<string>`COALESCE(SUM(${transactions.totalAmount}), 0)`,
+        transactions: sql<number>`COUNT(*)`,
+        discount: sql<string>`COALESCE(SUM(${transactions.discountAmount}), 0)`
+      })
+      .from(transactions)
+      .where(
+        and(
+          eq(transactions.storeId, storeId),
+          gte(transactions.createdAt, previousMonthStart),
+          lte(transactions.createdAt, previousMonthEnd)
+        )
+      );
+
+    // Product-wise report with discount tracking
+    const productWiseReport = await db
+      .select({
+        name: transactionItems.itemName,
+        quantity: sql<number>`SUM(${transactionItems.quantity})`,
+        revenue: sql<string>`SUM(${transactionItems.totalPrice})`,
+        discount: sql<string>`COALESCE(SUM(CASE WHEN ${transactions.discountAmount} > 0 THEN (${transactionItems.totalPrice} * ${transactions.discountAmount} / ${transactions.totalAmount}) ELSE 0 END), 0)`
+      })
+      .from(transactionItems)
+      .innerJoin(transactions, eq(transactionItems.transactionId, transactions.id))
+      .where(
+        and(
+          eq(transactions.storeId, storeId),
+          eq(transactionItems.itemType, 'product'),
+          gte(transactions.createdAt, startDate),
+          lte(transactions.createdAt, adjustedEndDate)
+        )
+      )
+      .groupBy(transactionItems.itemName)
+      .orderBy(desc(sql`SUM(${transactionItems.totalPrice})`));
+
+    // Service-wise report with discount tracking
+    const serviceWiseReport = await db
+      .select({
+        name: transactionItems.itemName,
+        quantity: sql<number>`SUM(${transactionItems.quantity})`,
+        revenue: sql<string>`SUM(${transactionItems.totalPrice})`,
+        discount: sql<string>`COALESCE(SUM(CASE WHEN ${transactions.discountAmount} > 0 THEN (${transactionItems.totalPrice} * ${transactions.discountAmount} / ${transactions.totalAmount}) ELSE 0 END), 0)`
+      })
+      .from(transactionItems)
+      .innerJoin(transactions, eq(transactionItems.transactionId, transactions.id))
+      .where(
+        and(
+          eq(transactions.storeId, storeId),
+          eq(transactionItems.itemType, 'service'),
+          gte(transactions.createdAt, startDate),
+          lte(transactions.createdAt, adjustedEndDate)
+        )
+      )
+      .groupBy(transactionItems.itemName)
+      .orderBy(desc(sql`SUM(${transactionItems.totalPrice})`));
+
+    // Calculate percentage changes
+    const calculateChange = (current: string, previous: string) => {
+      const curr = parseFloat(current) || 0;
+      const prev = parseFloat(previous) || 0;
+      return prev === 0 ? 0 : ((curr - prev) / prev) * 100;
+    };
+
+    const calculateChangeNumber = (current: number, previous: number) => {
+      return previous === 0 ? 0 : ((current - previous) / previous) * 100;
+    };
+
+    return {
+      dailyAnalytics: dailyAnalytics.map(day => ({
+        date: day.date,
+        revenue: day.revenue || '0',
+        transactions: day.transactions || 0,
+        discount: day.discount || '0'
+      })),
+      weeklyComparison: {
+        current: {
+          revenue: currentWeekData?.revenue || '0',
+          transactions: currentWeekData?.transactions || 0,
+          discount: currentWeekData?.discount || '0'
+        },
+        previous: {
+          revenue: previousWeekData?.revenue || '0',
+          transactions: previousWeekData?.transactions || 0,
+          discount: previousWeekData?.discount || '0'
+        },
+        change: {
+          revenue: calculateChange(currentWeekData?.revenue || '0', previousWeekData?.revenue || '0'),
+          transactions: calculateChangeNumber(currentWeekData?.transactions || 0, previousWeekData?.transactions || 0),
+          discount: calculateChange(currentWeekData?.discount || '0', previousWeekData?.discount || '0')
+        }
+      },
+      monthlyComparison: {
+        current: {
+          revenue: currentMonthData?.revenue || '0',
+          transactions: currentMonthData?.transactions || 0,
+          discount: currentMonthData?.discount || '0'
+        },
+        previous: {
+          revenue: previousMonthData?.revenue || '0',
+          transactions: previousMonthData?.transactions || 0,
+          discount: previousMonthData?.discount || '0'
+        },
+        change: {
+          revenue: calculateChange(currentMonthData?.revenue || '0', previousMonthData?.revenue || '0'),
+          transactions: calculateChangeNumber(currentMonthData?.transactions || 0, previousMonthData?.transactions || 0),
+          discount: calculateChange(currentMonthData?.discount || '0', previousMonthData?.discount || '0')
+        }
+      },
+      productWiseReport: productWiseReport.map(p => ({
+        name: p.name,
+        quantity: p.quantity || 0,
+        revenue: p.revenue || '0',
+        discount: p.discount || '0'
+      })),
+      serviceWiseReport: serviceWiseReport.map(s => ({
+        name: s.name,
+        quantity: s.quantity || 0,
+        revenue: s.revenue || '0',
+        discount: s.discount || '0'
+      }))
     };
   }
 

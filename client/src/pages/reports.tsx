@@ -10,8 +10,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { CalendarDays, Download, TrendingUp, Users, Package, Crown } from "lucide-react";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
+import { CalendarDays, Download, TrendingUp, TrendingDown, Users, Package, Crown, DollarSign, Percent, BarChart3, Clock, Calendar, Activity } from "lucide-react";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, Area, AreaChart } from "recharts";
 import BillingModal from "@/components/billing/billing-modal";
 
 export default function Reports() {
@@ -39,91 +41,78 @@ export default function Reports() {
   }, [isAuthenticated, isLoading, toast]);
 
   const { data: salesReport = {}, isLoading: reportLoading } = useQuery({
-    queryKey: [`/api/reports/sales?storeId=${selectedStoreId}&startDate=${dateRange.startDate}&endDate=${dateRange.endDate}`],
+    queryKey: [`/api/reports/sales`, selectedStoreId, dateRange.startDate, dateRange.endDate],
+    queryFn: () => fetch(`/api/reports/sales?storeId=${selectedStoreId}&startDate=${dateRange.startDate}&endDate=${dateRange.endDate}`).then(res => res.json()),
+    enabled: !!selectedStoreId && !!dateRange.startDate && !!dateRange.endDate,
+    retry: false,
+  });
+
+  const { data: analytics = {}, isLoading: analyticsLoading } = useQuery({
+    queryKey: [`/api/reports/analytics`, selectedStoreId, dateRange.startDate, dateRange.endDate],
+    queryFn: () => fetch(`/api/reports/analytics?storeId=${selectedStoreId}&startDate=${dateRange.startDate}&endDate=${dateRange.endDate}`).then(res => res.json()),
     enabled: !!selectedStoreId && !!dateRange.startDate && !!dateRange.endDate,
     retry: false,
   });
 
   const { data: transactions = [] } = useQuery({
-    queryKey: [`/api/transactions?storeId=${selectedStoreId}&limit=100`],
+    queryKey: [`/api/transactions`, selectedStoreId],
+    queryFn: () => fetch(`/api/transactions?storeId=${selectedStoreId}&limit=100`).then(res => res.json()),
     enabled: !!selectedStoreId,
     retry: false,
   });
 
-  const { data: dashboardStats = {} } = useQuery({
-    queryKey: [`/api/dashboard/stats/${selectedStoreId}`],
-    enabled: !!selectedStoreId,
-    retry: false,
-  });
+  const colors = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
 
-  // Process transaction data for charts
-  const processTransactionData = () => {
-    const last7Days = Array.from({ length: 7 }, (_, i) => {
-      const date = new Date();
-      date.setDate(date.getDate() - i);
-      return date.toISOString().split('T')[0];
-    }).reverse();
-
-    const dailyRevenue = last7Days.map(date => {
-      const dayTransactions = Array.isArray(transactions) ? transactions.filter((t: any) => 
-        new Date(t.createdAt).toISOString().split('T')[0] === date
-      ) : [];
-      const revenue = dayTransactions.reduce((sum: number, t: any) => 
-        sum + parseFloat(t.totalAmount || '0'), 0
-      );
-      
-      return {
-        date: new Date(date).toLocaleDateString('en-US', { weekday: 'short' }),
-        revenue: revenue,
-        transactions: dayTransactions.length,
-      };
-    });
-
-    return dailyRevenue;
+  const formatPercentageChange = (value: number) => {
+    const formatted = Math.abs(value).toFixed(1);
+    return value >= 0 ? `+${formatted}%` : `-${formatted}%`;
   };
 
-  const chartData = processTransactionData();
+  const getChangeIcon = (value: number) => {
+    return value >= 0 ? (
+      <TrendingUp className="h-4 w-4 text-green-500" />
+    ) : (
+      <TrendingDown className="h-4 w-4 text-red-500" />
+    );
+  };
 
-  const COLORS = ['hsl(262, 83%, 58%)', 'hsl(187, 100%, 42%)', 'hsl(37, 95%, 47%)', 'hsl(142, 71%, 45%)', 'hsl(346, 87%, 54%)'];
+  const getChangeColor = (value: number) => {
+    return value >= 0 ? "text-green-500" : "text-red-500";
+  };
 
-  if (isLoading) {
+  if (isLoading || !isAuthenticated) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-4 text-lg text-muted-foreground">Loading...</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       <Header selectedStoreId={selectedStoreId} onStoreChange={setSelectedStoreId} />
-      
       <div className="flex">
-        <Sidebar onOpenBilling={() => setShowBillingModal(true)} />
-        
-        <main className="flex-1 lg:ml-64">
-          <div className="p-6">
-            <div className="flex items-center justify-between mb-8">
-              <div>
-                <h2 className="text-3xl font-bold text-gray-900">Reports & Analytics</h2>
-                <p className="mt-1 text-gray-600">Track your business performance and insights</p>
-              </div>
-              <Button variant="outline" className="flex items-center space-x-2">
-                <Download size={16} />
-                <span>Export Report</span>
-              </Button>
+        <Sidebar />
+        <main className="flex-1 p-6">
+          <div className="max-w-7xl mx-auto">
+            <div className="mb-6">
+              <h1 className="text-3xl font-bold text-foreground mb-2">Advanced Reports & Analytics</h1>
+              <p className="text-muted-foreground">Comprehensive business analytics with comparisons and insights</p>
             </div>
 
             {/* Date Range Selector */}
-            <Card className="mb-8">
+            <Card className="mb-6">
               <CardHeader>
-                <CardTitle className="flex items-center">
-                  <CalendarDays className="mr-2" size={20} />
-                  Date Range
+                <CardTitle className="flex items-center gap-2">
+                  <CalendarDays className="h-5 w-5" />
+                  Date Range Filter
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                   <div>
                     <Label htmlFor="startDate">Start Date</Label>
                     <Input
@@ -142,248 +131,445 @@ export default function Reports() {
                       onChange={(e) => setDateRange(prev => ({ ...prev, endDate: e.target.value }))}
                     />
                   </div>
+                  <div className="flex items-end gap-2">
+                    <Button 
+                      variant="outline"
+                      onClick={() => {
+                        const today = new Date();
+                        const lastWeek = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+                        setDateRange({
+                          startDate: lastWeek.toISOString().split('T')[0],
+                          endDate: today.toISOString().split('T')[0]
+                        });
+                      }}
+                    >
+                      Last 7 Days
+                    </Button>
+                    <Button 
+                      variant="outline"
+                      onClick={() => {
+                        const today = new Date();
+                        const lastMonth = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
+                        setDateRange({
+                          startDate: lastMonth.toISOString().split('T')[0],
+                          endDate: today.toISOString().split('T')[0]
+                        });
+                      }}
+                    >
+                      Last 30 Days
+                    </Button>
+                  </div>
                   <div className="flex items-end">
-                    <Button className="w-full">Apply Filter</Button>
+                    <Button className="w-full">
+                      <BarChart3 className="h-4 w-4 mr-2" />
+                      Generate Report
+                    </Button>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
-            {/* Key Metrics */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-              <Card>
-                <CardContent className="p-6">
-                  <div className="flex items-center">
-                    <div className="flex-shrink-0">
-                      <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
-                        <TrendingUp className="h-5 w-5 text-green-600" />
-                      </div>
-                    </div>
-                    <div className="ml-4">
-                      <p className="text-sm font-medium text-gray-600">Total Revenue</p>
-                      <div className="text-2xl font-bold text-gray-900">
-                        {reportLoading ? (
-                          <Skeleton className="h-8 w-20" />
-                        ) : (
-                          `Rs. ${parseFloat((salesReport as any)?.totalRevenue || '0').toLocaleString()}`
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+            <Tabs defaultValue="overview" className="space-y-6">
+              <TabsList className="grid w-full grid-cols-5">
+                <TabsTrigger value="overview">Overview</TabsTrigger>
+                <TabsTrigger value="analytics">Analytics</TabsTrigger>
+                <TabsTrigger value="products">Products</TabsTrigger>
+                <TabsTrigger value="services">Services</TabsTrigger>
+                <TabsTrigger value="comparisons">Comparisons</TabsTrigger>
+              </TabsList>
 
-              <Card>
-                <CardContent className="p-6">
-                  <div className="flex items-center">
-                    <div className="flex-shrink-0">
-                      <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                        <Users className="h-5 w-5 text-blue-600" />
+              {/* Overview Tab */}
+              <TabsContent value="overview" className="space-y-6">
+                {/* Summary Cards */}
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
+                      <DollarSign className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">
+                        {reportLoading ? <Skeleton className="h-8 w-20" /> : `Rs. ${salesReport.totalRevenue || '0'}`}
                       </div>
-                    </div>
-                    <div className="ml-4">
-                      <p className="text-sm font-medium text-gray-600">Total Transactions</p>
-                      <div className="text-2xl font-bold text-gray-900">
-                        {reportLoading ? (
-                          <Skeleton className="h-8 w-16" />
-                        ) : (
-                          (salesReport as any)?.totalTransactions || 0
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+                    </CardContent>
+                  </Card>
 
-              <Card>
-                <CardContent className="p-6">
-                  <div className="flex items-center">
-                    <div className="flex-shrink-0">
-                      <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
-                        <Package className="h-5 w-5 text-purple-600" />
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">Total Transactions</CardTitle>
+                      <Activity className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">
+                        {reportLoading ? <Skeleton className="h-8 w-16" /> : (salesReport.totalTransactions || 0)}
                       </div>
-                    </div>
-                    <div className="ml-4">
-                      <p className="text-sm font-medium text-gray-600">Avg Transaction</p>
-                      <div className="text-2xl font-bold text-gray-900">
-                        {reportLoading ? (
-                          <Skeleton className="h-8 w-20" />
-                        ) : (
-                          `Rs. ${(parseFloat((salesReport as any)?.totalRevenue || '0') / Math.max((salesReport as any)?.totalTransactions || 1, 1)).toLocaleString()}`
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+                    </CardContent>
+                  </Card>
 
-              <Card>
-                <CardContent className="p-6">
-                  <div className="flex items-center">
-                    <div className="flex-shrink-0">
-                      <div className="w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center">
-                        <Crown className="h-5 w-5 text-amber-600" />
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">Total Discounts</CardTitle>
+                      <Percent className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">
+                        {reportLoading ? <Skeleton className="h-8 w-20" /> : `Rs. ${salesReport.totalDiscount || '0'}`}
                       </div>
-                    </div>
-                    <div className="ml-4">
-                      <p className="text-sm font-medium text-gray-600">Active Members</p>
-                      <div className="text-2xl font-bold text-gray-900">
-                        {(dashboardStats as any)?.activeMembers || 0}
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+                    </CardContent>
+                  </Card>
 
-            {/* Charts */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-              {/* Daily Revenue Chart */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Daily Revenue (Last 7 Days)</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="h-80">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={chartData}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="date" />
-                        <YAxis />
-                        <Tooltip 
-                          formatter={(value: any) => [`₹${value.toLocaleString()}`, 'Revenue']}
-                        />
-                        <Bar dataKey="revenue" fill="hsl(262, 83%, 58%)" />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Top Services Chart */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Top Services</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="h-80">
-                    {reportLoading ? (
-                      <div className="flex items-center justify-center h-full">
-                        <Skeleton className="h-40 w-40 rounded-full" />
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">Avg. Transaction</CardTitle>
+                      <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">
+                        {reportLoading ? <Skeleton className="h-8 w-20" /> : 
+                          `Rs. ${salesReport.totalTransactions > 0 ? 
+                            (parseFloat(salesReport.totalRevenue || '0') / salesReport.totalTransactions).toFixed(2) : 
+                            '0'}`
+                        }
                       </div>
-                    ) : (salesReport as any)?.topServices?.length > 0 ? (
-                      <ResponsiveContainer width="100%" height="100%">
-                        <PieChart>
-                          <Pie
-                            data={(salesReport as any).topServices}
-                            cx="50%"
-                            cy="50%"
-                            labelLine={false}
-                            label={({ name, value }) => `${name}: Rs. ${parseFloat(value).toLocaleString()}`}
-                            outerRadius={100}
-                            fill="#8884d8"
-                            dataKey="revenue"
-                          >
-                            {(salesReport as any).topServices.map((entry: any, index: number) => (
-                              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                            ))}
-                          </Pie>
-                          <Tooltip 
-                            formatter={(value: any) => [`₹${parseFloat(value).toLocaleString()}`, 'Revenue']}
-                          />
-                        </PieChart>
-                      </ResponsiveContainer>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Charts */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Top Services by Revenue</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      {reportLoading ? (
+                        <Skeleton className="h-64 w-full" />
+                      ) : (
+                        <ResponsiveContainer width="100%" height={300}>
+                          <BarChart data={salesReport.topServices || []}>
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <XAxis dataKey="name" />
+                            <YAxis />
+                            <Tooltip formatter={(value) => [`Rs. ${value}`, 'Revenue']} />
+                            <Bar dataKey="revenue" fill="#8884d8" />
+                          </BarChart>
+                        </ResponsiveContainer>
+                      )}
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Top Products Distribution</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      {reportLoading ? (
+                        <Skeleton className="h-64 w-full" />
+                      ) : (
+                        <ResponsiveContainer width="100%" height={300}>
+                          <PieChart>
+                            <Pie
+                              data={salesReport.topProducts || []}
+                              cx="50%"
+                              cy="50%"
+                              labelLine={false}
+                              label={({ name, value }) => `${name}: Rs. ${value}`}
+                              outerRadius={80}
+                              fill="#8884d8"
+                              dataKey="revenue"
+                            >
+                              {(salesReport.topProducts || []).map((entry, index) => (
+                                <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />
+                              ))}
+                            </Pie>
+                            <Tooltip formatter={(value) => [`Rs. ${value}`, 'Revenue']} />
+                          </PieChart>
+                        </ResponsiveContainer>
+                      )}
+                    </CardContent>
+                  </Card>
+                </div>
+              </TabsContent>
+
+              {/* Analytics Tab */}
+              <TabsContent value="analytics" className="space-y-6">
+                {analyticsLoading ? (
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    {[1, 2, 3].map((i) => (
+                      <Card key={i}>
+                        <CardHeader>
+                          <Skeleton className="h-6 w-32" />
+                        </CardHeader>
+                        <CardContent>
+                          <Skeleton className="h-64 w-full" />
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                ) : (
+                  <>
+                    {/* Daily Analytics Chart */}
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                          <Clock className="h-5 w-5" />
+                          Daily Sales Trend
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <ResponsiveContainer width="100%" height={400}>
+                          <AreaChart data={analytics.dailyAnalytics || []}>
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <XAxis dataKey="date" />
+                            <YAxis />
+                            <Tooltip formatter={(value, name) => [
+                              name === 'revenue' ? `Rs. ${value}` : name === 'discount' ? `Rs. ${value}` : value,
+                              name === 'revenue' ? 'Revenue' : name === 'discount' ? 'Discount' : 'Transactions'
+                            ]} />
+                            <Area type="monotone" dataKey="revenue" stackId="1" stroke="#8884d8" fill="#8884d8" fillOpacity={0.6} />
+                            <Area type="monotone" dataKey="discount" stackId="1" stroke="#ff7300" fill="#ff7300" fillOpacity={0.6} />
+                          </AreaChart>
+                        </ResponsiveContainer>
+                      </CardContent>
+                    </Card>
+
+                    {/* Week-on-Week & Month-on-Month Comparison */}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="flex items-center gap-2">
+                            <Calendar className="h-5 w-5" />
+                            Week-on-Week Comparison
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm text-muted-foreground">Current Week Revenue</span>
+                            <span className="font-bold">Rs. {analytics.weeklyComparison?.current?.revenue || '0'}</span>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm text-muted-foreground">Previous Week Revenue</span>
+                            <span className="font-bold">Rs. {analytics.weeklyComparison?.previous?.revenue || '0'}</span>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm text-muted-foreground">Change</span>
+                            <div className="flex items-center gap-1">
+                              {getChangeIcon(analytics.weeklyComparison?.change?.revenue || 0)}
+                              <span className={`font-bold ${getChangeColor(analytics.weeklyComparison?.change?.revenue || 0)}`}>
+                                {formatPercentageChange(analytics.weeklyComparison?.change?.revenue || 0)}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm text-muted-foreground">Current Week Transactions</span>
+                            <span className="font-bold">{analytics.weeklyComparison?.current?.transactions || 0}</span>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm text-muted-foreground">Transaction Change</span>
+                            <div className="flex items-center gap-1">
+                              {getChangeIcon(analytics.weeklyComparison?.change?.transactions || 0)}
+                              <span className={`font-bold ${getChangeColor(analytics.weeklyComparison?.change?.transactions || 0)}`}>
+                                {formatPercentageChange(analytics.weeklyComparison?.change?.transactions || 0)}
+                              </span>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="flex items-center gap-2">
+                            <Calendar className="h-5 w-5" />
+                            Month-on-Month Comparison
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm text-muted-foreground">Current Month Revenue</span>
+                            <span className="font-bold">Rs. {analytics.monthlyComparison?.current?.revenue || '0'}</span>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm text-muted-foreground">Previous Month Revenue</span>
+                            <span className="font-bold">Rs. {analytics.monthlyComparison?.previous?.revenue || '0'}</span>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm text-muted-foreground">Change</span>
+                            <div className="flex items-center gap-1">
+                              {getChangeIcon(analytics.monthlyComparison?.change?.revenue || 0)}
+                              <span className={`font-bold ${getChangeColor(analytics.monthlyComparison?.change?.revenue || 0)}`}>
+                                {formatPercentageChange(analytics.monthlyComparison?.change?.revenue || 0)}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm text-muted-foreground">Current Month Transactions</span>
+                            <span className="font-bold">{analytics.monthlyComparison?.current?.transactions || 0}</span>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm text-muted-foreground">Transaction Change</span>
+                            <div className="flex items-center gap-1">
+                              {getChangeIcon(analytics.monthlyComparison?.change?.transactions || 0)}
+                              <span className={`font-bold ${getChangeColor(analytics.monthlyComparison?.change?.transactions || 0)}`}>
+                                {formatPercentageChange(analytics.monthlyComparison?.change?.transactions || 0)}
+                              </span>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </div>
+                  </>
+                )}
+              </TabsContent>
+
+              {/* Products Tab */}
+              <TabsContent value="products" className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Package className="h-5 w-5" />
+                      Product-Wise Performance
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {analyticsLoading ? (
+                      <Skeleton className="h-64 w-full" />
                     ) : (
-                      <div className="flex items-center justify-center h-full text-gray-500">
-                        No service data available for the selected period
+                      <div className="space-y-4">
+                        {(analytics.productWiseReport || []).map((product: any, index: number) => (
+                          <div key={index} className="flex items-center justify-between p-4 border rounded-lg">
+                            <div>
+                              <h3 className="font-medium">{product.name}</h3>
+                              <p className="text-sm text-muted-foreground">Quantity: {product.quantity}</p>
+                            </div>
+                            <div className="text-right">
+                              <p className="font-bold">Rs. {product.revenue}</p>
+                              <p className="text-sm text-red-500">Discount: Rs. {product.discount}</p>
+                            </div>
+                          </div>
+                        ))}
                       </div>
                     )}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
 
-            {/* Top Services and Products Tables */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Top Services */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Top Services by Revenue</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {reportLoading ? (
-                    <div className="space-y-3">
-                      {Array.from({ length: 5 }).map((_, i) => (
-                        <div key={i} className="flex items-center justify-between">
-                          <Skeleton className="h-4 w-24" />
-                          <Skeleton className="h-4 w-16" />
-                        </div>
-                      ))}
-                    </div>
-                  ) : (salesReport as any)?.topServices?.length > 0 ? (
-                    <div className="space-y-3">
-                      {(salesReport as any).topServices.map((service: any, index: number) => (
-                        <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                          <div>
-                            <p className="font-medium text-gray-900">{service.name}</p>
-                            <p className="text-sm text-gray-600">{service.count} times</p>
+              {/* Services Tab */}
+              <TabsContent value="services" className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Crown className="h-5 w-5" />
+                      Service-Wise Performance
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {analyticsLoading ? (
+                      <Skeleton className="h-64 w-full" />
+                    ) : (
+                      <div className="space-y-4">
+                        {(analytics.serviceWiseReport || []).map((service: any, index: number) => (
+                          <div key={index} className="flex items-center justify-between p-4 border rounded-lg">
+                            <div>
+                              <h3 className="font-medium">{service.name}</h3>
+                              <p className="text-sm text-muted-foreground">Quantity: {service.quantity}</p>
+                            </div>
+                            <div className="text-right">
+                              <p className="font-bold">Rs. {service.revenue}</p>
+                              <p className="text-sm text-red-500">Discount: Rs. {service.discount}</p>
+                            </div>
                           </div>
-                          <div className="text-right">
-                            <p className="font-semibold text-gray-900">Rs. {parseFloat(service.revenue).toLocaleString()}</p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-gray-500 text-center py-8">No service data available</p>
-                  )}
-                </CardContent>
-              </Card>
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </TabsContent>
 
-              {/* Top Products */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Top Products by Revenue</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {reportLoading ? (
-                    <div className="space-y-3">
-                      {Array.from({ length: 5 }).map((_, i) => (
-                        <div key={i} className="flex items-center justify-between">
-                          <Skeleton className="h-4 w-24" />
-                          <Skeleton className="h-4 w-16" />
-                        </div>
-                      ))}
-                    </div>
-                  ) : (salesReport as any)?.topProducts?.length > 0 ? (
-                    <div className="space-y-3">
-                      {(salesReport as any).topProducts.map((product: any, index: number) => (
-                        <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                          <div>
-                            <p className="font-medium text-gray-900">{product.name}</p>
-                            <p className="text-sm text-gray-600">{product.count} sold</p>
-                          </div>
-                          <div className="text-right">
-                            <p className="font-semibold text-gray-900">Rs. {parseFloat(product.revenue).toLocaleString()}</p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-gray-500 text-center py-8">No product data available</p>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
+              {/* Comparisons Tab */}
+              <TabsContent value="comparisons" className="space-y-6">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Revenue vs Discount Trend</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      {analyticsLoading ? (
+                        <Skeleton className="h-64 w-full" />
+                      ) : (
+                        <ResponsiveContainer width="100%" height={300}>
+                          <LineChart data={analytics.dailyAnalytics || []}>
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <XAxis dataKey="date" />
+                            <YAxis />
+                            <Tooltip formatter={(value, name) => [
+                              `Rs. ${value}`,
+                              name === 'revenue' ? 'Revenue' : 'Discount'
+                            ]} />
+                            <Line type="monotone" dataKey="revenue" stroke="#8884d8" strokeWidth={2} />
+                            <Line type="monotone" dataKey="discount" stroke="#ff7300" strokeWidth={2} />
+                          </LineChart>
+                        </ResponsiveContainer>
+                      )}
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Transaction Volume</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      {analyticsLoading ? (
+                        <Skeleton className="h-64 w-full" />
+                      ) : (
+                        <ResponsiveContainer width="100%" height={300}>
+                          <BarChart data={analytics.dailyAnalytics || []}>
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <XAxis dataKey="date" />
+                            <YAxis />
+                            <Tooltip />
+                            <Bar dataKey="transactions" fill="#00C49F" />
+                          </BarChart>
+                        </ResponsiveContainer>
+                      )}
+                    </CardContent>
+                  </Card>
+                </div>
+              </TabsContent>
+            </Tabs>
+
+            {/* Export Section */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Download className="h-5 w-5" />
+                  Export Reports
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex gap-4">
+                  <Button variant="outline">
+                    Export CSV
+                  </Button>
+                  <Button variant="outline">
+                    Export PDF
+                  </Button>
+                  <Button variant="outline">
+                    Email Report
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </main>
       </div>
 
-      <BillingModal 
-        isOpen={showBillingModal} 
-        onClose={() => setShowBillingModal(false)} 
-        storeId={selectedStoreId}
-      />
+      {showBillingModal && (
+        <BillingModal
+          isOpen={showBillingModal}
+          onClose={() => setShowBillingModal(false)}
+          selectedStoreId={selectedStoreId}
+        />
+      )}
     </div>
   );
 }
