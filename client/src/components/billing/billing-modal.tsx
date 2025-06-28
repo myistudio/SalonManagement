@@ -478,8 +478,8 @@ export default function BillingModal({ isOpen, onClose, storeId }: BillingModalP
         itemId: item.id,
         itemName: item.name,
         quantity: item.quantity,
-        unitPrice: item.price.toFixed(2),
-        totalPrice: (item.price * item.quantity).toFixed(2),
+        unitPrice: Number(item.price || 0).toFixed(2),
+        totalPrice: (Number(item.price || 0) * Number(item.quantity || 0)).toFixed(2),
       })),
     };
 
