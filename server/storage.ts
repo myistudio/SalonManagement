@@ -45,6 +45,7 @@ export interface IStorage {
   getStore(id: number): Promise<Store | undefined>;
   createStore(store: InsertStore): Promise<Store>;
   updateStore(id: number, store: Partial<InsertStore>): Promise<Store>;
+  deleteStore(id: number): Promise<void>;
   getUserStores(userId: string): Promise<Store[]>;
   getStoreStaff(storeId: number): Promise<(StoreStaff & { user: User })[]>;
   assignUserToStore(userId: string, storeId: number, role: string): Promise<StoreStaff>;
@@ -172,6 +173,10 @@ export class DatabaseStorage implements IStorage {
       .where(eq(stores.id, id))
       .returning();
     return updatedStore;
+  }
+
+  async deleteStore(id: number): Promise<void> {
+    await db.delete(stores).where(eq(stores.id, id));
   }
 
   async getUserStores(userId: string): Promise<Store[]> {

@@ -151,6 +151,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.delete('/api/stores/:id', isAuthenticated, requireRole(['super_admin']), async (req: any, res) => {
+    try {
+      const storeId = parseInt(req.params.id);
+      await storage.deleteStore(storeId);
+      res.json({ message: "Store deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting store:", error);
+      res.status(500).json({ message: "Failed to delete store" });
+    }
+  });
+
   // Customer routes
   app.get('/api/customers', isAuthenticated, async (req: any, res) => {
     try {

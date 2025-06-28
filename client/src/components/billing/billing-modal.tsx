@@ -16,8 +16,9 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Search, QrCode, Plus, Trash2, X, Printer, Edit2 } from "lucide-react";
+import { Search, QrCode, Plus, Trash2, X, Printer, Edit2, Receipt } from "lucide-react";
 import { printBarcode } from "@/lib/barcode-utils";
+import { printToThermalPrinter, openCashDrawer } from "@/lib/thermal-printer";
 
 interface BillingModalProps {
   isOpen: boolean;
@@ -70,6 +71,11 @@ export default function BillingModal({ isOpen, onClose, storeId }: BillingModalP
 
   const { data: products = [] } = useQuery({
     queryKey: [`/api/products?storeId=${storeId}`],
+    enabled: isOpen && !!storeId,
+  });
+
+  const { data: store } = useQuery({
+    queryKey: [`/api/stores/${storeId}`],
     enabled: isOpen && !!storeId,
   });
 
@@ -163,6 +169,42 @@ export default function BillingModal({ isOpen, onClose, storeId }: BillingModalP
       };
       generatePDF(billData);
       
+      // Print thermal receipt
+      const receiptData = {
+        invoiceNumber: transaction.invoiceNumber,
+        storeName: (store as any)?.name || "Salon",
+        storeAddress: (store as any)?.address || "",
+        storePhone: (store as any)?.phone || "",
+        customer: selectedCustomer ? {
+          firstName: selectedCustomer.firstName,
+          lastName: selectedCustomer.lastName,
+          mobile: selectedCustomer.mobile,
+        } : undefined,
+        items: billItems.map(item => ({
+          name: item.name,
+          quantity: item.quantity,
+          price: item.price * item.quantity,
+        })),
+        subtotal: getSubtotal(),
+        discount: getDiscount(),
+        gst: getGST(),
+        total: getTotal(),
+        pointsEarned: getPointsEarned(),
+        pointsRedeemed: pointsToRedeem,
+        paymentMethod: "Cash",
+        cashier: "Cashier", // This should come from logged-in user
+        timestamp: new Date(),
+      };
+      
+      // Print thermal receipt and open cash drawer
+      try {
+        printToThermalPrinter(receiptData);
+        openCashDrawer();
+      } catch (error) {
+        console.error("Thermal printer error:", error);
+        // Continue with normal flow even if printing fails
+      }
+      
       // Reset form
       resetForm();
       queryClient.invalidateQueries({ queryKey: ["/api/transactions"] });
@@ -245,6 +287,57 @@ export default function BillingModal({ isOpen, onClose, storeId }: BillingModalP
     ));
     setEditingPrice(null);
     setCustomPrice("");
+  };
+
+  const printThermalReceipt = () => {
+    if (billItems.length === 0) {
+      toast({
+        title: "Error",
+        description: "No items to print",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const receiptData = {
+      invoiceNumber: `DRAFT-${Date.now()}`,
+      storeName: (store as any)?.name || "Salon",
+      storeAddress: (store as any)?.address || "",
+      storePhone: (store as any)?.phone || "",
+      customer: selectedCustomer ? {
+        firstName: selectedCustomer.firstName,
+        lastName: selectedCustomer.lastName,
+        mobile: selectedCustomer.mobile,
+      } : undefined,
+      items: billItems.map(item => ({
+        name: item.name,
+        quantity: item.quantity,
+        price: item.price * item.quantity,
+      })),
+      subtotal: getSubtotal(),
+      discount: getDiscount(),
+      gst: getGST(),
+      total: getTotal(),
+      pointsEarned: getPointsEarned(),
+      pointsRedeemed: pointsToRedeem,
+      paymentMethod: "Cash",
+      cashier: "Cashier",
+      timestamp: new Date(),
+    };
+
+    try {
+      printToThermalPrinter(receiptData);
+      toast({
+        title: "Receipt Sent",
+        description: "Thermal receipt sent to printer",
+      });
+    } catch (error) {
+      toast({
+        title: "Print Error",
+        description: "Failed to print thermal receipt",
+        variant: "destructive",
+      });
+    }
   };
 
   const handlePriceEdit = (item: BillItem) => {
@@ -653,6 +746,15 @@ export default function BillingModal({ isOpen, onClose, storeId }: BillingModalP
                 disabled={createTransaction.isPending || billItems.length === 0}
               >
                 {createTransaction.isPending ? "Processing..." : "Complete Payment"}
+              </Button>
+              <Button 
+                variant="outline" 
+                onClick={printThermalReceipt}
+                disabled={billItems.length === 0}
+                className="flex items-center space-x-2"
+              >
+                <Receipt className="h-4 w-4" />
+                <span>Print Receipt</span>
               </Button>
               <Button variant="outline" onClick={onClose}>
                 Cancel
