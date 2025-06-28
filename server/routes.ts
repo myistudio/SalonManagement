@@ -421,14 +421,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Email, role, and store ID are required" });
       }
 
-      // Find user by email
-      const [user] = await db
+      // Find or create user by email
+      let [user] = await db
         .select()
         .from(users)
         .where(eq(users.email, email));
 
       if (!user) {
-        return res.status(404).json({ message: "User not found. Please ensure the person has an account." });
+        // Create a pending user account for invitation
+        [user] = await db
+          .insert(users)
+          .values({
+            id: `pending_${Date.now()}`,
+            email,
+            firstName: email.split('@')[0], // Use email prefix as temporary name
+            lastName: null,
+            profileImageUrl: null,
+          })
+          .returning();
       }
 
       // Check if user is already staff at this store

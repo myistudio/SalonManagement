@@ -161,7 +161,7 @@ export default function Staff() {
       }
       toast({
         title: "Add Failed",
-        description: "Failed to add staff member. Please check if the email is registered.",
+        description: "Failed to add staff member. Please check the email address and try again.",
         variant: "destructive",
       });
     },
@@ -255,7 +255,7 @@ export default function Staff() {
                   <DialogHeader>
                     <DialogTitle>Add New Staff Member</DialogTitle>
                     <DialogDescription>
-                      Add a new staff member to {currentStore?.name}. The person must already have an account.
+                      Add a new staff member to {currentStore?.name}. If they don't have an account yet, we'll create one for them.
                     </DialogDescription>
                   </DialogHeader>
                   <div className="space-y-4">
