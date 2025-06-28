@@ -26,6 +26,8 @@ export default function Staff() {
   const [showBillingModal, setShowBillingModal] = useState(false);
   const [editingStaff, setEditingStaff] = useState<any>(null);
   const [showEditDialog, setShowEditDialog] = useState(false);
+  const [editingRole, setEditingRole] = useState("");
+  const [editingStoreId, setEditingStoreId] = useState<number>(1);
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [showPasswordDialog, setShowPasswordDialog] = useState(false);
   const [passwordChangeUser, setPasswordChangeUser] = useState<any>(null);
@@ -70,18 +72,19 @@ export default function Staff() {
     enabled: !!selectedStoreId,
   });
 
-  const updateRoleMutation = useMutation({
-    mutationFn: async ({ userId, role }: { userId: string; role: string }) => {
+  const updateStaffMutation = useMutation({
+    mutationFn: async ({ userId, role, storeId }: { userId: string; role: string; storeId: number }) => {
       return await apiRequest("PATCH", `/api/staff/${userId}/role`, { 
         role, 
-        storeId: selectedStoreId 
+        storeId 
       });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/staff", selectedStoreId] });
+      queryClient.invalidateQueries({ queryKey: ["/api/staff", editingStoreId] });
       toast({
-        title: "Role Updated",
-        description: "Staff role has been updated successfully.",
+        title: "Staff Updated",
+        description: "Staff role and store assignment have been updated successfully.",
       });
       setShowEditDialog(false);
       setEditingStaff(null);
@@ -257,14 +260,17 @@ export default function Staff() {
 
   const handleEditRole = (member: any) => {
     setEditingStaff(member);
+    setEditingRole(member.user.role);
+    setEditingStoreId(member.storeId);
     setShowEditDialog(true);
   };
 
-  const handleUpdateRole = (newRole: string) => {
+  const handleUpdateStaff = () => {
     if (editingStaff) {
-      updateRoleMutation.mutate({
+      updateStaffMutation.mutate({
         userId: editingStaff.user.id,
-        role: newRole,
+        role: editingRole,
+        storeId: editingStoreId,
       });
     }
   };
@@ -585,29 +591,50 @@ export default function Staff() {
         </div>
       </div>
 
-      {/* Edit Role Dialog */}
+      {/* Edit Staff Dialog */}
       <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Edit Staff Role</DialogTitle>
+            <DialogTitle>Edit Staff Member</DialogTitle>
             <DialogDescription>
-              Change the role for {editingStaff?.user.firstName} {editingStaff?.user.lastName}
+              Change the role and store assignment for {editingStaff?.user.firstName} {editingStaff?.user.lastName}
             </DialogDescription>
           </DialogHeader>
-          <div className="py-4">
-            <Select
-              defaultValue={editingStaff?.user.role}
-              onValueChange={handleUpdateRole}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select a role" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="cashier">Cashier</SelectItem>
-                <SelectItem value="store_manager">Store Manager</SelectItem>
-                <SelectItem value="super_admin">Super Admin</SelectItem>
-              </SelectContent>
-            </Select>
+          <div className="space-y-4 py-4">
+            <div>
+              <label className="text-sm font-medium mb-2 block">Role</label>
+              <Select
+                value={editingRole}
+                onValueChange={setEditingRole}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a role" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="cashier">Cashier</SelectItem>
+                  <SelectItem value="store_manager">Store Manager</SelectItem>
+                  <SelectItem value="super_admin">Super Admin</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <label className="text-sm font-medium mb-2 block">Store Assignment</label>
+              <Select
+                value={editingStoreId.toString()}
+                onValueChange={(value) => setEditingStoreId(parseInt(value))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a store" />
+                </SelectTrigger>
+                <SelectContent>
+                  {(stores as any[]).map((store) => (
+                    <SelectItem key={store.id} value={store.id.toString()}>
+                      {store.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
           <DialogFooter>
             <Button
@@ -615,6 +642,12 @@ export default function Staff() {
               onClick={() => setShowEditDialog(false)}
             >
               Cancel
+            </Button>
+            <Button
+              onClick={handleUpdateStaff}
+              disabled={updateStaffMutation.isPending}
+            >
+              {updateStaffMutation.isPending ? "Updating..." : "Update Staff"}
             </Button>
           </DialogFooter>
         </DialogContent>

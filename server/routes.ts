@@ -734,11 +734,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .where(eq(users.id, userId))
         .returning();
 
-      // Update store staff role if exists
-      await db
-        .update(storeStaff)
-        .set({ role })
-        .where(and(eq(storeStaff.userId, userId), eq(storeStaff.storeId, storeId)));
+      // Check if user is already assigned to any store
+      const existingAssignment = await db
+        .select()
+        .from(storeStaff)
+        .where(eq(storeStaff.userId, userId));
+
+      if (existingAssignment.length > 0) {
+        // Update existing store assignment - move to new store with new role
+        await db
+          .update(storeStaff)
+          .set({ storeId, role, updatedAt: new Date() })
+          .where(eq(storeStaff.userId, userId));
+      } else {
+        // Create new store assignment
+        await db
+          .insert(storeStaff)
+          .values({
+            userId,
+            storeId,
+            role,
+          });
+      }
 
       res.json(updatedUser);
     } catch (error) {
