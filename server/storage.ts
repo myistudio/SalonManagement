@@ -16,6 +16,7 @@ import {
   whatsappTemplates,
   whatsappMessages,
   customerCampaigns,
+  loginPageSettings,
   type User,
   type UpsertUser,
   type Store,
@@ -47,6 +48,8 @@ import {
   type InsertWhatsappMessage,
   type CustomerCampaign,
   type InsertCustomerCampaign,
+  type LoginPageSettings,
+  type InsertLoginPageSettings,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, sql, ilike, gte, lte } from "drizzle-orm";
@@ -156,6 +159,10 @@ export interface IStorage {
   getCustomerCampaigns(storeId: number): Promise<CustomerCampaign[]>;
   createCustomerCampaign(campaign: InsertCustomerCampaign): Promise<CustomerCampaign>;
   updateCustomerCampaign(id: number, campaign: Partial<InsertCustomerCampaign>): Promise<CustomerCampaign>;
+
+  // Login page customization operations
+  getLoginPageSettings(): Promise<LoginPageSettings | undefined>;
+  updateLoginPageSettings(settings: Partial<InsertLoginPageSettings>): Promise<LoginPageSettings>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1020,6 +1027,33 @@ export class DatabaseStorage implements IStorage {
       .where(eq(customerCampaigns.id, id))
       .returning();
     return updated;
+  }
+
+  // Login page settings operations
+  async getLoginPageSettings(): Promise<LoginPageSettings | undefined> {
+    const [settings] = await db.select().from(loginPageSettings).limit(1);
+    return settings;
+  }
+
+  async updateLoginPageSettings(settings: Partial<InsertLoginPageSettings>): Promise<LoginPageSettings> {
+    // First try to update existing settings
+    const existing = await this.getLoginPageSettings();
+    
+    if (existing) {
+      const [updated] = await db
+        .update(loginPageSettings)
+        .set({ ...settings, updatedAt: new Date() })
+        .where(eq(loginPageSettings.id, existing.id))
+        .returning();
+      return updated;
+    } else {
+      // Create new settings if none exist
+      const [created] = await db
+        .insert(loginPageSettings)
+        .values({ ...settings, updatedAt: new Date() })
+        .returning();
+      return created;
+    }
   }
 }
 

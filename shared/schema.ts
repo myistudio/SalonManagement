@@ -281,6 +281,17 @@ export const customerCampaigns = pgTable("customer_campaigns", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Login page customization settings
+export const loginPageSettings = pgTable("login_page_settings", {
+  id: serial("id").primaryKey(),
+  companyName: varchar("company_name", { length: 255 }).default("SalonPro"),
+  tagline: text("tagline").default("Manage Your Beauty Business"),
+  description: text("description").default("Complete salon management solution with billing, inventory, customer loyalty, and multi-store support."),
+  logoUrl: varchar("logo_url", { length: 500 }),
+  backgroundColor: varchar("background_color", { length: 50 }).default("from-purple-600 via-pink-600 to-indigo-600"),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
   storeStaff: many(storeStaff),
@@ -518,6 +529,11 @@ export const insertCustomerCampaignSchema = createInsertSchema(customerCampaigns
   updatedAt: true,
 });
 
+export const insertLoginPageSettingsSchema = createInsertSchema(loginPageSettings).omit({
+  id: true,
+  updatedAt: true,
+});
+
 // Types
 export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
@@ -550,3 +566,5 @@ export type WhatsappMessage = typeof whatsappMessages.$inferSelect;
 export type InsertWhatsappMessage = z.infer<typeof insertWhatsappMessageSchema>;
 export type CustomerCampaign = typeof customerCampaigns.$inferSelect;
 export type InsertCustomerCampaign = z.infer<typeof insertCustomerCampaignSchema>;
+export type LoginPageSettings = typeof loginPageSettings.$inferSelect;
+export type InsertLoginPageSettings = z.infer<typeof insertLoginPageSettingsSchema>;

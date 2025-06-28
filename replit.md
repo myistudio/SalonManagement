@@ -170,6 +170,7 @@ Changelog:
 - June 28, 2025. Created WhatsApp database tables and API endpoints for automated messaging functionality
 - June 28, 2025. Added "Back to Settings" button on WhatsApp page for improved navigation
 - June 28, 2025. Enhanced billing system with discount options - added both percentage and amount discount functionality with real-time calculation preview
+- June 28, 2025. Added comprehensive login page customization system with super admin controls for company branding, logo upload, content management, and "Designed by - My Internet" footer credit
 ```
 
 ## User Preferences

@@ -123,6 +123,12 @@ export default function SettingsPage() {
             <Shield size={16} />
             Permissions
           </TabsTrigger>
+          {user?.role === "super_admin" && (
+            <TabsTrigger value="admin" className="flex items-center gap-2">
+              <Settings size={16} />
+              Admin
+            </TabsTrigger>
+          )}
         </TabsList>
 
         <TabsContent value="store">
@@ -369,6 +375,32 @@ export default function SettingsPage() {
             </CardContent>
           </Card>
         </TabsContent>
+
+        {user?.role === "super_admin" && (
+          <TabsContent value="admin">
+            <Card>
+              <CardHeader>
+                <CardTitle>Admin Panel</CardTitle>
+                <CardDescription>
+                  Super admin controls for system configuration
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid gap-4">
+                  <Link href="/settings/login-page">
+                    <Button variant="outline" className="w-full justify-start">
+                      <Settings className="mr-2 h-4 w-4" />
+                      Login Page Customization
+                    </Button>
+                  </Link>
+                  <div className="text-sm text-muted-foreground">
+                    Customize the login page appearance, content, and branding
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        )}
       </Tabs>
     </div>
   );

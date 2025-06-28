@@ -15,6 +15,7 @@ import Staff from "@/pages/staff";
 import Stores from "@/pages/stores";
 import Settings from "@/pages/settings";
 import WhatsApp from "@/pages/whatsapp";
+import LoginPageSettings from "@/pages/login-page-settings";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -36,6 +37,7 @@ function Router() {
           <Route path="/stores" component={Stores} />
           <Route path="/whatsapp" component={WhatsApp} />
           <Route path="/settings" component={Settings} />
+          <Route path="/settings/login-page" component={LoginPageSettings} />
         </>
       )}
       <Route component={NotFound} />

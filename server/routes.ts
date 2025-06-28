@@ -1052,6 +1052,60 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Public login page settings endpoint
+  app.get("/api/login-settings", async (req, res) => {
+    try {
+      const settings = await storage.getLoginPageSettings();
+      res.json(settings || {
+        companyName: "SalonPro",
+        tagline: "Manage Your Beauty Business",
+        description: "Complete salon management solution with billing, inventory, customer loyalty, and multi-store support.",
+        logoUrl: null,
+        backgroundColor: "from-purple-600 via-pink-600 to-indigo-600"
+      });
+    } catch (error) {
+      console.error("Error fetching login settings:", error);
+      res.status(500).json({ message: "Failed to fetch login settings" });
+    }
+  });
+
+  // Login page customization routes (super admin only)
+  app.get("/api/admin/login-settings", isAuthenticated, async (req: any, res) => {
+    try {
+      const user = await storage.getUser(req.user.id);
+      if (!user || user.role !== "super_admin") {
+        return res.status(403).json({ message: "Unauthorized - Super admin access required" });
+      }
+      
+      const settings = await storage.getLoginPageSettings();
+      res.json(settings || {
+        companyName: "SalonPro",
+        tagline: "Manage Your Beauty Business",
+        description: "Complete salon management solution with billing, inventory, customer loyalty, and multi-store support.",
+        logoUrl: null,
+        backgroundColor: "from-purple-600 via-pink-600 to-indigo-600"
+      });
+    } catch (error) {
+      console.error("Error fetching login settings:", error);
+      res.status(500).json({ message: "Failed to fetch login settings" });
+    }
+  });
+
+  app.put("/api/admin/login-settings", isAuthenticated, async (req: any, res) => {
+    try {
+      const user = await storage.getUser(req.user.id);
+      if (!user || user.role !== "super_admin") {
+        return res.status(403).json({ message: "Unauthorized - Super admin access required" });
+      }
+
+      const settings = await storage.updateLoginPageSettings(req.body);
+      res.json(settings);
+    } catch (error) {
+      console.error("Error updating login settings:", error);
+      res.status(500).json({ message: "Failed to update login settings" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
