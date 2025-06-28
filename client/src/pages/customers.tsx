@@ -1,0 +1,215 @@
+import { useState, useEffect } from "react";
+import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/use-toast";
+import { isUnauthorizedError } from "@/lib/authUtils";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import Header from "@/components/layout/header";
+import Sidebar from "@/components/layout/sidebar";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Search, Plus, User, Phone, Calendar, Award } from "lucide-react";
+import CustomerForm from "@/components/customers/customer-form";
+import BillingModal from "@/components/billing/billing-modal";
+
+export default function Customers() {
+  const { toast } = useToast();
+  const { isAuthenticated, isLoading } = useAuth();
+  const queryClient = useQueryClient();
+  const [selectedStoreId, setSelectedStoreId] = useState<number>(1);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [showCustomerForm, setShowCustomerForm] = useState(false);
+  const [showBillingModal, setShowBillingModal] = useState(false);
+  const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
+
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      toast({
+        title: "Unauthorized",
+        description: "You are logged out. Logging in again...",
+        variant: "destructive",
+      });
+      setTimeout(() => {
+        window.location.href = "/api/login";
+      }, 500);
+      return;
+    }
+  }, [isAuthenticated, isLoading, toast]);
+
+  const { data: customers = [], isLoading: customersLoading } = useQuery({
+    queryKey: ["/api/customers"],
+    retry: false,
+  });
+
+  const filteredCustomers = customers.filter((customer: any) =>
+    customer.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    customer.lastName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    customer.mobile.includes(searchTerm)
+  );
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <Header selectedStoreId={selectedStoreId} onStoreChange={setSelectedStoreId} />
+      
+      <div className="flex">
+        <Sidebar onOpenBilling={() => setShowBillingModal(true)} />
+        
+        <main className="flex-1 lg:ml-64">
+          <div className="p-6">
+            <div className="flex items-center justify-between mb-8">
+              <div>
+                <h2 className="text-3xl font-bold text-gray-900">Customers</h2>
+                <p className="mt-1 text-gray-600">Manage your customer database and build relationships</p>
+              </div>
+              <Dialog open={showCustomerForm} onOpenChange={setShowCustomerForm}>
+                <DialogTrigger asChild>
+                  <Button className="flex items-center space-x-2">
+                    <Plus size={16} />
+                    <span>Add Customer</span>
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Add New Customer</DialogTitle>
+                  </DialogHeader>
+                  <CustomerForm onSuccess={() => setShowCustomerForm(false)} />
+                </DialogContent>
+              </Dialog>
+            </div>
+
+            {/* Search */}
+            <div className="mb-6">
+              <div className="relative max-w-md">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+                <Input
+                  placeholder="Search customers by name or mobile..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+            </div>
+
+            {/* Customers Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {customersLoading ? (
+                Array.from({ length: 6 }).map((_, i) => (
+                  <Card key={i}>
+                    <CardContent className="p-6">
+                      <Skeleton className="h-16 w-16 rounded-full mb-4" />
+                      <Skeleton className="h-4 w-3/4 mb-2" />
+                      <Skeleton className="h-3 w-1/2 mb-4" />
+                      <div className="flex space-x-2">
+                        <Skeleton className="h-6 w-16" />
+                        <Skeleton className="h-6 w-20" />
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))
+              ) : filteredCustomers.length === 0 ? (
+                <div className="col-span-full text-center py-12">
+                  <User className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">No customers found</h3>
+                  <p className="text-gray-600 mb-4">
+                    {searchTerm ? "Try adjusting your search terms" : "Get started by adding your first customer"}
+                  </p>
+                  <Button onClick={() => setShowCustomerForm(true)}>
+                    <Plus size={16} className="mr-2" />
+                    Add Customer
+                  </Button>
+                </div>
+              ) : (
+                filteredCustomers.map((customer: any) => (
+                  <Card key={customer.id} className="hover:shadow-lg transition-shadow cursor-pointer">
+                    <CardContent className="p-6">
+                      <div className="flex items-center space-x-4 mb-4">
+                        <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center">
+                          <User className="h-8 w-8 text-primary" />
+                        </div>
+                        <div className="flex-1">
+                          <h3 className="font-semibold text-gray-900">
+                            {customer.firstName} {customer.lastName || ''}
+                          </h3>
+                          <div className="flex items-center text-sm text-gray-600 mt-1">
+                            <Phone size={14} className="mr-1" />
+                            {customer.mobile}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="space-y-2 mb-4">
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-gray-600">Visits:</span>
+                          <span className="font-medium">{customer.totalVisits}</span>
+                        </div>
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-gray-600">Total Spent:</span>
+                          <span className="font-medium">₹{parseFloat(customer.totalSpent || '0').toLocaleString()}</span>
+                        </div>
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-gray-600">Loyalty Points:</span>
+                          <span className="font-medium text-primary">{customer.loyaltyPoints}</span>
+                        </div>
+                      </div>
+
+                      {customer.membership && (
+                        <div className="mb-4">
+                          <Badge variant="secondary" className="flex items-center">
+                            <Award size={12} className="mr-1" />
+                            {customer.membership.membershipPlan.name} Member
+                          </Badge>
+                        </div>
+                      )}
+
+                      <div className="flex space-x-2">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="flex-1"
+                          onClick={() => {
+                            setSelectedCustomer(customer);
+                            // You could open a customer details modal here
+                          }}
+                        >
+                          View Profile
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          className="flex-1"
+                          onClick={() => {
+                            setSelectedCustomer(customer);
+                            setShowBillingModal(true);
+                          }}
+                        >
+                          New Bill
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))
+              )}
+            </div>
+          </div>
+        </main>
+      </div>
+
+      <BillingModal 
+        isOpen={showBillingModal} 
+        onClose={() => setShowBillingModal(false)} 
+        storeId={selectedStoreId}
+      />
+    </div>
+  );
+}
