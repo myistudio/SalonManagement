@@ -335,7 +335,12 @@ export default function Reports() {
                       ))}
                     </div>
                   ) : (
-                    <p className="text-gray-500 text-center py-8">No service data available</p>
+                    <div className="text-center py-8">
+                      <p className="text-gray-500">No service data available</p>
+                      <p className="text-xs text-gray-400 mt-2">
+                        Debug: {JSON.stringify((salesReport as any)?.topServices)}
+                      </p>
+                    </div>
                   )}
                 </CardContent>
               </Card>
@@ -370,7 +375,12 @@ export default function Reports() {
                       ))}
                     </div>
                   ) : (
-                    <p className="text-gray-500 text-center py-8">No product data available</p>
+                    <div className="text-center py-8">
+                      <p className="text-gray-500">No product data available</p>
+                      <p className="text-xs text-gray-400 mt-2">
+                        Debug: {JSON.stringify((salesReport as any)?.topProducts)}
+                      </p>
+                    </div>
                   )}
                 </CardContent>
               </Card>
