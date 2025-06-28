@@ -361,7 +361,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/transactions', isAuthenticated, async (req: any, res) => {
     try {
       const { transaction, items } = req.body;
-      const userId = req.user.claims.sub;
+      const userId = req.user.id; // Use basic auth user id
       
       // Generate invoice number
       const invoiceNumber = await storage.generateInvoiceNumber(transaction.storeId);
