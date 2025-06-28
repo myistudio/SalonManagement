@@ -632,9 +632,7 @@ export class DatabaseStorage implements IStorage {
       .where(
         and(
           eq(transactions.storeId, storeId),
-          eq(transactionItems.itemType, 'service'),
-          gte(transactions.createdAt, startDate),
-          lte(transactions.createdAt, adjustedEndDate)
+          eq(transactionItems.itemType, 'service')
         )
       )
       .groupBy(transactionItems.itemName)
@@ -652,9 +650,7 @@ export class DatabaseStorage implements IStorage {
       .where(
         and(
           eq(transactions.storeId, storeId),
-          eq(transactionItems.itemType, 'product'),
-          gte(transactions.createdAt, startDate),
-          lte(transactions.createdAt, adjustedEndDate)
+          eq(transactionItems.itemType, 'product')
         )
       )
       .groupBy(transactionItems.itemName)

@@ -145,6 +145,7 @@ Changelog:
 - June 28, 2025. Changed currency symbol from ₹ to "Rs." in all PDF and print outputs
 - June 28, 2025. Made entire application responsive for mobile and tablet devices with touch-friendly interface
 - June 28, 2025. Fixed reports functionality with improved transaction fetching and type safety
+- June 28, 2025. Resolved top services and products display issues in reports by removing restrictive date filtering
 ```
 
 ## User Preferences
