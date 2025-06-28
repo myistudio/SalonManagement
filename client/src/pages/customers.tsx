@@ -46,7 +46,7 @@ export default function Customers() {
     retry: false,
   });
 
-  const filteredCustomers = customers.filter((customer: any) =>
+  const filteredCustomers = (customers as any[]).filter((customer: any) =>
     customer.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
     customer.lastName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     customer.mobile.includes(searchTerm)

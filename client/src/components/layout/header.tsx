@@ -16,7 +16,7 @@ export default function Header({ selectedStoreId, onStoreChange }: HeaderProps) 
     queryKey: ["/api/stores"],
   });
 
-  const selectedStore = stores.find((store: any) => store.id === selectedStoreId);
+  const selectedStore = (stores as any[]).find((store: any) => store.id === selectedStoreId);
 
   return (
     <nav className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-50">
@@ -36,7 +36,7 @@ export default function Header({ selectedStoreId, onStoreChange }: HeaderProps) 
                     <SelectValue placeholder="Select store" />
                   </SelectTrigger>
                   <SelectContent>
-                    {stores.map((store: any) => (
+                    {(stores as any[]).map((store: any) => (
                       <SelectItem key={store.id} value={store.id.toString()}>
                         {store.name}
                       </SelectItem>
@@ -60,12 +60,12 @@ export default function Header({ selectedStoreId, onStoreChange }: HeaderProps) 
                 <button className="flex items-center space-x-3 hover:bg-gray-50 rounded-lg p-2 transition-colors">
                   <div className="text-right text-sm">
                     <div className="font-medium text-gray-900">
-                      {user?.firstName} {user?.lastName}
+                      {(user as any)?.firstName} {(user as any)?.lastName}
                     </div>
-                    <div className="text-gray-500 capitalize">{user?.role?.replace('_', ' ')}</div>
+                    <div className="text-gray-500 capitalize">{(user as any)?.role?.replace('_', ' ')}</div>
                   </div>
                   <img 
-                    src={user?.profileImageUrl || "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=40&h=40&fit=crop&crop=face"} 
+                    src={(user as any)?.profileImageUrl || "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=40&h=40&fit=crop&crop=face"} 
                     alt="Profile" 
                     className="h-10 w-10 rounded-full object-cover"
                   />
@@ -74,7 +74,7 @@ export default function Header({ selectedStoreId, onStoreChange }: HeaderProps) 
               <DropdownMenuContent align="end" className="w-56">
                 <DropdownMenuItem disabled>
                   <User className="mr-2 h-4 w-4" />
-                  <span>{user?.email}</span>
+                  <span>{(user as any)?.email}</span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem 

@@ -80,7 +80,7 @@ export default function Reports() {
     return value >= 0 ? "text-green-500" : "text-red-500";
   };
 
-  const exportToCSV = () => {
+  const handleExportToCSV = () => {
     try {
       const csvData = [];
       
@@ -270,7 +270,7 @@ export default function Reports() {
       }
       
       // Footer
-      const pageCount = doc.internal.getNumberOfPages();
+      const pageCount = (doc as any).internal.getNumberOfPages();
       doc.setFontSize(8);
       for (let i = 1; i <= pageCount; i++) {
         doc.setPage(i);
@@ -761,7 +761,7 @@ export default function Reports() {
               </CardHeader>
               <CardContent>
                 <div className="flex gap-4">
-                  <Button variant="outline" onClick={exportToCSV}>
+                  <Button variant="outline" onClick={handleExportToCSV}>
                     Export CSV
                   </Button>
                   <Button variant="outline" onClick={exportToPDF}>

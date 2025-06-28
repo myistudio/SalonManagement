@@ -66,19 +66,29 @@ const ReceiptDialog = ({ isOpen, onClose, transaction, setShowReceiptDialog }: R
     
     try {
       const receiptData = {
+        invoiceNumber: transaction.invoiceNumber || `INV-${transaction.id}`,
         storeName: "VEEPRESS",
         storeAddress: "",
-        transactionId: transaction.id,
-        date: new Date().toLocaleDateString(),
-        time: new Date().toLocaleTimeString(),
-        items: transaction.items || [],
+        storePhone: "",
+        customer: transaction.customer ? {
+          firstName: transaction.customer.firstName,
+          lastName: transaction.customer.lastName || "",
+          mobile: transaction.customer.mobile || ""
+        } : undefined,
+        items: (transaction.items || []).map((item: any) => ({
+          name: item.name || item.product?.name || item.service?.name || "",
+          quantity: item.quantity || 1,
+          price: typeof item.price === 'number' ? item.price : parseFloat(item.price || "0")
+        })),
         subtotal: parseFloat(transaction.subtotal || "0"),
-        tax: parseFloat(transaction.taxAmount || "0"),
+        discount: parseFloat(transaction.discountAmount || "0"),
+        gst: parseFloat(transaction.taxAmount || "0"),
         total: parseFloat(transaction.totalAmount || "0"),
+        pointsEarned: parseInt(transaction.pointsEarned || "0"),
+        pointsRedeemed: parseInt(transaction.pointsRedeemed || "0"),
         paymentMethod: transaction.paymentMethod || "cash",
-        customerName: transaction.customer ? 
-          `${transaction.customer.firstName} ${transaction.customer.lastName || ''}` : 
-          "Walk-in Customer"
+        cashier: "Staff",
+        timestamp: new Date()
       };
 
       await printToThermalPrinter(receiptData);

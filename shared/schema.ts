@@ -67,16 +67,20 @@ export const storeStaff = pgTable("store_staff", {
   userId: varchar("user_id").references(() => users.id).notNull(),
   role: varchar("role").notNull(), // store_manager, cashier
   createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 // Customers table
 export const customers = pgTable("customers", {
   id: serial("id").primaryKey(),
+  storeId: integer("store_id").references(() => stores.id).notNull(),
   firstName: varchar("first_name", { length: 100 }).notNull(),
   lastName: varchar("last_name", { length: 100 }),
   mobile: varchar("mobile", { length: 15 }).notNull(),
   email: varchar("email"),
   dateOfBirth: date("date_of_birth"),
+  anniversaryDate: date("anniversary_date"),
+  gender: varchar("gender", { length: 10 }),
   address: text("address"),
   loyaltyPoints: integer("loyalty_points").default(0),
   totalVisits: integer("total_visits").default(0),
