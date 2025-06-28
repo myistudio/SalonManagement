@@ -257,20 +257,37 @@ export default function BillingModal({ isOpen, onClose, storeId }: BillingModalP
   const scanProduct = useMutation({
     mutationFn: async (barcode: string) => {
       const response = await apiRequest("GET", `/api/products/barcode/${barcode}`);
-      return response.json();
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      const data = await response.json();
+      console.log("API Response:", data);
+      return data;
     },
     onSuccess: (product) => {
-      addProductToBill(product);
-      setProductScan("");
-      toast({
-        title: "Product Scanned",
-        description: `${product.name} added to bill`,
-      });
+      console.log("Scanned product:", product);
+      if (product && product.id) {
+        addProductToBill(product);
+        setProductScan("");
+        toast({
+          title: "Product Scanned",
+          description: `${product.name} added to bill`,
+        });
+      } else {
+        console.log("Product data structure:", product);
+        toast({
+          title: "Invalid Product",
+          description: "Product data is incomplete",
+          variant: "destructive",
+        });
+      }
     },
     onError: (error: Error) => {
+      console.error("Scan error:", error);
+      setProductScan("");
       toast({
         title: "Product Not Found",
-        description: "No product found with this barcode",
+        description: error.message || "No product found with this barcode",
         variant: "destructive",
       });
     },
