@@ -16,11 +16,15 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Search, Plus, Package, AlertTriangle, QrCode, Edit, Printer, Tag } from "lucide-react";
 import ProductForm from "@/components/products/product-form";
 import BillingModal from "@/components/billing/billing-modal";
-import { printBarcode, printQRCode, printBarcodeWithPrice } from "@/lib/barcode-utils";
+import { printBarcode, printQRCode, printBarcodeWithPrice, printGridBarcodes, printGridQRCodes } from "@/lib/barcode-utils";
 import { 
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
@@ -277,12 +281,59 @@ export default function Inventory() {
                                   <DropdownMenuContent align="end">
                                     <DropdownMenuItem onClick={() => handlePrintBarcode(product)}>
                                       <Tag size={16} className="mr-2" />
-                                      Print Barcode Label
+                                      Single Barcode Label
                                     </DropdownMenuItem>
                                     <DropdownMenuItem onClick={() => handlePrintQRCode(product)}>
                                       <QrCode size={16} className="mr-2" />
-                                      Print QR Code Label
+                                      Single QR Code Label
                                     </DropdownMenuItem>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuSub>
+                                      <DropdownMenuSubTrigger>
+                                        <Tag size={16} className="mr-2" />
+                                        Multiple Barcode Labels
+                                      </DropdownMenuSubTrigger>
+                                      <DropdownMenuSubContent>
+                                        <DropdownMenuItem onClick={() => printGridBarcodes(product, 4)}>
+                                          4 Labels (1 row)
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem onClick={() => printGridBarcodes(product, 8)}>
+                                          8 Labels (2 rows)
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem onClick={() => printGridBarcodes(product, 12)}>
+                                          12 Labels (3 rows)
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem onClick={() => printGridBarcodes(product, 16)}>
+                                          16 Labels (4 rows)
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem onClick={() => printGridBarcodes(product, 20)}>
+                                          20 Labels (5 rows)
+                                        </DropdownMenuItem>
+                                      </DropdownMenuSubContent>
+                                    </DropdownMenuSub>
+                                    <DropdownMenuSub>
+                                      <DropdownMenuSubTrigger>
+                                        <QrCode size={16} className="mr-2" />
+                                        Multiple QR Code Labels
+                                      </DropdownMenuSubTrigger>
+                                      <DropdownMenuSubContent>
+                                        <DropdownMenuItem onClick={() => printGridQRCodes(product, 4)}>
+                                          4 Labels (1 row)
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem onClick={() => printGridQRCodes(product, 8)}>
+                                          8 Labels (2 rows)
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem onClick={() => printGridQRCodes(product, 12)}>
+                                          12 Labels (3 rows)
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem onClick={() => printGridQRCodes(product, 16)}>
+                                          16 Labels (4 rows)
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem onClick={() => printGridQRCodes(product, 20)}>
+                                          20 Labels (5 rows)
+                                        </DropdownMenuItem>
+                                      </DropdownMenuSubContent>
+                                    </DropdownMenuSub>
                                   </DropdownMenuContent>
                                 </DropdownMenu>
                                 <Button
