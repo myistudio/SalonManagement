@@ -130,6 +130,7 @@ Changelog:
 - June 28, 2025. Added salon logo upload functionality and role-based authentication
 - June 28, 2025. Enhanced barcode/QR labels with salon branding (logo + name)
 - June 28, 2025. Fixed store settings permissions - updated user role to store_manager
+- June 28, 2025. Added staff management with edit/delete roles functionality
 ```
 
 ## User Preferences

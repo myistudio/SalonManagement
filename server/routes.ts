@@ -13,7 +13,12 @@ import {
   insertMembershipPlanSchema,
   insertTransactionSchema,
   insertTransactionItemSchema,
+  users,
+  storeStaff,
 } from "@shared/schema";
+import { z } from "zod";
+import { db } from "./db";
+import { eq, and } from "drizzle-orm";
 
 // Configure multer for logo uploads
 const storage_config = multer.diskStorage({
@@ -67,7 +72,6 @@ const requireRole = (allowedRoles: string[]) => {
     }
   };
 };
-import { z } from "zod";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware
@@ -395,6 +399,63 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(transaction);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch transaction" });
+    }
+  });
+
+  // Staff routes
+  app.get('/api/staff/:storeId', isAuthenticated, async (req: any, res) => {
+    try {
+      const storeId = parseInt(req.params.storeId);
+      const staff = await storage.getStoreStaff(storeId);
+      res.json(staff);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch staff" });
+    }
+  });
+
+  app.patch('/api/staff/:userId/role', isAuthenticated, requireRole(['super_admin', 'store_manager']), async (req: any, res) => {
+    try {
+      const userId = req.params.userId;
+      const { role, storeId } = req.body;
+      
+      if (!role || !storeId) {
+        return res.status(400).json({ message: "Role and store ID are required" });
+      }
+
+      // Update user role
+      const [updatedUser] = await db
+        .update(users)
+        .set({ role, updatedAt: new Date() })
+        .where(eq(users.id, userId))
+        .returning();
+
+      // Update store staff role if exists
+      await db
+        .update(storeStaff)
+        .set({ role })
+        .where(and(eq(storeStaff.userId, userId), eq(storeStaff.storeId, storeId)));
+
+      res.json(updatedUser);
+    } catch (error) {
+      console.error("Error updating staff role:", error);
+      res.status(500).json({ message: "Failed to update staff role" });
+    }
+  });
+
+  app.delete('/api/staff/:userId/:storeId', isAuthenticated, requireRole(['super_admin', 'store_manager']), async (req: any, res) => {
+    try {
+      const userId = req.params.userId;
+      const storeId = parseInt(req.params.storeId);
+      
+      // Remove from store staff
+      await db
+        .delete(storeStaff)
+        .where(and(eq(storeStaff.userId, userId), eq(storeStaff.storeId, storeId)));
+
+      res.json({ message: "Staff member removed successfully" });
+    } catch (error) {
+      console.error("Error removing staff:", error);
+      res.status(500).json({ message: "Failed to remove staff member" });
     }
   });
 
