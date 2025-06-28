@@ -28,7 +28,7 @@ const storage_config = multer.diskStorage({
       await fs.mkdir(uploadDir, { recursive: true });
       cb(null, uploadDir);
     } catch (error) {
-      cb(error, uploadDir);
+      cb(error as Error, uploadDir);
     }
   },
   filename: (req, file, cb) => {
@@ -354,7 +354,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const transactions = await storage.getTransactions(storeId, limit);
       res.json(transactions);
     } catch (error) {
-      res.status(500).json({ message: "Failed to fetch transactions" });
+      console.error('Error fetching transactions:', error);
+      res.status(500).json({ message: "Failed to fetch transactions", error: (error as Error).message });
     }
   });
 

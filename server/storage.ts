@@ -392,27 +392,59 @@ export class DatabaseStorage implements IStorage {
 
   // Transaction operations
   async getTransactions(storeId: number, limit = 50): Promise<(Transaction & { customer?: Customer; staff: User; items: TransactionItem[] })[]> {
-    const transactionList = await db
-      .select()
-      .from(transactions)
-      .leftJoin(customers, eq(transactions.customerId, customers.id))
-      .innerJoin(users, eq(transactions.staffId, users.id))
-      .where(eq(transactions.storeId, storeId))
-      .orderBy(desc(transactions.createdAt))
-      .limit(limit);
+    try {
+      // First get transactions only
+      const transactionList = await db
+        .select()
+        .from(transactions)
+        .where(eq(transactions.storeId, storeId))
+        .orderBy(desc(transactions.createdAt))
+        .limit(limit);
 
-    const transactionIds = transactionList.map(t => t.transactions.id);
-    const items = await db
-      .select()
-      .from(transactionItems)
-      .where(sql`${transactionItems.transactionId} = ANY(${transactionIds})`);
+      if (transactionList.length === 0) {
+        return [];
+      }
 
-    return transactionList.map(t => ({
-      ...t.transactions,
-      customer: t.customers || undefined,
-      staff: t.users,
-      items: items.filter(item => item.transactionId === t.transactions.id),
-    }));
+      // Get related data for each transaction
+      const result: (Transaction & { customer?: Customer; staff: User; items: TransactionItem[] })[] = [];
+      for (const transaction of transactionList) {
+        // Get customer if exists
+        let customer: Customer | undefined = undefined;
+        if (transaction.customerId) {
+          const [customerRecord] = await db
+            .select()
+            .from(customers)
+            .where(eq(customers.id, transaction.customerId));
+          customer = customerRecord;
+        }
+
+        // Get staff
+        const [staff] = await db
+          .select()
+          .from(users)
+          .where(eq(users.id, transaction.staffId));
+
+        // Get transaction items
+        const items = await db
+          .select()
+          .from(transactionItems)
+          .where(eq(transactionItems.transactionId, transaction.id));
+
+        if (staff) {
+          result.push({
+            ...transaction,
+            customer,
+            staff,
+            items,
+          });
+        }
+      }
+
+      return result;
+    } catch (error) {
+      console.error('Error in getTransactions:', error);
+      throw error;
+    }
   }
 
   async getTransaction(id: number): Promise<(Transaction & { customer?: Customer; staff: User; items: TransactionItem[] }) | undefined> {

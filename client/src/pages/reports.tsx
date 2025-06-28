@@ -38,7 +38,7 @@ export default function Reports() {
     }
   }, [isAuthenticated, isLoading, toast]);
 
-  const { data: salesReport, isLoading: reportLoading } = useQuery({
+  const { data: salesReport = {}, isLoading: reportLoading } = useQuery({
     queryKey: [`/api/reports/sales?storeId=${selectedStoreId}&startDate=${dateRange.startDate}&endDate=${dateRange.endDate}`],
     enabled: !!selectedStoreId && !!dateRange.startDate && !!dateRange.endDate,
     retry: false,
@@ -50,7 +50,7 @@ export default function Reports() {
     retry: false,
   });
 
-  const { data: dashboardStats } = useQuery({
+  const { data: dashboardStats = {} } = useQuery({
     queryKey: [`/api/dashboard/stats/${selectedStoreId}`],
     enabled: !!selectedStoreId,
     retry: false,
@@ -65,11 +65,11 @@ export default function Reports() {
     }).reverse();
 
     const dailyRevenue = last7Days.map(date => {
-      const dayTransactions = transactions.filter((t: any) => 
+      const dayTransactions = Array.isArray(transactions) ? transactions.filter((t: any) => 
         new Date(t.createdAt).toISOString().split('T')[0] === date
-      );
+      ) : [];
       const revenue = dayTransactions.reduce((sum: number, t: any) => 
-        sum + parseFloat(t.totalAmount), 0
+        sum + parseFloat(t.totalAmount || '0'), 0
       );
       
       return {
@@ -161,13 +161,13 @@ export default function Reports() {
                     </div>
                     <div className="ml-4">
                       <p className="text-sm font-medium text-gray-600">Total Revenue</p>
-                      <p className="text-2xl font-bold text-gray-900">
+                      <div className="text-2xl font-bold text-gray-900">
                         {reportLoading ? (
                           <Skeleton className="h-8 w-20" />
                         ) : (
-                          `₹${parseFloat(salesReport?.totalRevenue || '0').toLocaleString()}`
+                          `Rs. ${parseFloat((salesReport as any)?.totalRevenue || '0').toLocaleString()}`
                         )}
-                      </p>
+                      </div>
                     </div>
                   </div>
                 </CardContent>
@@ -183,13 +183,13 @@ export default function Reports() {
                     </div>
                     <div className="ml-4">
                       <p className="text-sm font-medium text-gray-600">Total Transactions</p>
-                      <p className="text-2xl font-bold text-gray-900">
+                      <div className="text-2xl font-bold text-gray-900">
                         {reportLoading ? (
                           <Skeleton className="h-8 w-16" />
                         ) : (
-                          salesReport?.totalTransactions || 0
+                          (salesReport as any)?.totalTransactions || 0
                         )}
-                      </p>
+                      </div>
                     </div>
                   </div>
                 </CardContent>
@@ -205,13 +205,13 @@ export default function Reports() {
                     </div>
                     <div className="ml-4">
                       <p className="text-sm font-medium text-gray-600">Avg Transaction</p>
-                      <p className="text-2xl font-bold text-gray-900">
+                      <div className="text-2xl font-bold text-gray-900">
                         {reportLoading ? (
                           <Skeleton className="h-8 w-20" />
                         ) : (
-                          `₹${(parseFloat(salesReport?.totalRevenue || '0') / Math.max(salesReport?.totalTransactions || 1, 1)).toLocaleString()}`
+                          `Rs. ${(parseFloat((salesReport as any)?.totalRevenue || '0') / Math.max((salesReport as any)?.totalTransactions || 1, 1)).toLocaleString()}`
                         )}
-                      </p>
+                      </div>
                     </div>
                   </div>
                 </CardContent>
@@ -227,9 +227,9 @@ export default function Reports() {
                     </div>
                     <div className="ml-4">
                       <p className="text-sm font-medium text-gray-600">Active Members</p>
-                      <p className="text-2xl font-bold text-gray-900">
-                        {dashboardStats?.activeMembers || 0}
-                      </p>
+                      <div className="text-2xl font-bold text-gray-900">
+                        {(dashboardStats as any)?.activeMembers || 0}
+                      </div>
                     </div>
                   </div>
                 </CardContent>
@@ -271,20 +271,20 @@ export default function Reports() {
                       <div className="flex items-center justify-center h-full">
                         <Skeleton className="h-40 w-40 rounded-full" />
                       </div>
-                    ) : salesReport?.topServices?.length > 0 ? (
+                    ) : (salesReport as any)?.topServices?.length > 0 ? (
                       <ResponsiveContainer width="100%" height="100%">
                         <PieChart>
                           <Pie
-                            data={salesReport.topServices}
+                            data={(salesReport as any).topServices}
                             cx="50%"
                             cy="50%"
                             labelLine={false}
-                            label={({ name, value }) => `${name}: ₹${parseFloat(value).toLocaleString()}`}
+                            label={({ name, value }) => `${name}: Rs. ${parseFloat(value).toLocaleString()}`}
                             outerRadius={100}
                             fill="#8884d8"
                             dataKey="revenue"
                           >
-                            {salesReport.topServices.map((entry: any, index: number) => (
+                            {(salesReport as any).topServices.map((entry: any, index: number) => (
                               <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                             ))}
                           </Pie>
@@ -320,16 +320,16 @@ export default function Reports() {
                         </div>
                       ))}
                     </div>
-                  ) : salesReport?.topServices?.length > 0 ? (
+                  ) : (salesReport as any)?.topServices?.length > 0 ? (
                     <div className="space-y-3">
-                      {salesReport.topServices.map((service: any, index: number) => (
+                      {(salesReport as any).topServices.map((service: any, index: number) => (
                         <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                           <div>
                             <p className="font-medium text-gray-900">{service.name}</p>
                             <p className="text-sm text-gray-600">{service.count} times</p>
                           </div>
                           <div className="text-right">
-                            <p className="font-semibold text-gray-900">₹{parseFloat(service.revenue).toLocaleString()}</p>
+                            <p className="font-semibold text-gray-900">Rs. {parseFloat(service.revenue).toLocaleString()}</p>
                           </div>
                         </div>
                       ))}
@@ -355,16 +355,16 @@ export default function Reports() {
                         </div>
                       ))}
                     </div>
-                  ) : salesReport?.topProducts?.length > 0 ? (
+                  ) : (salesReport as any)?.topProducts?.length > 0 ? (
                     <div className="space-y-3">
-                      {salesReport.topProducts.map((product: any, index: number) => (
+                      {(salesReport as any).topProducts.map((product: any, index: number) => (
                         <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                           <div>
                             <p className="font-medium text-gray-900">{product.name}</p>
                             <p className="text-sm text-gray-600">{product.count} sold</p>
                           </div>
                           <div className="text-right">
-                            <p className="font-semibold text-gray-900">₹{parseFloat(product.revenue).toLocaleString()}</p>
+                            <p className="font-semibold text-gray-900">Rs. {parseFloat(product.revenue).toLocaleString()}</p>
                           </div>
                         </div>
                       ))}

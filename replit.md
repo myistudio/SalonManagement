@@ -144,6 +144,7 @@ Changelog:
 - June 28, 2025. Added thermal receipt printing with ESC/POS commands and cash drawer opening
 - June 28, 2025. Changed currency symbol from ₹ to "Rs." in all PDF and print outputs
 - June 28, 2025. Made entire application responsive for mobile and tablet devices with touch-friendly interface
+- June 28, 2025. Fixed reports functionality with improved transaction fetching and type safety
 ```
 
 ## User Preferences
