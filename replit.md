@@ -131,6 +131,7 @@ Changelog:
 - June 28, 2025. Enhanced barcode/QR labels with salon branding (logo + name)
 - June 28, 2025. Fixed store settings permissions - updated user role to store_manager
 - June 28, 2025. Added staff management with edit/delete roles functionality
+- June 28, 2025. Added "Add Staff" feature to invite new staff members by email
 ```
 
 ## User Preferences

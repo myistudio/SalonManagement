@@ -403,13 +403,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Staff routes
-  app.get('/api/staff/:storeId', isAuthenticated, async (req: any, res) => {
+  app.get('/api/staff', isAuthenticated, async (req: any, res) => {
     try {
-      const storeId = parseInt(req.params.storeId);
+      const storeId = parseInt(req.query.storeId as string) || 1;
       const staff = await storage.getStoreStaff(storeId);
       res.json(staff);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch staff" });
+    }
+  });
+
+  app.post('/api/staff', isAuthenticated, requireRole(['super_admin', 'store_manager']), async (req: any, res) => {
+    try {
+      const { email, role, storeId } = req.body;
+      
+      if (!email || !role || !storeId) {
+        return res.status(400).json({ message: "Email, role, and store ID are required" });
+      }
+
+      // Find user by email
+      const [user] = await db
+        .select()
+        .from(users)
+        .where(eq(users.email, email));
+
+      if (!user) {
+        return res.status(404).json({ message: "User not found. Please ensure the person has an account." });
+      }
+
+      // Check if user is already staff at this store
+      const [existingStaff] = await db
+        .select()
+        .from(storeStaff)
+        .where(and(eq(storeStaff.userId, user.id), eq(storeStaff.storeId, storeId)));
+
+      if (existingStaff) {
+        return res.status(400).json({ message: "User is already a staff member at this store" });
+      }
+
+      // Add user to store staff
+      const newStaff = await storage.assignUserToStore(user.id, storeId, role);
+
+      // Update user's role
+      await db
+        .update(users)
+        .set({ role, updatedAt: new Date() })
+        .where(eq(users.id, user.id));
+
+      res.json(newStaff);
+    } catch (error) {
+      console.error("Error adding staff:", error);
+      res.status(500).json({ message: "Failed to add staff member" });
     }
   });
 

@@ -26,6 +26,9 @@ export default function Staff() {
   const [showBillingModal, setShowBillingModal] = useState(false);
   const [editingStaff, setEditingStaff] = useState<any>(null);
   const [showEditDialog, setShowEditDialog] = useState(false);
+  const [showAddDialog, setShowAddDialog] = useState(false);
+  const [newStaffEmail, setNewStaffEmail] = useState("");
+  const [newStaffRole, setNewStaffRole] = useState("cashier");
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -47,7 +50,7 @@ export default function Staff() {
   });
 
   const { data: staff = [], isLoading: staffLoading } = useQuery({
-    queryKey: ["/api/staff", selectedStoreId],
+    queryKey: [`/api/staff?storeId=${selectedStoreId}`],
     retry: false,
     enabled: !!selectedStoreId,
   });
@@ -114,6 +117,44 @@ export default function Staff() {
       toast({
         title: "Remove Failed",
         description: "Failed to remove staff member. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const addStaffMutation = useMutation({
+    mutationFn: async ({ email, role }: { email: string; role: string }) => {
+      return await apiRequest("/api/staff", "POST", {
+        email,
+        role,
+        storeId: selectedStoreId,
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/staff", selectedStoreId] });
+      setShowAddDialog(false);
+      setNewStaffEmail("");
+      setNewStaffRole("cashier");
+      toast({
+        title: "Staff Added",
+        description: "Staff member has been added successfully.",
+      });
+    },
+    onError: (error) => {
+      if (isUnauthorizedError(error)) {
+        toast({
+          title: "Unauthorized",
+          description: "You are logged out. Logging in again...",
+          variant: "destructive",
+        });
+        setTimeout(() => {
+          window.location.href = "/api/login";
+        }, 500);
+        return;
+      }
+      toast({
+        title: "Add Failed",
+        description: "Failed to add staff member. Please check if the email is registered.",
         variant: "destructive",
       });
     },
@@ -196,6 +237,64 @@ export default function Staff() {
                   <p className="text-gray-600">Manage store staff and their roles</p>
                 </div>
               </div>
+              <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
+                <DialogTrigger asChild>
+                  <Button className="bg-primary hover:bg-primary/90">
+                    <Plus size={16} className="mr-2" />
+                    Add Staff
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Add New Staff Member</DialogTitle>
+                    <DialogDescription>
+                      Add a new staff member to {currentStore?.name}. The person must already have an account.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="text-sm font-medium">Email Address</label>
+                      <Input
+                        type="email"
+                        placeholder="Enter staff member's email"
+                        value={newStaffEmail}
+                        onChange={(e) => setNewStaffEmail(e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium">Role</label>
+                      <Select value={newStaffRole} onValueChange={setNewStaffRole}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="cashier">Cashier</SelectItem>
+                          <SelectItem value="store_manager">Store Manager</SelectItem>
+                          <SelectItem value="super_admin">Super Admin</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button 
+                      variant="outline" 
+                      onClick={() => setShowAddDialog(false)}
+                      disabled={addStaffMutation.isPending}
+                    >
+                      Cancel
+                    </Button>
+                    <Button 
+                      onClick={() => addStaffMutation.mutate({ 
+                        email: newStaffEmail, 
+                        role: newStaffRole 
+                      })}
+                      disabled={!newStaffEmail || addStaffMutation.isPending}
+                    >
+                      {addStaffMutation.isPending ? "Adding..." : "Add Staff"}
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
             </div>
 
             {/* Store Info */}
