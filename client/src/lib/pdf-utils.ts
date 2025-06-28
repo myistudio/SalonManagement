@@ -59,8 +59,8 @@ export function generatePDF(billData: BillData) {
   billData.items.forEach((item) => {
     doc.text(item.name, 20, yPos);
     doc.text(item.quantity.toString(), 120, yPos);
-    doc.text(`₹${item.price.toFixed(2)}`, 150, yPos);
-    doc.text(`₹${(item.price * item.quantity).toFixed(2)}`, 180, yPos);
+    doc.text(`Rs. ${item.price.toFixed(2)}`, 150, yPos);
+    doc.text(`Rs. ${(item.price * item.quantity).toFixed(2)}`, 180, yPos);
     yPos += 10;
   });
   
@@ -69,19 +69,19 @@ export function generatePDF(billData: BillData) {
   doc.line(120, yPos, 200, yPos);
   yPos += 10;
   
-  doc.text(`Subtotal: ₹${billData.subtotal.toFixed(2)}`, 120, yPos);
+  doc.text(`Subtotal: Rs. ${billData.subtotal.toFixed(2)}`, 120, yPos);
   yPos += 10;
   
   if (billData.discount > 0) {
-    doc.text(`Discount: -₹${billData.discount.toFixed(2)}`, 120, yPos);
+    doc.text(`Discount: -Rs. ${billData.discount.toFixed(2)}`, 120, yPos);
     yPos += 10;
   }
   
-  doc.text(`GST (18%): ₹${billData.gst.toFixed(2)}`, 120, yPos);
+  doc.text(`GST (18%): Rs. ${billData.gst.toFixed(2)}`, 120, yPos);
   yPos += 10;
   
   doc.setFontSize(14);
-  doc.text(`Total: ₹${billData.total.toFixed(2)}`, 120, yPos);
+  doc.text(`Total: Rs. ${billData.total.toFixed(2)}`, 120, yPos);
   
   // Loyalty points
   if (billData.pointsEarned > 0 || billData.pointsRedeemed > 0) {

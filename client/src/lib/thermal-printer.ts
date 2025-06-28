@@ -120,7 +120,7 @@ export function generateThermalReceipt(data: ReceiptData): string {
     receipt.push(formatLine(
       '', 
       item.quantity.toString(), 
-      `₹${item.price.toFixed(2)}`
+      `Rs. ${item.price.toFixed(2)}`
     ));
     receipt.push(commands.newLine);
   });
@@ -130,16 +130,16 @@ export function generateThermalReceipt(data: ReceiptData): string {
   receipt.push(commands.newLine);
   
   // Totals
-  receipt.push(formatLine('Subtotal:', '', `₹${data.subtotal.toFixed(2)}`));
+  receipt.push(formatLine('Subtotal:', '', `Rs. ${data.subtotal.toFixed(2)}`));
   receipt.push(commands.newLine);
   
   if (data.discount > 0) {
-    receipt.push(formatLine('Discount:', '', `-₹${data.discount.toFixed(2)}`));
+    receipt.push(formatLine('Discount:', '', `-Rs. ${data.discount.toFixed(2)}`));
     receipt.push(commands.newLine);
   }
   
   if (data.gst > 0) {
-    receipt.push(formatLine('GST:', '', `₹${data.gst.toFixed(2)}`));
+    receipt.push(formatLine('GST:', '', `Rs. ${data.gst.toFixed(2)}`));
     receipt.push(commands.newLine);
   }
   
@@ -149,7 +149,7 @@ export function generateThermalReceipt(data: ReceiptData): string {
   // Final total
   receipt.push(commands.bold);
   receipt.push(commands.doubleWidth);
-  receipt.push(formatLine('TOTAL:', '', `₹${data.total.toFixed(2)}`));
+  receipt.push(formatLine('TOTAL:', '', `Rs. ${data.total.toFixed(2)}`));
   receipt.push(commands.newLine);
   receipt.push(commands.boldOff);
   receipt.push(commands.largeFontOff);

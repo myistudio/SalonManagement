@@ -790,7 +790,7 @@ export default function BillingModal({ isOpen, onClose, storeId }: BillingModalP
           
           <div className="space-y-4">
             <div className="text-center text-green-600 font-medium">
-              Total Paid: ₹{lastTransaction?.billData?.total?.toFixed(2)}
+              Total Paid: Rs. {getTotal().toFixed(2)}
             </div>
             
             <div className="flex flex-col space-y-3">

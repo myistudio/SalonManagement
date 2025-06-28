@@ -138,6 +138,11 @@ Changelog:
 - June 28, 2025. Implemented complete store management system with role-based access control
 - June 28, 2025. Added staff password creation and change functionality with secure hashing
 - June 28, 2025. Created multi-store management page for super admins to create and view stores
+- June 28, 2025. Fixed transaction creation validation issues and payment processing
+- June 28, 2025. Enhanced customer search with dropdown selection in billing modal
+- June 28, 2025. Implemented optional receipt printing workflow after payment completion
+- June 28, 2025. Added thermal receipt printing with ESC/POS commands and cash drawer opening
+- June 28, 2025. Changed currency symbol from ₹ to "Rs." in all PDF and print outputs
 ```
 
 ## User Preferences
