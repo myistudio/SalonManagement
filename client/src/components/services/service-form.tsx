@@ -35,7 +35,7 @@ export default function ServiceForm({ storeId, service, onSuccess }: ServiceForm
   const [imagePreview, setImagePreview] = useState<string>(service?.imageUrl || "");
 
   // Fetch service categories for this store
-  const { data: serviceCategories = [] } = useQuery({
+  const { data: serviceCategories = [] } = useQuery<any[]>({
     queryKey: [`/api/service-categories?storeId=${storeId}`],
   });
 
@@ -181,7 +181,7 @@ export default function ServiceForm({ storeId, service, onSuccess }: ServiceForm
                 </SelectTrigger>
                 <SelectContent>
                   {serviceCategories.length === 0 ? (
-                    <SelectItem value="" disabled>
+                    <SelectItem value="no-categories" disabled>
                       No categories available. Create one first.
                     </SelectItem>
                   ) : (

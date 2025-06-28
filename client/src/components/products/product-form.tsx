@@ -39,7 +39,7 @@ export default function ProductForm({ storeId, product, onSuccess }: ProductForm
   const [imagePreview, setImagePreview] = useState<string>(product?.imageUrl || "");
 
   // Fetch categories for this store
-  const { data: dynamicCategories = [] } = useQuery({
+  const { data: dynamicCategories = [] } = useQuery<any[]>({
     queryKey: [`/api/product-categories?storeId=${storeId}`],
   });
 
@@ -180,11 +180,17 @@ export default function ProductForm({ storeId, product, onSuccess }: ProductForm
                     <SelectValue placeholder="Select category" />
                   </SelectTrigger>
                   <SelectContent>
-                    {dynamicCategories.map((category: any) => (
-                      <SelectItem key={category.id} value={category.name}>
-                        {category.name}
+                    {dynamicCategories.length === 0 ? (
+                      <SelectItem value="no-categories" disabled>
+                        No categories available. Create one first.
                       </SelectItem>
-                    ))}
+                    ) : (
+                      dynamicCategories.map((category: any) => (
+                        <SelectItem key={category.id} value={category.name}>
+                          {category.name}
+                        </SelectItem>
+                      ))
+                    )}
                   </SelectContent>
                 </Select>
                 <CategoryManager 

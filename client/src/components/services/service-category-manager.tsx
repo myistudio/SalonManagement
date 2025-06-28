@@ -38,7 +38,7 @@ export default function ServiceCategoryManager({ storeId, onCategorySelect }: Se
   });
 
   // Fetch service categories
-  const { data: categories = [], isLoading } = useQuery({
+  const { data: categories = [], isLoading } = useQuery<any[]>({
     queryKey: [`/api/service-categories?storeId=${storeId}`],
     enabled: isManagerOpen,
   });

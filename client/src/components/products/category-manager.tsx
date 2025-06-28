@@ -38,7 +38,7 @@ export default function CategoryManager({ storeId, onCategorySelect }: CategoryM
   });
 
   // Fetch categories
-  const { data: categories = [], isLoading } = useQuery({
+  const { data: categories = [], isLoading } = useQuery<any[]>({
     queryKey: [`/api/product-categories?storeId=${storeId}`],
     enabled: isManagerOpen,
   });
