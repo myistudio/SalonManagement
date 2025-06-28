@@ -34,7 +34,7 @@ export function setupBasicAuth(app: Express) {
   const PostgresSessionStore = connectPg(session);
   const sessionStore = new PostgresSessionStore({
     conString: process.env.DATABASE_URL,
-    createTableIfMissing: true,
+    createTableIfMissing: false, // Table already exists
     ttl: 7 * 24 * 60 * 60, // 1 week
   });
 
