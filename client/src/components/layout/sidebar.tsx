@@ -1,5 +1,6 @@
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/hooks/useAuth";
 import { 
   BarChart3, 
   CreditCard, 
@@ -18,6 +19,10 @@ interface SidebarProps {
 
 export default function Sidebar({ onOpenBilling }: SidebarProps) {
   const [location] = useLocation();
+  const { user } = useAuth();
+  
+  // Get user role for navigation filtering
+  const userRole = (user as any)?.role || "cashier";
 
   const menuItems = [
     { 
@@ -84,7 +89,15 @@ export default function Sidebar({ onOpenBilling }: SidebarProps) {
                 Billing
               </button>
               
-              {menuItems.map((item) => (
+              {menuItems.filter(item => {
+                // Show all items for super_admin and store_manager
+                if (userRole === "super_admin" || userRole === "store_manager") return true;
+                // For cashiers, hide Reports, Staff, and Settings
+                if (userRole === "cashier") {
+                  return !["Reports", "Staff", "Settings"].includes(item.label);
+                }
+                return true;
+              }).map((item) => (
                 <Link
                   key={item.path}
                   href={item.path}
