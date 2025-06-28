@@ -15,7 +15,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Search, Plus, Bus, User, Settings, Mail, Phone, Edit, Trash2, Shield, Building2 } from "lucide-react";
+import { Search, Plus, Bus, User, Settings, Mail, Phone, Edit, Trash2, Shield, Building2, Key } from "lucide-react";
 import BillingModal from "@/components/billing/billing-modal";
 
 export default function Staff() {
@@ -27,8 +27,16 @@ export default function Staff() {
   const [editingStaff, setEditingStaff] = useState<any>(null);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showAddDialog, setShowAddDialog] = useState(false);
+  const [showPasswordDialog, setShowPasswordDialog] = useState(false);
+  const [passwordChangeUser, setPasswordChangeUser] = useState<any>(null);
   const [newStaffEmail, setNewStaffEmail] = useState("");
+  const [newStaffMobile, setNewStaffMobile] = useState("");
+  const [newStaffPassword, setNewStaffPassword] = useState("");
+  const [newStaffFirstName, setNewStaffFirstName] = useState("");
+  const [newStaffLastName, setNewStaffLastName] = useState("");
   const [newStaffRole, setNewStaffRole] = useState("cashier");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -130,16 +138,28 @@ export default function Staff() {
   });
 
   const addStaffMutation = useMutation({
-    mutationFn: async ({ email, role }: { email: string; role: string }) => {
-      return await apiRequest("POST", "/api/staff", {
-        email,
-        role,
+    mutationFn: async (staffData: { 
+      email: string; 
+      mobile?: string;
+      password: string;
+      firstName: string;
+      lastName?: string;
+      role: string; 
+    }) => {
+      return await apiRequest("POST", "/api/staff/create", {
+        ...staffData,
         storeId: selectedStoreId,
       });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/staff", selectedStoreId] });
       setShowAddDialog(false);
+      setNewStaffEmail("");
+      setNewStaffMobile("");
+      setNewStaffPassword("");
+      setNewStaffFirstName("");
+      setNewStaffLastName("");
+      setNewStaffRole("cashier");
       setNewStaffEmail("");
       setNewStaffRole("cashier");
       toast({
@@ -162,6 +182,42 @@ export default function Staff() {
       toast({
         title: "Add Failed",
         description: "Failed to add staff member. Please check the email address and try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const changePasswordMutation = useMutation({
+    mutationFn: async ({ userId, newPassword }: { userId: string; newPassword: string }) => {
+      return await apiRequest("PATCH", `/api/staff/${userId}/password`, {
+        password: newPassword,
+      });
+    },
+    onSuccess: () => {
+      setShowPasswordDialog(false);
+      setPasswordChangeUser(null);
+      setNewPassword("");
+      setConfirmPassword("");
+      toast({
+        title: "Password Updated",
+        description: "Staff password has been updated successfully.",
+      });
+    },
+    onError: (error) => {
+      if (isUnauthorizedError(error)) {
+        toast({
+          title: "Unauthorized",
+          description: "You are logged out. Logging in again...",
+          variant: "destructive",
+        });
+        setTimeout(() => {
+          window.location.href = "/api/login";
+        }, 500);
+        return;
+      }
+      toast({
+        title: "Password Update Failed",
+        description: "Failed to update password. Please try again.",
         variant: "destructive",
       });
     },
@@ -259,13 +315,49 @@ export default function Staff() {
                     </DialogDescription>
                   </DialogHeader>
                   <div className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="text-sm font-medium">First Name *</label>
+                        <Input
+                          placeholder="First name"
+                          value={newStaffFirstName}
+                          onChange={(e) => setNewStaffFirstName(e.target.value)}
+                        />
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium">Last Name</label>
+                        <Input
+                          placeholder="Last name"
+                          value={newStaffLastName}
+                          onChange={(e) => setNewStaffLastName(e.target.value)}
+                        />
+                      </div>
+                    </div>
                     <div>
-                      <label className="text-sm font-medium">Email Address</label>
+                      <label className="text-sm font-medium">Email Address *</label>
                       <Input
                         type="email"
                         placeholder="Enter staff member's email"
                         value={newStaffEmail}
                         onChange={(e) => setNewStaffEmail(e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium">Mobile Number</label>
+                      <Input
+                        type="tel"
+                        placeholder="Enter mobile number"
+                        value={newStaffMobile}
+                        onChange={(e) => setNewStaffMobile(e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium">Password *</label>
+                      <Input
+                        type="password"
+                        placeholder="Create password (min 6 characters)"
+                        value={newStaffPassword}
+                        onChange={(e) => setNewStaffPassword(e.target.value)}
                       />
                     </div>
                     <div>
@@ -292,10 +384,14 @@ export default function Staff() {
                     </Button>
                     <Button 
                       onClick={() => addStaffMutation.mutate({ 
-                        email: newStaffEmail, 
+                        email: newStaffEmail,
+                        mobile: newStaffMobile || undefined,
+                        password: newStaffPassword,
+                        firstName: newStaffFirstName,
+                        lastName: newStaffLastName || undefined,
                         role: newStaffRole 
                       })}
-                      disabled={!newStaffEmail || addStaffMutation.isPending}
+                      disabled={!newStaffEmail || !newStaffPassword || !newStaffFirstName || addStaffMutation.isPending}
                     >
                       {addStaffMutation.isPending ? "Adding..." : "Add Staff"}
                     </Button>
@@ -409,8 +505,21 @@ export default function Staff() {
                                 size="sm"
                                 onClick={() => handleEditRole(member)}
                                 className="h-8 px-2"
+                                title="Edit Role"
                               >
                                 <Edit size={16} />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                  setPasswordChangeUser(member.user);
+                                  setShowPasswordDialog(true);
+                                }}
+                                className="h-8 px-2 text-blue-600 hover:text-blue-700"
+                                title="Change Password"
+                              >
+                                <Key size={16} />
                               </Button>
                               <AlertDialog>
                                 <AlertDialogTrigger asChild>
@@ -483,6 +592,78 @@ export default function Staff() {
               onClick={() => setShowEditDialog(false)}
             >
               Cancel
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Password Change Dialog */}
+      <Dialog open={showPasswordDialog} onOpenChange={setShowPasswordDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Change Password</DialogTitle>
+            <DialogDescription>
+              Set a new password for {passwordChangeUser?.firstName} {passwordChangeUser?.lastName}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium">New Password</label>
+              <Input
+                type="password"
+                placeholder="Enter new password (min 6 characters)"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium">Confirm Password</label>
+              <Input
+                type="password"
+                placeholder="Confirm new password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setShowPasswordDialog(false);
+                setNewPassword("");
+                setConfirmPassword("");
+              }}
+              disabled={changePasswordMutation.isPending}
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={() => {
+                if (newPassword !== confirmPassword) {
+                  toast({
+                    title: "Password Mismatch",
+                    description: "Passwords do not match. Please try again.",
+                    variant: "destructive",
+                  });
+                  return;
+                }
+                if (newPassword.length < 6) {
+                  toast({
+                    title: "Password Too Short",
+                    description: "Password must be at least 6 characters long.",
+                    variant: "destructive",
+                  });
+                  return;
+                }
+                changePasswordMutation.mutate({
+                  userId: passwordChangeUser?.id,
+                  newPassword: newPassword,
+                });
+              }}
+              disabled={!newPassword || !confirmPassword || changePasswordMutation.isPending}
+            >
+              {changePasswordMutation.isPending ? "Updating..." : "Update Password"}
             </Button>
           </DialogFooter>
         </DialogContent>

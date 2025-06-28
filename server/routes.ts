@@ -413,6 +413,64 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Create staff with password
+  app.post('/api/staff/create', isAuthenticated, requireRole(['super_admin', 'store_manager']), async (req: any, res) => {
+    try {
+      const { email, mobile, password, firstName, lastName, role, storeId } = req.body;
+      
+      if (!email && !mobile) {
+        return res.status(400).json({ message: "Email or mobile number is required" });
+      }
+      if (!password || !firstName || !role || !storeId) {
+        return res.status(400).json({ message: "Password, first name, role, and store ID are required" });
+      }
+
+      // Check if user already exists
+      const existingUser = await storage.getUserByEmailOrMobile(email || mobile);
+      if (existingUser) {
+        return res.status(400).json({ message: "User already exists with this email or mobile" });
+      }
+
+      // Hash password
+      const { scrypt, randomBytes } = await import('crypto');
+      const { promisify } = await import('util');
+      const scryptAsync = promisify(scrypt);
+      
+      const salt = randomBytes(16).toString("hex");
+      const buf = (await scryptAsync(password, salt, 64)) as Buffer;
+      const hashedPassword = `${buf.toString("hex")}.${salt}`;
+
+      // Create new user
+      const userId = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const user = await storage.createUser({
+        id: userId,
+        email: email || null,
+        mobile: mobile || null,
+        password: hashedPassword,
+        firstName,
+        lastName: lastName || null,
+        profileImageUrl: null,
+        role,
+        isActive: true,
+      });
+
+      // Add user to store staff
+      const newStaff = await storage.assignUserToStore(user.id, storeId, role);
+
+      res.status(201).json({
+        id: user.id,
+        email: user.email,
+        mobile: user.mobile,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        role: user.role,
+      });
+    } catch (error) {
+      console.error("Error creating staff:", error);
+      res.status(500).json({ message: "Failed to create staff member" });
+    }
+  });
+
   app.post('/api/staff', isAuthenticated, requireRole(['super_admin', 'store_manager']), async (req: any, res) => {
     try {
       const { email, role, storeId } = req.body;
@@ -493,6 +551,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error updating staff role:", error);
       res.status(500).json({ message: "Failed to update staff role" });
+    }
+  });
+
+  // Change staff password
+  app.patch('/api/staff/:userId/password', isAuthenticated, requireRole(['super_admin', 'store_manager']), async (req: any, res) => {
+    try {
+      const userId = req.params.userId;
+      const { password } = req.body;
+      
+      if (!password) {
+        return res.status(400).json({ message: "Password is required" });
+      }
+
+      if (password.length < 6) {
+        return res.status(400).json({ message: "Password must be at least 6 characters long" });
+      }
+
+      // Hash the new password
+      const { scrypt, randomBytes } = await import('crypto');
+      const { promisify } = await import('util');
+      const scryptAsync = promisify(scrypt);
+      
+      const salt = randomBytes(16).toString("hex");
+      const buf = (await scryptAsync(password, salt, 64)) as Buffer;
+      const hashedPassword = `${buf.toString("hex")}.${salt}`;
+
+      // Update user password
+      await db
+        .update(users)
+        .set({ password: hashedPassword, updatedAt: new Date() })
+        .where(eq(users.id, userId));
+
+      res.json({ message: "Password updated successfully" });
+    } catch (error) {
+      console.error("Error updating password:", error);
+      res.status(500).json({ message: "Failed to update password" });
     }
   });
 
