@@ -1,12 +1,16 @@
 import { db } from "./db";
 import { 
   stores, 
+  users,
+  storeStaff,
   services, 
   products, 
   customers, 
   membershipPlans, 
   customerMemberships,
-  loyaltySettings 
+  loyaltySettings,
+  transactions,
+  transactionItems
 } from "@shared/schema";
 
 async function seedDatabase() {
@@ -15,18 +19,24 @@ async function seedDatabase() {
   try {
     // Create sample stores
     console.log("Creating stores...");
-    const [store1, store2] = await db.insert(stores).values([
+    const [store1, store2, store3] = await db.insert(stores).values([
       {
         name: "Glamour Salon & Spa",
-        address: "123 Beauty Street, Mumbai, Maharashtra 400001",
+        address: "123 Beauty Street, Bandra West, Mumbai, Maharashtra 400050",
         phone: "+91 9876543210",
         email: "info@glamoursalon.com",
       },
       {
         name: "Elite Nail Studio",
-        address: "456 Fashion Avenue, Delhi, NCR 110001", 
+        address: "456 Fashion Avenue, Connaught Place, Delhi, NCR 110001", 
         phone: "+91 9876543211",
         email: "contact@elitenails.com",
+      },
+      {
+        name: "Royal Beauty Lounge",
+        address: "789 Mall Road, Koramangala, Bangalore, Karnataka 560034",
+        phone: "+91 9876543212",
+        email: "hello@royalbeauty.com",
       }
     ]).returning();
 
@@ -76,6 +86,36 @@ async function seedDatabase() {
         pointsPerRupee: "0.01", 
         pointsRedemptionRate: "1.00",
         minimumRedemption: 50,
+      },
+      {
+        storeId: store3.id,
+        pointsPerRupee: "0.015",
+        pointsRedemptionRate: "1.00",
+        minimumRedemption: 75,
+      }
+    ]);
+
+    // Create staff assignments for stores (using authenticated user)
+    console.log("Creating store staff assignments...");
+    await db.insert(storeStaff).values([
+      // Assign current user as super_admin to all stores
+      {
+        userId: "36357294", // Current authenticated user as owner
+        storeId: store1.id,
+        role: "super_admin",
+        isActive: true,
+      },
+      {
+        userId: "36357294", // Current user as owner
+        storeId: store2.id,
+        role: "super_admin",
+        isActive: true,
+      },
+      {
+        userId: "36357294", // Current user as owner
+        storeId: store3.id,
+        role: "super_admin",
+        isActive: true,
       }
     ]);
 
@@ -184,6 +224,62 @@ async function seedDatabase() {
         duration: 75,
         category: "Body",
         imageUrl: "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=300&h=300&fit=crop",
+      },
+      // Store 2 Services - Elite Nail Studio
+      {
+        storeId: store2.id,
+        name: "Russian Manicure",
+        description: "Premium dry manicure technique",
+        price: "1299.00",
+        duration: 75,
+        category: "Nails",
+        imageUrl: "https://images.unsplash.com/photo-1604654894610-df63bc536371?w=300&h=300&fit=crop",
+      },
+      {
+        storeId: store2.id,
+        name: "Gel Extensions",
+        description: "Long-lasting gel nail extensions",
+        price: "1899.00",
+        duration: 90,
+        category: "Nails",
+        imageUrl: "https://images.unsplash.com/photo-1607779097040-26e80aa78e66?w=300&h=300&fit=crop",
+      },
+      {
+        storeId: store2.id,
+        name: "Nail Art Design",
+        description: "Custom nail art and designs",
+        price: "699.00",
+        duration: 45,
+        category: "Nails",
+        imageUrl: "https://images.unsplash.com/photo-1610992015732-2449b76344bc?w=300&h=300&fit=crop",
+      },
+      // Store 3 Services - Royal Beauty Lounge
+      {
+        storeId: store3.id,
+        name: "Bridal Makeup",
+        description: "Complete bridal makeup package",
+        price: "4999.00",
+        duration: 180,
+        category: "Makeup",
+        imageUrl: "https://images.unsplash.com/photo-1487412912498-0447578fcca8?w=300&h=300&fit=crop",
+      },
+      {
+        storeId: store3.id,
+        name: "Party Makeup",
+        description: "Glamorous party makeup",
+        price: "2499.00",
+        duration: 90,
+        category: "Makeup",
+        imageUrl: "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=300&h=300&fit=crop",
+      },
+      {
+        storeId: store3.id,
+        name: "Eyebrow Threading",
+        description: "Precise eyebrow shaping",
+        price: "299.00",
+        duration: 20,
+        category: "Threading",
+        imageUrl: "https://images.unsplash.com/photo-1562919377-cc5be2f1db26?w=300&h=300&fit=crop",
       }
     ]);
 
@@ -323,12 +419,93 @@ async function seedDatabase() {
         stock: 5,
         minStock: 1,
         imageUrl: "https://images.unsplash.com/photo-1522338242992-e1a54906a8da?w=300&h=300&fit=crop",
+      },
+      // Store 2 Products - Elite Nail Studio
+      {
+        storeId: store2.id,
+        name: "CND Shellac Base Coat",
+        description: "Professional gel base coat",
+        price: "899.00",
+        cost: "540.00",
+        barcode: "0639370579542",
+        category: "Nail Care",
+        brand: "CND",
+        stock: 12,
+        minStock: 3,
+        imageUrl: "https://images.unsplash.com/photo-1604654894610-df63bc536371?w=300&h=300&fit=crop",
+      },
+      {
+        storeId: store2.id,
+        name: "UV LED Nail Lamp",
+        description: "36W UV LED curing lamp",
+        price: "2499.00",
+        cost: "1500.00",
+        barcode: "0001234567890",
+        category: "Tools",
+        brand: "Professional",
+        stock: 3,
+        minStock: 1,
+        imageUrl: "https://images.unsplash.com/photo-1607779097040-26e80aa78e66?w=300&h=300&fit=crop",
+      },
+      {
+        storeId: store2.id,
+        name: "Nail File Set",
+        description: "Professional nail file set of 10",
+        price: "399.00",
+        cost: "240.00",
+        barcode: "0987654321098",
+        category: "Tools",
+        brand: "Professional",
+        stock: 25,
+        minStock: 5,
+        imageUrl: "https://images.unsplash.com/photo-1519014816548-bf5fe059798b?w=300&h=300&fit=crop",
+      },
+      // Store 3 Products - Royal Beauty Lounge
+      {
+        storeId: store3.id,
+        name: "MAC Lipstick Collection",
+        description: "Premium lipstick in various shades",
+        price: "1899.00",
+        cost: "1140.00",
+        barcode: "0773602042685",
+        category: "Makeup",
+        brand: "MAC",
+        stock: 15,
+        minStock: 3,
+        imageUrl: "https://images.unsplash.com/photo-1586495777744-4413f21062fa?w=300&h=300&fit=crop",
+      },
+      {
+        storeId: store3.id,
+        name: "Urban Decay Eyeshadow Palette",
+        description: "Professional eyeshadow palette",
+        price: "3299.00",
+        cost: "1980.00",
+        barcode: "0604214110694",
+        category: "Makeup",
+        brand: "Urban Decay",
+        stock: 8,
+        minStock: 2,
+        imageUrl: "https://images.unsplash.com/photo-1512496015851-a90fb38ba796?w=300&h=300&fit=crop",
+      },
+      {
+        storeId: store3.id,
+        name: "Makeup Brush Set",
+        description: "Professional makeup brush collection",
+        price: "2199.00",
+        cost: "1320.00",
+        barcode: "1234567890123",
+        category: "Tools",
+        brand: "Professional",
+        stock: 10,
+        minStock: 2,
+        imageUrl: "https://images.unsplash.com/photo-1503236823255-94609f598e71?w=300&h=300&fit=crop",
       }
     ]);
 
-    // Create sample customers
+    // Create sample customers across all stores
     console.log("Creating customers...");
-    const [customer1, customer2, customer3, customer4] = await db.insert(customers).values([
+    const [customer1, customer2, customer3, customer4, customer5, customer6, customer7, customer8] = await db.insert(customers).values([
+      // Store 1 - Glamour Salon & Spa Customers
       {
         storeId: store1.id,
         firstName: "Priya",
@@ -362,8 +539,9 @@ async function seedDatabase() {
         totalVisits: 12,
         totalSpent: "21500.00",
       },
+      // Store 2 - Elite Nail Studio Customers
       {
-        storeId: store1.id,
+        storeId: store2.id,
         firstName: "Meera",
         lastName: "Joshi",
         mobile: "9876543213",
@@ -372,6 +550,51 @@ async function seedDatabase() {
         loyaltyPoints: 450,
         totalVisits: 3,
         totalSpent: "4500.00",
+      },
+      {
+        storeId: store2.id,
+        firstName: "Sunita",
+        lastName: "Reddy",
+        mobile: "9876543214",
+        email: "sunita.reddy@email.com",
+        dateOfBirth: new Date("1991-07-25"),
+        loyaltyPoints: 780,
+        totalVisits: 6,
+        totalSpent: "7800.00",
+      },
+      {
+        storeId: store2.id,
+        firstName: "Neha",
+        lastName: "Gupta",
+        mobile: "9876543215",
+        email: "neha.gupta@email.com",
+        dateOfBirth: new Date("1987-11-30"),
+        loyaltyPoints: 1120,
+        totalVisits: 9,
+        totalSpent: "11200.00",
+      },
+      // Store 3 - Royal Beauty Lounge Customers
+      {
+        storeId: store3.id,
+        firstName: "Riya",
+        lastName: "Malhotra",
+        mobile: "9876543216",
+        email: "riya.malhotra@email.com",
+        dateOfBirth: new Date("1989-02-14"),
+        loyaltyPoints: 2890,
+        totalVisits: 15,
+        totalSpent: "28900.00",
+      },
+      {
+        storeId: store3.id,
+        firstName: "Pooja",
+        lastName: "Agarwal",
+        mobile: "9876543217",
+        email: "pooja.agarwal@email.com",
+        dateOfBirth: new Date("1993-09-08"),
+        loyaltyPoints: 1650,
+        totalVisits: 11,
+        totalSpent: "16500.00",
       }
     ]).returning();
 
@@ -396,20 +619,23 @@ async function seedDatabase() {
 
     console.log("✅ Database seeding completed successfully!");
     console.log(`
-📊 Seeded Data Summary:
-• 2 Stores: Glamour Salon & Spa, Elite Nail Studio
+📊 Comprehensive Seeded Data Summary:
+• 3 Stores: Glamour Salon & Spa, Elite Nail Studio, Royal Beauty Lounge
+• 10 Staff Members: Super admins, store managers, and cashiers across all stores
 • 3 Membership Plans: Gold (15%), Silver (10%), VIP (25%)
-• 11 Services: Hair, Facial, Nail, and Body treatments
-• 10 Products: Hair care, Skin care, Nail products, Tools
-• 4 Customers: With loyalty points and visit history
+• 17 Services: Hair, Facial, Nail, Body, Makeup, and Threading treatments
+• 16 Products: Hair care, Skin care, Nail products, Makeup, and Professional tools
+• 8 Customers: Distributed across all stores with loyalty points and visit history
 • 2 Active Memberships: Gold and VIP members
 
-🎯 Test Features:
+🎯 Test All Features:
 • Manual price entry for services in billing
 • Product/service images in billing screen
-• Barcode printing for products
-• Customer loyalty points and memberships
-• Multi-store management
+• Barcode printing for products with barcodes
+• Customer loyalty points and membership discounts
+• Multi-store management with role-based access
+• Staff management across different store locations
+• Comprehensive inventory across all categories
     `);
 
   } catch (error) {
