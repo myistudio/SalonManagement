@@ -111,6 +111,17 @@ export const productCategories = pgTable("product_categories", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Service categories table
+export const serviceCategories = pgTable("service_categories", {
+  id: serial("id").primaryKey(),
+  storeId: integer("store_id").references(() => stores.id).notNull(),
+  name: varchar("name", { length: 100 }).notNull(),
+  description: text("description"),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Products table
 export const products = pgTable("products", {
   id: serial("id").primaryKey(),
@@ -212,6 +223,7 @@ export const storesRelations = relations(stores, ({ many }) => ({
   services: many(services),
   products: many(products),
   productCategories: many(productCategories),
+  serviceCategories: many(serviceCategories),
   membershipPlans: many(membershipPlans),
   transactions: many(transactions),
   loyaltySettings: many(loyaltySettings),
@@ -243,6 +255,13 @@ export const servicesRelations = relations(services, ({ one }) => ({
 export const productCategoriesRelations = relations(productCategories, ({ one }) => ({
   store: one(stores, {
     fields: [productCategories.storeId],
+    references: [stores.id],
+  }),
+}));
+
+export const serviceCategoriesRelations = relations(serviceCategories, ({ one }) => ({
+  store: one(stores, {
+    fields: [serviceCategories.storeId],
     references: [stores.id],
   }),
 }));
@@ -336,6 +355,12 @@ export const insertProductCategorySchema = createInsertSchema(productCategories)
   updatedAt: true,
 });
 
+export const insertServiceCategorySchema = createInsertSchema(serviceCategories).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 export const insertProductSchema = createInsertSchema(products).omit({
   id: true,
   createdAt: true,
@@ -370,6 +395,8 @@ export type Product = typeof products.$inferSelect;
 export type InsertProduct = z.infer<typeof insertProductSchema>;
 export type ProductCategory = typeof productCategories.$inferSelect;
 export type InsertProductCategory = z.infer<typeof insertProductCategorySchema>;
+export type ServiceCategory = typeof serviceCategories.$inferSelect;
+export type InsertServiceCategory = z.infer<typeof insertServiceCategorySchema>;
 export type MembershipPlan = typeof membershipPlans.$inferSelect;
 export type InsertMembershipPlan = z.infer<typeof insertMembershipPlanSchema>;
 export type CustomerMembership = typeof customerMemberships.$inferSelect;

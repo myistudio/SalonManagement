@@ -6,6 +6,7 @@ import {
   services,
   products,
   productCategories,
+  serviceCategories,
   membershipPlans,
   customerMemberships,
   transactions,
@@ -23,6 +24,8 @@ import {
   type InsertProduct,
   type ProductCategory,
   type InsertProductCategory,
+  type ServiceCategory,
+  type InsertServiceCategory,
   type MembershipPlan,
   type InsertMembershipPlan,
   type CustomerMembership,
@@ -60,6 +63,13 @@ export interface IStorage {
   createCustomer(customer: InsertCustomer): Promise<Customer>;
   updateCustomer(id: number, customer: Partial<InsertCustomer>): Promise<Customer>;
   updateCustomerLoyalty(id: number, points: number, visits: number, spent: string): Promise<void>;
+
+  // Service category operations
+  getServiceCategories(storeId: number): Promise<ServiceCategory[]>;
+  getServiceCategory(id: number): Promise<ServiceCategory | undefined>;
+  createServiceCategory(category: InsertServiceCategory): Promise<ServiceCategory>;
+  updateServiceCategory(id: number, category: Partial<InsertServiceCategory>): Promise<ServiceCategory>;
+  deleteServiceCategory(id: number): Promise<void>;
 
   // Service operations
   getServices(storeId: number): Promise<Service[]>;
@@ -294,6 +304,41 @@ export class DatabaseStorage implements IStorage {
       .where(eq(productCategories.id, id));
   }
 
+  // Service category operations
+  async getServiceCategories(storeId: number): Promise<ServiceCategory[]> {
+    return await db
+      .select()
+      .from(serviceCategories)
+      .where(and(eq(serviceCategories.storeId, storeId), eq(serviceCategories.isActive, true)))
+      .orderBy(serviceCategories.name);
+  }
+
+  async getServiceCategory(id: number): Promise<ServiceCategory | undefined> {
+    const [category] = await db.select().from(serviceCategories).where(eq(serviceCategories.id, id));
+    return category;
+  }
+
+  async createServiceCategory(category: InsertServiceCategory): Promise<ServiceCategory> {
+    const [newCategory] = await db.insert(serviceCategories).values(category).returning();
+    return newCategory;
+  }
+
+  async updateServiceCategory(id: number, category: Partial<InsertServiceCategory>): Promise<ServiceCategory> {
+    const [updatedCategory] = await db
+      .update(serviceCategories)
+      .set({ ...category, updatedAt: new Date() })
+      .where(eq(serviceCategories.id, id))
+      .returning();
+    return updatedCategory;
+  }
+
+  async deleteServiceCategory(id: number): Promise<void> {
+    await db
+      .update(serviceCategories)
+      .set({ isActive: false, updatedAt: new Date() })
+      .where(eq(serviceCategories.id, id));
+  }
+
   // Service operations
   async getServices(storeId: number): Promise<Service[]> {
     return await db
@@ -346,6 +391,13 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createProduct(product: InsertProduct): Promise<Product> {
+    // Generate barcode if not provided
+    if (!product.barcode) {
+      const timestamp = Date.now().toString();
+      const randomSuffix = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+      product.barcode = `${product.storeId}${timestamp.slice(-6)}${randomSuffix}`;
+    }
+    
     const [newProduct] = await db.insert(products).values(product).returning();
     return newProduct;
   }

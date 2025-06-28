@@ -153,6 +153,9 @@ Changelog:
 - June 28, 2025. Fixed customer profile view buttons with detailed customer modal
 - June 28, 2025. Implemented complete image upload functionality for products and services with 5MB file size limits
 - June 28, 2025. Added dynamic product category management system with add, edit, and delete functionality
+- June 28, 2025. Created comprehensive service category management system with database-driven CRUD operations
+- June 28, 2025. Implemented auto-generated barcodes for products to streamline inventory management
+- June 28, 2025. Replaced hardcoded categories with dynamic category management for both products and services
 ```
 
 ## User Preferences

@@ -9,6 +9,7 @@ import express from "express";
 import {
   insertCustomerSchema,
   insertServiceSchema,
+  insertServiceCategorySchema,
   insertProductSchema,
   insertProductCategorySchema,
   insertMembershipPlanSchema,
@@ -264,6 +265,61 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ ...customer, membership });
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch customer" });
+    }
+  });
+
+  // Service category routes
+  app.get("/api/service-categories", isAuthenticated, async (req: any, res) => {
+    try {
+      const storeId = parseInt(req.query.storeId);
+      if (!storeId) {
+        return res.status(400).json({ message: "Store ID is required" });
+      }
+      const categories = await storage.getServiceCategories(storeId);
+      res.json(categories);
+    } catch (error) {
+      console.error("Error fetching service categories:", error);
+      res.status(500).json({ message: "Failed to fetch service categories" });
+    }
+  });
+
+  app.post("/api/service-categories", isAuthenticated, async (req: any, res) => {
+    try {
+      const categoryData = insertServiceCategorySchema.parse(req.body);
+      const category = await storage.createServiceCategory(categoryData);
+      res.status(201).json(category);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid category data", errors: error.errors });
+      }
+      console.error("Error creating service category:", error);
+      res.status(500).json({ message: "Failed to create service category" });
+    }
+  });
+
+  app.put("/api/service-categories/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const categoryData = insertServiceCategorySchema.partial().parse(req.body);
+      const category = await storage.updateServiceCategory(id, categoryData);
+      res.json(category);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid category data", errors: error.errors });
+      }
+      console.error("Error updating service category:", error);
+      res.status(500).json({ message: "Failed to update service category" });
+    }
+  });
+
+  app.delete("/api/service-categories/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      await storage.deleteServiceCategory(id);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting service category:", error);
+      res.status(500).json({ message: "Failed to delete service category" });
     }
   });
 

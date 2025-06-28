@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { isUnauthorizedError } from "@/lib/authUtils";
@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
+import ServiceCategoryManager from "./service-category-manager";
 
 interface ServiceFormProps {
   storeId: number;
@@ -32,6 +33,11 @@ export default function ServiceForm({ storeId, service, onSuccess }: ServiceForm
   
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>(service?.imageUrl || "");
+
+  // Fetch service categories for this store
+  const { data: serviceCategories = [] } = useQuery({
+    queryKey: [`/api/service-categories?storeId=${storeId}`],
+  });
 
   const createService = useMutation({
     mutationFn: async (serviceData: any) => {
@@ -109,6 +115,10 @@ export default function ServiceForm({ storeId, service, onSuccess }: ServiceForm
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
+  const handleCategorySelect = (categoryName: string) => {
+    handleInputChange("category", categoryName);
+  };
+
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -140,10 +150,7 @@ export default function ServiceForm({ storeId, service, onSuccess }: ServiceForm
     return data.imageUrl;
   };
 
-  const categories = [
-    "Facial", "Pedicure", "Manicure", "Hair Cut", "Hair Color", "Hair Treatment", 
-    "Massage", "Waxing", "Threading", "Bridal", "Other"
-  ];
+
 
   return (
     <Card>
@@ -161,17 +168,29 @@ export default function ServiceForm({ storeId, service, onSuccess }: ServiceForm
               />
             </div>
             <div>
-              <Label htmlFor="category">Category</Label>
+              <div className="flex items-center">
+                <Label htmlFor="category">Category</Label>
+                <ServiceCategoryManager 
+                  storeId={storeId} 
+                  onCategorySelect={handleCategorySelect}
+                />
+              </div>
               <Select value={formData.category} onValueChange={(value) => handleInputChange("category", value)}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select category" />
                 </SelectTrigger>
                 <SelectContent>
-                  {categories.map(category => (
-                    <SelectItem key={category} value={category}>
-                      {category}
+                  {serviceCategories.length === 0 ? (
+                    <SelectItem value="" disabled>
+                      No categories available. Create one first.
                     </SelectItem>
-                  ))}
+                  ) : (
+                    serviceCategories.map((category: any) => (
+                      <SelectItem key={category.id} value={category.name}>
+                        {category.name}
+                      </SelectItem>
+                    ))
+                  )}
                 </SelectContent>
               </Select>
             </div>
