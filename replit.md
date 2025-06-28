@@ -149,6 +149,8 @@ Changelog:
 - June 28, 2025. Enhanced billing system with walk-in customer details form (name, mobile, DOB, gender)
 - June 28, 2025. Removed payment amount display from receipt completion dialog
 - June 28, 2025. Fixed currency symbol consistency to "Rs." throughout billing interface
+- June 28, 2025. Added phone number validation - 10 digits only, cannot start with 0 or +
+- June 28, 2025. Fixed customer profile view buttons with detailed customer modal
 ```
 
 ## User Preferences

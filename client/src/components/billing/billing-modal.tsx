@@ -569,9 +569,24 @@ export default function BillingModal({ isOpen, onClose, storeId }: BillingModalP
                       <Input
                         id="mobile"
                         value={newCustomer.mobile}
-                        onChange={(e) => setNewCustomer({...newCustomer, mobile: e.target.value})}
-                        placeholder="Enter mobile number"
+                        onChange={(e) => {
+                          const value = e.target.value.replace(/[^0-9]/g, '');
+                          if (value.length <= 10) {
+                            setNewCustomer({...newCustomer, mobile: value});
+                          }
+                        }}
+                        placeholder="Enter 10-digit mobile number"
+                        maxLength={10}
                       />
+                      {newCustomer.mobile && (
+                        newCustomer.mobile.length !== 10 || 
+                        newCustomer.mobile.startsWith('0') || 
+                        newCustomer.mobile.startsWith('+')
+                      ) && (
+                        <p className="text-red-500 text-xs mt-1">
+                          Mobile number must be 10 digits and cannot start with 0 or +
+                        </p>
+                      )}
                     </div>
                     <div>
                       <Label htmlFor="gender">Gender</Label>
@@ -608,6 +623,19 @@ export default function BillingModal({ isOpen, onClose, storeId }: BillingModalP
                           });
                           return;
                         }
+                        
+                        // Validate mobile number
+                        if (newCustomer.mobile.length !== 10 || 
+                            newCustomer.mobile.startsWith('0') || 
+                            newCustomer.mobile.startsWith('+')) {
+                          toast({
+                            title: "Invalid Mobile Number",
+                            description: "Mobile number must be 10 digits and cannot start with 0 or +",
+                            variant: "destructive",
+                          });
+                          return;
+                        }
+                        
                         createCustomer.mutate({
                           ...newCustomer,
                           storeId: storeId,

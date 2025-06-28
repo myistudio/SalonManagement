@@ -71,6 +71,18 @@ export default function CustomerForm({ onSuccess }: CustomerFormProps) {
       return;
     }
 
+    // Validate mobile number
+    if (formData.mobile.length !== 10 || 
+        formData.mobile.startsWith('0') || 
+        formData.mobile.startsWith('+')) {
+      toast({
+        title: "Invalid Mobile Number",
+        description: "Mobile number must be 10 digits and cannot start with 0 or +",
+        variant: "destructive",
+      });
+      return;
+    }
+
     const customerData = {
       ...formData,
       dateOfBirth: formData.dateOfBirth || null,
@@ -115,10 +127,25 @@ export default function CustomerForm({ onSuccess }: CustomerFormProps) {
               <Input
                 id="mobile"
                 value={formData.mobile}
-                onChange={(e) => handleInputChange("mobile", e.target.value)}
-                placeholder="Enter mobile number"
+                onChange={(e) => {
+                  const value = e.target.value.replace(/[^0-9]/g, '');
+                  if (value.length <= 10) {
+                    handleInputChange("mobile", value);
+                  }
+                }}
+                placeholder="Enter 10-digit mobile number"
+                maxLength={10}
                 required
               />
+              {formData.mobile && (
+                formData.mobile.length !== 10 || 
+                formData.mobile.startsWith('0') || 
+                formData.mobile.startsWith('+')
+              ) && (
+                <p className="text-red-500 text-xs mt-1">
+                  Mobile number must be 10 digits and cannot start with 0 or +
+                </p>
+              )}
             </div>
             <div>
               <Label htmlFor="email">Email</Label>

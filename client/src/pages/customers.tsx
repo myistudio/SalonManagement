@@ -24,6 +24,7 @@ export default function Customers() {
   const [searchTerm, setSearchTerm] = useState("");
   const [showCustomerForm, setShowCustomerForm] = useState(false);
   const [showBillingModal, setShowBillingModal] = useState(false);
+  const [showCustomerProfile, setShowCustomerProfile] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
 
   useEffect(() => {
@@ -156,7 +157,7 @@ export default function Customers() {
                         </div>
                         <div className="flex items-center justify-between text-sm">
                           <span className="text-gray-600">Total Spent:</span>
-                          <span className="font-medium">₹{parseFloat(customer.totalSpent || '0').toLocaleString()}</span>
+                          <span className="font-medium">Rs. {parseFloat(customer.totalSpent || '0').toLocaleString()}</span>
                         </div>
                         <div className="flex items-center justify-between text-sm">
                           <span className="text-gray-600">Loyalty Points:</span>
@@ -180,7 +181,7 @@ export default function Customers() {
                           className="flex-1"
                           onClick={() => {
                             setSelectedCustomer(customer);
-                            // You could open a customer details modal here
+                            setShowCustomerProfile(true);
                           }}
                         >
                           View Profile
@@ -210,6 +211,130 @@ export default function Customers() {
         onClose={() => setShowBillingModal(false)} 
         storeId={selectedStoreId}
       />
+
+      {/* Customer Profile Modal */}
+      <Dialog open={showCustomerProfile} onOpenChange={setShowCustomerProfile}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Customer Profile</DialogTitle>
+          </DialogHeader>
+          {selectedCustomer && (
+            <div className="space-y-6">
+              {/* Customer Basic Info */}
+              <div className="flex items-center space-x-4">
+                <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center">
+                  <User className="h-10 w-10 text-primary" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-semibold text-gray-900">
+                    {selectedCustomer.firstName} {selectedCustomer.lastName || ''}
+                  </h3>
+                  <div className="flex items-center text-gray-600 mt-1">
+                    <Phone size={16} className="mr-2" />
+                    {selectedCustomer.mobile}
+                  </div>
+                  {selectedCustomer.email && (
+                    <div className="text-gray-600 mt-1">
+                      {selectedCustomer.email}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Customer Details */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">Personal Information</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    {selectedCustomer.dateOfBirth && (
+                      <div className="flex items-center justify-between">
+                        <span className="text-gray-600">Date of Birth:</span>
+                        <span className="font-medium">
+                          {new Date(selectedCustomer.dateOfBirth).toLocaleDateString()}
+                        </span>
+                      </div>
+                    )}
+                    {selectedCustomer.gender && (
+                      <div className="flex items-center justify-between">
+                        <span className="text-gray-600">Gender:</span>
+                        <span className="font-medium capitalize">{selectedCustomer.gender}</span>
+                      </div>
+                    )}
+                    <div className="flex items-center justify-between">
+                      <span className="text-gray-600">Customer Since:</span>
+                      <span className="font-medium">
+                        {new Date(selectedCustomer.createdAt).toLocaleDateString()}
+                      </span>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">Visit Statistics</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-gray-600">Total Visits:</span>
+                      <span className="font-medium">{selectedCustomer.totalVisits}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-gray-600">Total Spent:</span>
+                      <span className="font-medium">Rs. {parseFloat(selectedCustomer.totalSpent || '0').toLocaleString()}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-gray-600">Loyalty Points:</span>
+                      <span className="font-medium text-primary">{selectedCustomer.loyaltyPoints}</span>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Membership Info */}
+              {selectedCustomer.membership && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">Membership Details</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h4 className="font-medium">{selectedCustomer.membership.membershipPlan.name}</h4>
+                        <p className="text-sm text-gray-600">{selectedCustomer.membership.membershipPlan.description}</p>
+                      </div>
+                      <Badge variant="secondary" className="flex items-center">
+                        <Award size={12} className="mr-1" />
+                        Active Member
+                      </Badge>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Action Buttons */}
+              <div className="flex space-x-3 pt-4 border-t">
+                <Button 
+                  className="flex-1"
+                  onClick={() => {
+                    setShowCustomerProfile(false);
+                    setShowBillingModal(true);
+                  }}
+                >
+                  Create New Bill
+                </Button>
+                <Button 
+                  variant="outline"
+                  onClick={() => setShowCustomerProfile(false)}
+                >
+                  Close
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
