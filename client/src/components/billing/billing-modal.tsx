@@ -999,7 +999,7 @@ export default function BillingModal({ isOpen, onClose, storeId }: BillingModalP
                   
                   <div className="space-y-3">
                     {/* Discount Type Selection */}
-                    <div className="flex gap-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                       <Button
                         type="button"
                         variant={discountType === 'none' ? "default" : "outline"}
@@ -1007,7 +1007,7 @@ export default function BillingModal({ isOpen, onClose, storeId }: BillingModalP
                           setDiscountType('none');
                           setDiscountValue(0);
                         }}
-                        className="flex-1 h-10 text-sm"
+                        className="h-10 text-xs sm:text-sm px-2 sm:px-4"
                       >
                         No Discount
                       </Button>
@@ -1015,52 +1015,70 @@ export default function BillingModal({ isOpen, onClose, storeId }: BillingModalP
                         type="button"
                         variant={discountType === 'percentage' ? "default" : "outline"}
                         onClick={() => setDiscountType('percentage')}
-                        className="flex-1 h-10 text-sm"
+                        className="h-10 text-xs sm:text-sm px-2 sm:px-4"
                       >
-                        Percentage
+                        Percentage %
                       </Button>
                       <Button
                         type="button"
                         variant={discountType === 'amount' ? "default" : "outline"}
                         onClick={() => setDiscountType('amount')}
-                        className="flex-1 h-10 text-sm"
+                        className="h-10 text-xs sm:text-sm px-2 sm:px-4"
                       >
-                        Amount
+                        Fixed Amount
                       </Button>
                     </div>
 
                     {/* Discount Value Input */}
                     {discountType !== 'none' && (
-                      <div className="flex items-center space-x-3">
-                        <Input
-                          type="number"
-                          value={discountValue}
-                          onChange={(e) => {
-                            const value = parseFloat(e.target.value) || 0;
-                            if (discountType === 'percentage') {
-                              setDiscountValue(Math.min(value, 100));
-                            } else {
-                              setDiscountValue(Math.min(value, getSubtotal()));
-                            }
-                          }}
-                          max={discountType === 'percentage' ? 100 : getSubtotal()}
-                          placeholder={discountType === 'percentage' ? "Enter %" : "Enter amount"}
-                          className="flex-1 h-12 text-base border-2 touch-manipulation"
-                        />
-                        <span className="text-sm font-semibold text-gray-600 min-w-[60px]">
-                          {discountType === 'percentage' ? '%' : 'Rs.'}
-                        </span>
+                      <div className="flex items-center gap-2 sm:gap-3">
+                        <div className="relative flex-1">
+                          <Input
+                            type="number"
+                            value={discountValue}
+                            onChange={(e) => {
+                              const value = parseFloat(e.target.value) || 0;
+                              if (discountType === 'percentage') {
+                                setDiscountValue(Math.min(value, 100));
+                              } else {
+                                setDiscountValue(Math.min(value, getSubtotal()));
+                              }
+                            }}
+                            max={discountType === 'percentage' ? 100 : getSubtotal()}
+                            placeholder={discountType === 'percentage' ? "Enter %" : "Enter amount"}
+                            className="h-10 sm:h-12 text-sm sm:text-base border-2 touch-manipulation pr-12"
+                          />
+                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs sm:text-sm font-semibold text-gray-600">
+                            {discountType === 'percentage' ? '%' : 'Rs.'}
+                          </span>
+                        </div>
+                        <div className="text-xs sm:text-sm text-gray-500 min-w-[80px] sm:min-w-[100px]">
+                          Max: {discountType === 'percentage' ? '100%' : `Rs. ${getSubtotal().toLocaleString()}`}
+                        </div>
                       </div>
                     )}
 
                     {/* Discount Preview */}
                     {discountType !== 'none' && discountValue > 0 && (
-                      <div className="text-sm text-purple-600 bg-purple-50 rounded-lg p-2">
-                        Discount: Rs. {(discountType === 'percentage' 
-                          ? (getSubtotal() * discountValue) / 100 
-                          : discountValue
-                        ).toLocaleString()}
-                        {discountType === 'percentage' && ` (${discountValue}%)`}
+                      <div className="bg-purple-50 rounded-lg p-3 border border-purple-200">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs sm:text-sm font-medium text-purple-700">
+                            Discount Applied:
+                          </span>
+                          <div className="text-right">
+                            <div className="text-sm sm:text-base font-bold text-purple-600">
+                              Rs. {(discountType === 'percentage' 
+                                ? (getSubtotal() * discountValue) / 100 
+                                : discountValue
+                              ).toLocaleString()}
+                            </div>
+                            {discountType === 'percentage' && (
+                              <div className="text-xs text-purple-500">
+                                ({discountValue}% of subtotal)
+                              </div>
+                            )}
+                          </div>
+                        </div>
                       </div>
                     )}
                   </div>
