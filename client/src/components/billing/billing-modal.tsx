@@ -256,7 +256,7 @@ export default function BillingModal({ isOpen, onClose, storeId }: BillingModalP
 
   const scanProduct = useMutation({
     mutationFn: async (barcode: string) => {
-      const response = await apiRequest("GET", `/api/products/barcode/${barcode}`);
+      const response = await apiRequest("GET", `/api/products/scan/${barcode}`);
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
