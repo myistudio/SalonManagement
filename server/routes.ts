@@ -10,6 +10,7 @@ import {
   insertCustomerSchema,
   insertServiceSchema,
   insertProductSchema,
+  insertProductCategorySchema,
   insertMembershipPlanSchema,
   insertTransactionSchema,
   insertTransactionItemSchema,
@@ -304,6 +305,61 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid service data", errors: error.errors });
       }
       res.status(500).json({ message: "Failed to update service" });
+    }
+  });
+
+  // Product category routes
+  app.get("/api/product-categories", isAuthenticated, async (req: any, res) => {
+    try {
+      const storeId = parseInt(req.query.storeId);
+      if (!storeId) {
+        return res.status(400).json({ message: "Store ID is required" });
+      }
+      const categories = await storage.getProductCategories(storeId);
+      res.json(categories);
+    } catch (error) {
+      console.error("Error fetching product categories:", error);
+      res.status(500).json({ message: "Failed to fetch product categories" });
+    }
+  });
+
+  app.post("/api/product-categories", isAuthenticated, async (req: any, res) => {
+    try {
+      const categoryData = insertProductCategorySchema.parse(req.body);
+      const category = await storage.createProductCategory(categoryData);
+      res.status(201).json(category);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid category data", errors: error.errors });
+      }
+      console.error("Error creating product category:", error);
+      res.status(500).json({ message: "Failed to create product category" });
+    }
+  });
+
+  app.put("/api/product-categories/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const categoryData = insertProductCategorySchema.partial().parse(req.body);
+      const category = await storage.updateProductCategory(id, categoryData);
+      res.json(category);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid category data", errors: error.errors });
+      }
+      console.error("Error updating product category:", error);
+      res.status(500).json({ message: "Failed to update product category" });
+    }
+  });
+
+  app.delete("/api/product-categories/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      await storage.deleteProductCategory(id);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting product category:", error);
+      res.status(500).json({ message: "Failed to delete product category" });
     }
   });
 

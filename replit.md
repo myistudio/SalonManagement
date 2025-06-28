@@ -152,6 +152,7 @@ Changelog:
 - June 28, 2025. Added phone number validation - 10 digits only, cannot start with 0 or +
 - June 28, 2025. Fixed customer profile view buttons with detailed customer modal
 - June 28, 2025. Implemented complete image upload functionality for products and services with 5MB file size limits
+- June 28, 2025. Added dynamic product category management system with add, edit, and delete functionality
 ```
 
 ## User Preferences

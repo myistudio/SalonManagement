@@ -5,6 +5,7 @@ import {
   customers,
   services,
   products,
+  productCategories,
   membershipPlans,
   customerMemberships,
   transactions,
@@ -20,6 +21,8 @@ import {
   type InsertService,
   type Product,
   type InsertProduct,
+  type ProductCategory,
+  type InsertProductCategory,
   type MembershipPlan,
   type InsertMembershipPlan,
   type CustomerMembership,
@@ -64,6 +67,13 @@ export interface IStorage {
   createService(service: InsertService): Promise<Service>;
   updateService(id: number, service: Partial<InsertService>): Promise<Service>;
   deleteService(id: number): Promise<void>;
+
+  // Product category operations
+  getProductCategories(storeId: number): Promise<ProductCategory[]>;
+  getProductCategory(id: number): Promise<ProductCategory | undefined>;
+  createProductCategory(category: InsertProductCategory): Promise<ProductCategory>;
+  updateProductCategory(id: number, category: Partial<InsertProductCategory>): Promise<ProductCategory>;
+  deleteProductCategory(id: number): Promise<void>;
 
   // Product operations
   getProducts(storeId: number): Promise<Product[]>;
@@ -247,6 +257,41 @@ export class DatabaseStorage implements IStorage {
         updatedAt: new Date(),
       })
       .where(eq(customers.id, id));
+  }
+
+  // Product category operations
+  async getProductCategories(storeId: number): Promise<ProductCategory[]> {
+    return await db
+      .select()
+      .from(productCategories)
+      .where(and(eq(productCategories.storeId, storeId), eq(productCategories.isActive, true)))
+      .orderBy(productCategories.name);
+  }
+
+  async getProductCategory(id: number): Promise<ProductCategory | undefined> {
+    const [category] = await db.select().from(productCategories).where(eq(productCategories.id, id));
+    return category;
+  }
+
+  async createProductCategory(category: InsertProductCategory): Promise<ProductCategory> {
+    const [newCategory] = await db.insert(productCategories).values(category).returning();
+    return newCategory;
+  }
+
+  async updateProductCategory(id: number, category: Partial<InsertProductCategory>): Promise<ProductCategory> {
+    const [updatedCategory] = await db
+      .update(productCategories)
+      .set({ ...category, updatedAt: new Date() })
+      .where(eq(productCategories.id, id))
+      .returning();
+    return updatedCategory;
+  }
+
+  async deleteProductCategory(id: number): Promise<void> {
+    await db
+      .update(productCategories)
+      .set({ isActive: false, updatedAt: new Date() })
+      .where(eq(productCategories.id, id));
   }
 
   // Service operations

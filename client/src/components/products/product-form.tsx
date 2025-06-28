@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { isUnauthorizedError } from "@/lib/authUtils";
@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
+import CategoryManager from "./category-manager";
 
 interface ProductFormProps {
   storeId: number;
@@ -36,6 +37,11 @@ export default function ProductForm({ storeId, product, onSuccess }: ProductForm
   
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>(product?.imageUrl || "");
+
+  // Fetch categories for this store
+  const { data: dynamicCategories = [] } = useQuery({
+    queryKey: [`/api/product-categories?storeId=${storeId}`],
+  });
 
   const createProduct = useMutation({
     mutationFn: async (productData: any) => {
@@ -147,9 +153,9 @@ export default function ProductForm({ storeId, product, onSuccess }: ProductForm
     return data.imageUrl;
   };
 
-  const categories = [
-    "Nail Care", "Hair Care", "Skin Care", "Makeup", "Tools", "Accessories", "Other"
-  ];
+  const handleCategorySelect = (categoryName: string) => {
+    handleInputChange("category", categoryName);
+  };
 
   return (
     <Card>
@@ -168,18 +174,24 @@ export default function ProductForm({ storeId, product, onSuccess }: ProductForm
             </div>
             <div>
               <Label htmlFor="category">Category</Label>
-              <Select value={formData.category} onValueChange={(value) => handleInputChange("category", value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select category" />
-                </SelectTrigger>
-                <SelectContent>
-                  {categories.map(category => (
-                    <SelectItem key={category} value={category}>
-                      {category}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="flex items-center space-x-2">
+                <Select value={formData.category} onValueChange={(value) => handleInputChange("category", value)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {dynamicCategories.map((category: any) => (
+                      <SelectItem key={category.id} value={category.name}>
+                        {category.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <CategoryManager 
+                  storeId={storeId} 
+                  onCategorySelect={handleCategorySelect}
+                />
+              </div>
             </div>
           </div>
 
