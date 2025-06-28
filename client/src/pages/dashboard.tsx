@@ -46,7 +46,7 @@ export default function Dashboard() {
         <Sidebar onOpenBilling={() => setShowBillingModal(true)} />
         
         <main className="flex-1 lg:ml-64">
-          <div className="p-6">
+          <div className="p-4 sm:p-6">
             <div className="mb-8">
               <h2 className="text-3xl font-bold text-gray-900">Dashboard</h2>
               <p className="mt-1 text-gray-600">Welcome back! Here's what's happening at your salon today.</p>

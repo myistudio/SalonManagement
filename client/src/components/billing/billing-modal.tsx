@@ -408,9 +408,9 @@ export default function BillingModal({ isOpen, onClose, storeId }: BillingModalP
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl max-h-[95vh] w-[95vw] sm:w-full overflow-y-auto p-4 sm:p-6">
         <DialogHeader>
-          <DialogTitle className="flex items-center justify-between">
+          <DialogTitle className="flex items-center justify-between text-lg sm:text-xl">
             New Bill
             <Button variant="ghost" size="sm" onClick={onClose}>
               <X size={20} />
@@ -418,7 +418,7 @@ export default function BillingModal({ isOpen, onClose, storeId }: BillingModalP
           </DialogTitle>
         </DialogHeader>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 lg:gap-6">
           {/* Left Column - Customer & Services */}
           <div className="space-y-4">
             {/* Customer Selection */}
@@ -779,24 +779,24 @@ export default function BillingModal({ isOpen, onClose, storeId }: BillingModalP
 
       {/* Receipt Dialog */}
       <Dialog open={showReceiptDialog} onOpenChange={setShowReceiptDialog}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-sm sm:max-w-md mx-4">
           <DialogHeader>
-            <DialogTitle>Payment Successful!</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="text-lg sm:text-xl">Payment Successful!</DialogTitle>
+            <DialogDescription className="text-sm">
               Invoice {lastTransaction?.transaction?.invoiceNumber} has been created.
               Would you like to print a receipt?
             </DialogDescription>
           </DialogHeader>
           
           <div className="space-y-4">
-            <div className="text-center text-green-600 font-medium">
+            <div className="text-center text-green-600 font-medium text-lg">
               Total Paid: Rs. {getTotal().toFixed(2)}
             </div>
             
             <div className="flex flex-col space-y-3">
               <Button 
                 onClick={() => printReceiptFromTransaction(true)} 
-                className="flex items-center justify-center space-x-2"
+                className="flex items-center justify-center space-x-2 btn-touch py-3"
               >
                 <Receipt className="h-4 w-4" />
                 <span>Print Thermal Receipt</span>
@@ -805,7 +805,7 @@ export default function BillingModal({ isOpen, onClose, storeId }: BillingModalP
               <Button 
                 variant="outline" 
                 onClick={() => printReceiptFromTransaction(false)}
-                className="flex items-center justify-center space-x-2"
+                className="flex items-center justify-center space-x-2 btn-touch py-3"
               >
                 <Printer className="h-4 w-4" />
                 <span>No Receipt (Open Drawer Only)</span>
@@ -817,6 +817,7 @@ export default function BillingModal({ isOpen, onClose, storeId }: BillingModalP
                   setShowReceiptDialog(false);
                   onClose();
                 }}
+                className="btn-touch py-3"
               >
                 Skip
               </Button>
