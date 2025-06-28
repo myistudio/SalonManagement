@@ -807,21 +807,17 @@ export default function BillingModal({ isOpen, onClose, storeId }: BillingModalP
                   {billItems.map((item, index) => (
                     <div key={`${item.type}-${item.id}-${index}`} className="border border-gray-200 rounded-xl p-3 bg-gray-50">
                       <div className="flex items-start gap-3">
-                        {/* Item Image and Name */}
-                        <div className="flex items-center gap-3 flex-1 min-w-0">
-                          {item.imageUrl && (
-                            <img 
-                              src={item.imageUrl} 
-                              alt={item.name}
-                              className="w-10 h-10 object-cover rounded-lg"
-                            />
-                          )}
-                          <div className="flex-1 min-w-0">
-                            <p className="font-semibold text-sm truncate text-gray-900">{item.name}</p>
-                            <p className="text-sm text-gray-600">
-                              Rs. {item.price.toLocaleString()} each
+                        {/* Item Name Only */}
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold text-base text-gray-900 mb-1">{item.name}</p>
+                          <p className="text-sm text-gray-600">
+                            Rs. {item.price.toLocaleString()} each
+                          </p>
+                          {item.duration && (
+                            <p className="text-xs text-gray-500">
+                              Duration: {item.duration} min
                             </p>
-                          </div>
+                          )}
                         </div>
 
                         {/* Quantity Controls */}
