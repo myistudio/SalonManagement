@@ -82,9 +82,15 @@ export default function BillingModal({ isOpen, onClose, storeId }: BillingModalP
     enabled: isOpen && !!storeId,
   });
 
+  const { data: customers = [] } = useQuery({
+    queryKey: [`/api/customers?storeId=${storeId}`],
+    enabled: isOpen && !!storeId,
+  });
+
   // Type the arrays properly
   const typedServices = services as any[];
   const typedProducts = products as any[];
+  const typedCustomers = customers as any[];
 
   const searchCustomer = useMutation({
     mutationFn: async (mobile: string) => {
@@ -415,26 +421,54 @@ export default function BillingModal({ isOpen, onClose, storeId }: BillingModalP
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Left Column - Customer & Services */}
           <div className="space-y-4">
-            {/* Customer Search */}
+            {/* Customer Selection */}
             <div>
               <Label className="text-sm font-medium text-gray-700 mb-2">Customer</Label>
-              <div className="flex space-x-2">
+              <div className="space-y-2">
                 <Input
-                  placeholder="Search by mobile number"
+                  placeholder="Search customers by name or mobile..."
                   value={customerSearch}
                   onChange={(e) => setCustomerSearch(e.target.value)}
-                  onKeyPress={(e) => {
-                    if (e.key === 'Enter' && customerSearch) {
-                      searchCustomer.mutate(customerSearch);
-                    }
-                  }}
                 />
-                <Button 
+                
+                {/* Customer Dropdown */}
+                {customerSearch && (
+                  <div className="max-h-32 overflow-y-auto border rounded-md bg-white shadow-sm">
+                    {typedCustomers
+                      .filter((customer: any) => 
+                        customer.firstName.toLowerCase().includes(customerSearch.toLowerCase()) ||
+                        customer.lastName?.toLowerCase().includes(customerSearch.toLowerCase()) ||
+                        customer.mobile.includes(customerSearch)
+                      )
+                      .slice(0, 5)
+                      .map((customer: any) => (
+                        <div
+                          key={customer.id}
+                          className="p-2 hover:bg-gray-50 cursor-pointer border-b last:border-b-0"
+                          onClick={() => {
+                            setSelectedCustomer(customer);
+                            setCustomerSearch(`${customer.firstName} ${customer.lastName || ''} - ${customer.mobile}`);
+                          }}
+                        >
+                          <div className="font-medium">{customer.firstName} {customer.lastName}</div>
+                          <div className="text-sm text-gray-600">{customer.mobile}</div>
+                          {customer.loyaltyPoints > 0 && (
+                            <div className="text-xs text-blue-600">{customer.loyaltyPoints} loyalty points</div>
+                          )}
+                        </div>
+                      ))}
+                  </div>
+                )}
+                
+                <Button
                   variant="outline"
-                  onClick={() => customerSearch && searchCustomer.mutate(customerSearch)}
-                  disabled={searchCustomer.isPending}
+                  onClick={() => {
+                    setSelectedCustomer(null);
+                    setCustomerSearch("");
+                  }}
+                  className="w-full"
                 >
-                  <Search size={16} />
+                  Walk-in Customer (No Selection)
                 </Button>
               </div>
             </div>
