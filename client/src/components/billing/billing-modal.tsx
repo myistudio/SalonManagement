@@ -155,13 +155,13 @@ export default function BillingModal({ isOpen, onClose, storeId }: BillingModalP
 
   // Queries
   const { data: services = [] } = useQuery({
-    queryKey: ["/api/services"],
-    enabled: isOpen,
+    queryKey: [`/api/services?storeId=${storeId}`],
+    enabled: isOpen && !!storeId,
   });
 
   const { data: products = [] } = useQuery({
-    queryKey: ["/api/products"],
-    enabled: isOpen,
+    queryKey: [`/api/products?storeId=${storeId}`],
+    enabled: isOpen && !!storeId,
   });
 
   const { data: customers = [] } = useQuery({
@@ -556,70 +556,73 @@ export default function BillingModal({ isOpen, onClose, storeId }: BillingModalP
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-3 lg:gap-4">
-          {/* Left Column - Services & Products */}
-          <div className="lg:col-span-3 space-y-4">
-            {/* Services Section */}
-            <div className="bg-white border-2 border-green-200 rounded-xl p-4">
-              <h3 className="text-lg font-bold text-gray-900 mb-3">Services</h3>
-              <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 gap-2 max-h-80 overflow-y-auto">
-                {typedServices.map((service: any) => (
-                  <div 
-                    key={service.id}
-                    className="w-24 h-24 border-2 border-gray-200 rounded-lg p-2 hover:border-green-400 hover:bg-green-50 transition-all cursor-pointer flex flex-col items-center justify-center text-center"
-                    onClick={() => addServiceToBill(service)}
-                  >
-                    {service.imageUrl ? (
-                      <img 
-                        src={service.imageUrl} 
-                        alt={service.name}
-                        className="w-8 h-8 object-cover rounded mb-1"
-                      />
-                    ) : (
-                      <div className="w-8 h-8 bg-green-200 rounded mb-1 flex items-center justify-center">
-                        <Scissors size={12} />
-                      </div>
-                    )}
-                    <span className="text-xs font-medium text-gray-900 line-clamp-2 leading-tight">
-                      {service.name}
-                    </span>
-                    <span className="text-xs text-green-600 font-bold">
-                      Rs. {service.price}
-                    </span>
-                  </div>
-                ))}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 lg:gap-4">
+          {/* Left Column - Services & Products Side by Side */}
+          <div className="lg:col-span-8 space-y-4">
+            {/* Services and Products in Two Columns */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Services Section */}
+              <div className="bg-white border-2 border-green-200 rounded-xl p-4">
+                <h3 className="text-lg font-bold text-gray-900 mb-3">Services</h3>
+                <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 max-h-80 overflow-y-auto">
+                  {typedServices.map((service: any) => (
+                    <div 
+                      key={service.id}
+                      className="w-24 h-24 border-2 border-gray-200 rounded-lg p-2 hover:border-green-400 hover:bg-green-50 transition-all cursor-pointer flex flex-col items-center justify-center text-center"
+                      onClick={() => addServiceToBill(service)}
+                    >
+                      {service.imageUrl ? (
+                        <img 
+                          src={service.imageUrl} 
+                          alt={service.name}
+                          className="w-8 h-8 object-cover rounded mb-1"
+                        />
+                      ) : (
+                        <div className="w-8 h-8 bg-green-200 rounded mb-1 flex items-center justify-center">
+                          <Scissors size={12} />
+                        </div>
+                      )}
+                      <span className="text-xs font-medium text-gray-900 line-clamp-2 leading-tight">
+                        {service.name}
+                      </span>
+                      <span className="text-xs text-green-600 font-bold">
+                        Rs. {service.price}
+                      </span>
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
 
-            {/* Products Section */}
-            <div className="bg-white border-2 border-orange-200 rounded-xl p-4">
-              <h3 className="text-lg font-bold text-gray-900 mb-3">Products</h3>
-              <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 gap-2 max-h-80 overflow-y-auto">
-                {typedProducts.map((product: any) => (
-                  <div 
-                    key={product.id}
-                    className="w-24 h-24 border-2 border-gray-200 rounded-lg p-2 hover:border-orange-400 hover:bg-orange-50 transition-all cursor-pointer flex flex-col items-center justify-center text-center"
-                    onClick={() => addProductToBill(product)}
-                  >
-                    {product.imageUrl ? (
-                      <img 
-                        src={product.imageUrl} 
-                        alt={product.name}
-                        className="w-8 h-8 object-cover rounded mb-1"
-                      />
-                    ) : (
-                      <div className="w-8 h-8 bg-orange-200 rounded mb-1 flex items-center justify-center">
-                        <Package size={12} />
-                      </div>
-                    )}
-                    <span className="text-xs font-medium text-gray-900 line-clamp-2 leading-tight">
-                      {product.name}
-                    </span>
-                    <span className="text-xs text-orange-600 font-bold">
-                      Rs. {product.price}
-                    </span>
-                  </div>
-                ))}
+              {/* Products Section */}
+              <div className="bg-white border-2 border-orange-200 rounded-xl p-4">
+                <h3 className="text-lg font-bold text-gray-900 mb-3">Products</h3>
+                <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 max-h-80 overflow-y-auto">
+                  {typedProducts.map((product: any) => (
+                    <div 
+                      key={product.id}
+                      className="w-24 h-24 border-2 border-gray-200 rounded-lg p-2 hover:border-orange-400 hover:bg-orange-50 transition-all cursor-pointer flex flex-col items-center justify-center text-center"
+                      onClick={() => addProductToBill(product)}
+                    >
+                      {product.imageUrl ? (
+                        <img 
+                          src={product.imageUrl} 
+                          alt={product.name}
+                          className="w-8 h-8 object-cover rounded mb-1"
+                        />
+                      ) : (
+                        <div className="w-8 h-8 bg-orange-200 rounded mb-1 flex items-center justify-center">
+                          <Package size={12} />
+                        </div>
+                      )}
+                      <span className="text-xs font-medium text-gray-900 line-clamp-2 leading-tight">
+                        {product.name}
+                      </span>
+                      <span className="text-xs text-orange-600 font-bold">
+                        Rs. {product.price}
+                      </span>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
 
@@ -653,8 +656,8 @@ export default function BillingModal({ isOpen, onClose, storeId }: BillingModalP
             </div>
           </div>
 
-          {/* Right Column - Bill Summary & Checkout */}
-          <div className="lg:col-span-1 space-y-4">
+          {/* Right Column - Wider Bill Summary & Checkout */}
+          <div className="lg:col-span-4 space-y-4">
             {/* Walk-in Form */}
             {showWalkInForm && (
               <Card className="bg-blue-50">
