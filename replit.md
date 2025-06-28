@@ -165,6 +165,7 @@ Changelog:
 - June 28, 2025. Major billing interface redesign - moved customer selection to horizontal top bar, reduced product/service boxes to 100x100px for optimal space usage
 - June 28, 2025. iPad-optimized billing interface with proper margins, larger touch targets (120px min-height), enhanced spacing, and touch-friendly controls
 - June 28, 2025. Fixed barcode scanning functionality - corrected API endpoint mismatch and enhanced error handling for reliable product scanning
+- June 28, 2025. Implemented comprehensive store allocation system for staff members with role-based access control to restrict cashiers and managers to their assigned stores
 ```
 
 ## User Preferences

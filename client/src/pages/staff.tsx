@@ -144,12 +144,10 @@ export default function Staff() {
       password: string;
       firstName: string;
       lastName?: string;
-      role: string; 
+      role: string;
+      storeId: number;
     }) => {
-      return await apiRequest("POST", "/api/staff/create", {
-        ...staffData,
-        storeId: selectedStoreId,
-      });
+      return await apiRequest("POST", "/api/staff/create", staffData);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/staff", selectedStoreId] });
@@ -373,6 +371,21 @@ export default function Staff() {
                         </SelectContent>
                       </Select>
                     </div>
+                    <div>
+                      <label className="text-sm font-medium">Assign to Store</label>
+                      <Select value={selectedStoreId.toString()} onValueChange={(value) => setSelectedStoreId(parseInt(value))}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {Array.isArray(stores) && stores.map((store: any) => (
+                            <SelectItem key={store.id} value={store.id.toString()}>
+                              {store.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
                   <DialogFooter>
                     <Button 
@@ -389,7 +402,8 @@ export default function Staff() {
                         password: newStaffPassword,
                         firstName: newStaffFirstName,
                         lastName: newStaffLastName || undefined,
-                        role: newStaffRole 
+                        role: newStaffRole,
+                        storeId: selectedStoreId
                       })}
                       disabled={!newStaffEmail || !newStaffPassword || !newStaffFirstName || addStaffMutation.isPending}
                     >
@@ -465,6 +479,7 @@ export default function Staff() {
                         <TableHead>Staff Member</TableHead>
                         <TableHead>Email</TableHead>
                         <TableHead>Role</TableHead>
+                        <TableHead>Store Assignment</TableHead>
                         <TableHead>Actions</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -497,6 +512,14 @@ export default function Staff() {
                             <Badge className={getRoleBadgeColor(member.user.role)}>
                               {getRoleDisplayName(member.user.role)}
                             </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                              <span className="text-sm font-medium">
+                                {currentStore?.name || `Store ${selectedStoreId}`}
+                              </span>
+                            </div>
                           </TableCell>
                           <TableCell>
                             <div className="flex items-center gap-2">

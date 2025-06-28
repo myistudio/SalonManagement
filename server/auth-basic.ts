@@ -207,3 +207,37 @@ export const isAuthenticated = (req: any, res: any, next: any) => {
   }
   res.status(401).json({ message: "Unauthorized" });
 };
+
+// Check if user has access to specific store
+export const hasStoreAccess = async (req: any, res: any, next: any) => {
+  try {
+    const user = req.user;
+    if (!user) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    // Super admins have access to all stores
+    if (user.role === 'super_admin') {
+      return next();
+    }
+
+    // Get store ID from params or query
+    const storeId = parseInt(req.params.storeId || req.query.storeId);
+    if (!storeId) {
+      return res.status(400).json({ message: "Store ID is required" });
+    }
+
+    // Check if user is assigned to this store
+    const userStores = await storage.getUserStores(user.id);
+    const hasAccess = userStores.some((store: any) => store.id === storeId);
+
+    if (!hasAccess) {
+      return res.status(403).json({ message: "Access denied to this store" });
+    }
+
+    next();
+  } catch (error) {
+    console.error("Store access check error:", error);
+    res.status(500).json({ message: "Failed to verify store access" });
+  }
+};

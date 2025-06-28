@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { setupBasicAuth, isAuthenticated } from "./auth-basic";
+import { setupBasicAuth, isAuthenticated, hasStoreAccess } from "./auth-basic";
 import multer from "multer";
 import path from "path";
 import fs from "fs/promises";
@@ -210,7 +210,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Customer routes
-  app.get('/api/customers', isAuthenticated, async (req: any, res) => {
+  app.get('/api/customers', isAuthenticated, hasStoreAccess, async (req: any, res) => {
     try {
       const storeId = req.query.storeId ? parseInt(req.query.storeId) : undefined;
       const customers = await storage.getCustomers(storeId);
@@ -324,7 +324,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Service routes
-  app.get('/api/services', isAuthenticated, async (req: any, res) => {
+  app.get('/api/services', isAuthenticated, hasStoreAccess, async (req: any, res) => {
     try {
       const storeId = parseInt(req.query.storeId as string);
       if (!storeId) {
@@ -420,7 +420,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Product routes
-  app.get('/api/products', isAuthenticated, async (req: any, res) => {
+  app.get('/api/products', isAuthenticated, hasStoreAccess, async (req: any, res) => {
     try {
       const storeId = parseInt(req.query.storeId as string);
       if (!storeId) {
@@ -501,7 +501,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Transaction routes
-  app.get('/api/transactions', isAuthenticated, async (req: any, res) => {
+  app.get('/api/transactions', isAuthenticated, hasStoreAccess, async (req: any, res) => {
     try {
       const storeId = parseInt(req.query.storeId as string);
       const limit = req.query.limit ? parseInt(req.query.limit as string) : undefined;
@@ -801,7 +801,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Dashboard routes
-  app.get('/api/dashboard/stats/:storeId', isAuthenticated, async (req: any, res) => {
+  app.get('/api/dashboard/stats/:storeId', isAuthenticated, hasStoreAccess, async (req: any, res) => {
     try {
       const storeId = parseInt(req.params.storeId);
       const stats = await storage.getDashboardStats(storeId);
