@@ -16,7 +16,8 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Search, QrCode, Plus, Trash2, X } from "lucide-react";
+import { Search, QrCode, Plus, Trash2, X, Printer, Edit2 } from "lucide-react";
+import { printBarcode } from "@/lib/barcode-utils";
 
 interface BillingModalProps {
   isOpen: boolean;
@@ -29,8 +30,11 @@ interface BillItem {
   type: 'service' | 'product';
   name: string;
   price: number;
+  originalPrice?: number;
   quantity: number;
   duration?: number;
+  imageUrl?: string;
+  isCustomPrice?: boolean;
 }
 
 interface Customer {
@@ -56,14 +60,22 @@ export default function BillingModal({ isOpen, onClose, storeId }: BillingModalP
   const [productScan, setProductScan] = useState("");
   const [billItems, setBillItems] = useState<BillItem[]>([]);
   const [pointsToRedeem, setPointsToRedeem] = useState(0);
+  const [editingPrice, setEditingPrice] = useState<{id: number, type: string} | null>(null);
+  const [customPrice, setCustomPrice] = useState("");
 
   const { data: services = [] } = useQuery({
     queryKey: [`/api/services?storeId=${storeId}`],
     enabled: isOpen && !!storeId,
   });
 
-  // Type the services array properly
+  const { data: products = [] } = useQuery({
+    queryKey: [`/api/products?storeId=${storeId}`],
+    enabled: isOpen && !!storeId,
+  });
+
+  // Type the arrays properly
   const typedServices = services as any[];
+  const typedProducts = products as any[];
 
   const searchCustomer = useMutation({
     mutationFn: async (mobile: string) => {
@@ -183,16 +195,21 @@ export default function BillingModal({ isOpen, onClose, storeId }: BillingModalP
     setProductScan("");
     setBillItems([]);
     setPointsToRedeem(0);
+    setEditingPrice(null);
+    setCustomPrice("");
   };
 
-  const addServiceToBill = (service: any) => {
+  const addServiceToBill = (service: any, customPrice?: number) => {
     setBillItems(prev => [...prev, {
       id: service.id,
       type: 'service',
       name: service.name,
-      price: parseFloat(service.price),
+      price: customPrice || parseFloat(service.price),
+      originalPrice: parseFloat(service.price),
       quantity: 1,
       duration: service.duration,
+      imageUrl: service.imageUrl,
+      isCustomPrice: !!customPrice,
     }]);
   };
 
@@ -211,12 +228,28 @@ export default function BillingModal({ isOpen, onClose, storeId }: BillingModalP
         name: product.name,
         price: parseFloat(product.price),
         quantity: 1,
+        imageUrl: product.imageUrl,
       }]);
     }
   };
 
   const removeItem = (id: number, type: string) => {
     setBillItems(prev => prev.filter(item => !(item.id === id && item.type === type)));
+  };
+
+  const updateItemPrice = (id: number, type: string, newPrice: number) => {
+    setBillItems(prev => prev.map(item => 
+      item.id === id && item.type === type
+        ? { ...item, price: newPrice, isCustomPrice: true }
+        : item
+    ));
+    setEditingPrice(null);
+    setCustomPrice("");
+  };
+
+  const handlePriceEdit = (item: BillItem) => {
+    setEditingPrice({ id: item.id, type: item.type });
+    setCustomPrice(item.price.toString());
   };
 
   const getSubtotal = () => {
@@ -358,48 +391,83 @@ export default function BillingModal({ isOpen, onClose, storeId }: BillingModalP
                 {typedServices.map((service: any) => (
                   <div 
                     key={service.id}
-                    className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 cursor-pointer"
-                    onClick={() => addServiceToBill(service)}
+                    className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50"
                   >
-                    <div>
-                      <p className="font-medium">{service.name}</p>
-                      <p className="text-sm text-gray-600">{service.duration} minutes</p>
+                    <div className="flex items-center space-x-3">
+                      {service.imageUrl && (
+                        <img 
+                          src={service.imageUrl} 
+                          alt={service.name}
+                          className="w-12 h-12 object-cover rounded-lg"
+                        />
+                      )}
+                      <div>
+                        <p className="font-medium">{service.name}</p>
+                        <p className="text-sm text-gray-600">{service.duration} minutes</p>
+                      </div>
                     </div>
                     <div className="flex items-center space-x-2">
                       <span className="font-semibold">₹{parseFloat(service.price).toLocaleString()}</span>
-                      <Plus size={16} className="text-gray-400" />
+                      <Button 
+                        size="sm" 
+                        onClick={() => addServiceToBill(service)}
+                      >
+                        <Plus size={14} />
+                      </Button>
                     </div>
                   </div>
                 ))}
               </div>
             </div>
 
-            {/* Added Services */}
-            {billItems.filter(item => item.type === 'service').length > 0 && (
-              <div>
-                <h4 className="font-medium text-gray-900 mb-2">Added Services</h4>
-                <div className="space-y-2">
-                  {billItems.filter(item => item.type === 'service').map((item, index) => (
-                    <div key={`${item.type}-${item.id}-${index}`} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+            {/* Products Section */}
+            <div>
+              <h3 className="text-lg font-medium text-gray-900 mb-3">Products</h3>
+              <div className="space-y-2 max-h-48 overflow-y-auto">
+                {typedProducts.map((product: any) => (
+                  <div 
+                    key={product.id}
+                    className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50"
+                  >
+                    <div className="flex items-center space-x-3">
+                      {product.imageUrl && (
+                        <img 
+                          src={product.imageUrl} 
+                          alt={product.name}
+                          className="w-12 h-12 object-cover rounded-lg"
+                        />
+                      )}
                       <div>
-                        <p className="font-medium">{item.name}</p>
-                        {item.duration && <p className="text-sm text-gray-600">{item.duration} minutes</p>}
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <span className="font-semibold">₹{(item.price * item.quantity).toLocaleString()}</span>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => removeItem(item.id, item.type)}
-                        >
-                          <Trash2 size={16} className="text-red-500" />
-                        </Button>
+                        <p className="font-medium">{product.name}</p>
+                        <p className="text-sm text-gray-600">Stock: {product.stockQuantity}</p>
+                        {product.barcode && (
+                          <p className="text-xs text-gray-500">{product.barcode}</p>
+                        )}
                       </div>
                     </div>
-                  ))}
-                </div>
+                    <div className="flex items-center space-x-2">
+                      <span className="font-semibold">₹{parseFloat(product.price).toLocaleString()}</span>
+                      <Button 
+                        size="sm" 
+                        onClick={() => addProductToBill(product)}
+                        disabled={product.stockQuantity <= 0}
+                      >
+                        <Plus size={14} />
+                      </Button>
+                      {product.barcode && (
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => printBarcode(product.barcode, product.name)}
+                        >
+                          <Printer size={14} />
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                ))}
               </div>
-            )}
+            </div>
           </div>
 
           {/* Right Column - Products & Summary */}
@@ -428,16 +496,75 @@ export default function BillingModal({ isOpen, onClose, storeId }: BillingModalP
               </div>
             </div>
 
-            {/* Added Products */}
-            {billItems.filter(item => item.type === 'product').length > 0 && (
+            {/* Bill Items */}
+            {billItems.length > 0 && (
               <div>
-                <h3 className="text-lg font-medium text-gray-900 mb-3">Products</h3>
+                <h3 className="text-lg font-medium text-gray-900 mb-3">Bill Items</h3>
                 <div className="space-y-2">
-                  {billItems.filter(item => item.type === 'product').map((item, index) => (
+                  {billItems.map((item, index) => (
                     <div key={`${item.type}-${item.id}-${index}`} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                      <div>
-                        <p className="font-medium">{item.name}</p>
-                        <p className="text-sm text-gray-600">Qty: {item.quantity} × ₹{item.price}</p>
+                      <div className="flex items-center space-x-3">
+                        {item.imageUrl && (
+                          <img 
+                            src={item.imageUrl} 
+                            alt={item.name}
+                            className="w-10 h-10 object-cover rounded"
+                          />
+                        )}
+                        <div>
+                          <p className="font-medium">{item.name}</p>
+                          <div className="flex items-center space-x-2">
+                            <span className="text-sm text-gray-600">Qty: {item.quantity}</span>
+                            {editingPrice?.id === item.id && editingPrice?.type === item.type ? (
+                              <div className="flex items-center space-x-1">
+                                <span className="text-sm">₹</span>
+                                <Input
+                                  type="number"
+                                  value={customPrice}
+                                  onChange={(e) => setCustomPrice(e.target.value)}
+                                  className="w-16 h-6 text-sm"
+                                  onKeyPress={(e) => {
+                                    if (e.key === 'Enter' && customPrice) {
+                                      updateItemPrice(item.id, item.type, parseFloat(customPrice));
+                                    }
+                                  }}
+                                  autoFocus
+                                />
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => {
+                                    if (customPrice) {
+                                      updateItemPrice(item.id, item.type, parseFloat(customPrice));
+                                    }
+                                  }}
+                                >
+                                  ✓
+                                </Button>
+                              </div>
+                            ) : (
+                              <div className="flex items-center space-x-1">
+                                <span className="text-sm">× ₹{item.price}</span>
+                                {item.type === 'service' && (
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => handlePriceEdit(item)}
+                                    className="p-1 h-auto"
+                                  >
+                                    <Edit2 size={12} />
+                                  </Button>
+                                )}
+                              </div>
+                            )}
+                            {item.isCustomPrice && (
+                              <Badge variant="secondary" className="text-xs">Custom</Badge>
+                            )}
+                          </div>
+                          {item.duration && (
+                            <p className="text-xs text-gray-500">{item.duration} minutes</p>
+                          )}
+                        </div>
                       </div>
                       <div className="flex items-center space-x-2">
                         <span className="font-semibold">₹{(item.price * item.quantity).toLocaleString()}</span>

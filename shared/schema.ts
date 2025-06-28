@@ -86,6 +86,7 @@ export const services = pgTable("services", {
   price: decimal("price", { precision: 10, scale: 2 }).notNull(),
   duration: integer("duration"), // in minutes
   category: varchar("category"), // facial, pedicure, manicure, hair, etc.
+  imageUrl: text("image_url"),
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
@@ -105,6 +106,7 @@ export const products = pgTable("products", {
   brand: varchar("brand"),
   stock: integer("stock").default(0),
   minStock: integer("min_stock").default(5),
+  imageUrl: text("image_url"),
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
