@@ -156,6 +156,9 @@ Changelog:
 - June 28, 2025. Created comprehensive service category management system with database-driven CRUD operations
 - June 28, 2025. Implemented auto-generated barcodes for products to streamline inventory management
 - June 28, 2025. Replaced hardcoded categories with dynamic category management for both products and services
+- June 28, 2025. Redesigned New Bill interface with square box layout for products and services optimized for touch screens
+- June 28, 2025. Added quantity increment logic - duplicate items now increase quantity instead of creating separate entries
+- June 28, 2025. Enhanced bill item controls with +/- quantity buttons and price editing for both services and products
 ```
 
 ## User Preferences

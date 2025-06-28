@@ -342,17 +342,26 @@ export default function BillingModal({ isOpen, onClose, storeId }: BillingModalP
   };
 
   const addServiceToBill = (service: any, customPrice?: number) => {
-    setBillItems(prev => [...prev, {
-      id: service.id,
-      type: 'service',
-      name: service.name,
-      price: customPrice || parseFloat(service.price),
-      originalPrice: parseFloat(service.price),
-      quantity: 1,
-      duration: service.duration,
-      imageUrl: service.imageUrl,
-      isCustomPrice: !!customPrice,
-    }]);
+    const existingItem = billItems.find(item => item.id === service.id && item.type === 'service');
+    if (existingItem) {
+      setBillItems(prev => prev.map(item => 
+        item.id === service.id && item.type === 'service'
+          ? { ...item, quantity: item.quantity + 1 }
+          : item
+      ));
+    } else {
+      setBillItems(prev => [...prev, {
+        id: service.id,
+        type: 'service',
+        name: service.name,
+        price: customPrice || parseFloat(service.price),
+        originalPrice: parseFloat(service.price),
+        quantity: 1,
+        duration: service.duration,
+        imageUrl: service.imageUrl,
+        isCustomPrice: !!customPrice,
+      }]);
+    }
   };
 
   const addProductToBill = (product: any) => {
@@ -377,6 +386,16 @@ export default function BillingModal({ isOpen, onClose, storeId }: BillingModalP
 
   const removeItem = (id: number, type: string) => {
     setBillItems(prev => prev.filter(item => !(item.id === id && item.type === type)));
+  };
+
+  const updateItemQuantity = (id: number, type: string, change: number) => {
+    setBillItems(prev => prev.map(item => {
+      if (item.id === id && item.type === type) {
+        const newQuantity = item.quantity + change;
+        return newQuantity > 0 ? { ...item, quantity: newQuantity } : item;
+      }
+      return item;
+    }));
   };
 
   const updateItemPrice = (id: number, type: string, newPrice: number) => {
@@ -693,38 +712,36 @@ export default function BillingModal({ isOpen, onClose, storeId }: BillingModalP
             {/* Services Section */}
             <div className="bg-white border-2 border-green-200 rounded-xl p-4">
               <h3 className="text-xl font-bold text-gray-900 mb-4">Services</h3>
-              <div className="grid grid-cols-1 gap-3 max-h-80 overflow-y-auto">
+              <div className="grid grid-cols-2 gap-3 max-h-80 overflow-y-auto">
                 {typedServices.map((service: any) => (
                   <div 
                     key={service.id}
-                    className="border-2 border-gray-200 rounded-xl p-4 hover:border-green-400 hover:bg-green-50 transition-all touch-manipulation cursor-pointer"
+                    className="aspect-square border-2 border-gray-200 rounded-xl p-3 hover:border-green-400 hover:bg-green-50 transition-all touch-manipulation cursor-pointer flex flex-col"
                     onClick={() => addServiceToBill(service)}
                   >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-3 flex-1">
-                        {service.imageUrl && (
-                          <img 
-                            src={service.imageUrl} 
-                            alt={service.name}
-                            className="w-16 h-16 object-cover rounded-lg"
-                          />
-                        )}
-                        <div className="flex-1">
-                          <p className="font-semibold text-lg">{service.name}</p>
-                          <p className="text-base text-gray-600">{service.duration} min</p>
+                    <div className="flex-1 flex flex-col items-center justify-center text-center">
+                      {service.imageUrl ? (
+                        <img 
+                          src={service.imageUrl} 
+                          alt={service.name}
+                          className="w-16 h-16 object-cover rounded-lg mb-2"
+                        />
+                      ) : (
+                        <div className="w-16 h-16 bg-green-100 rounded-lg mb-2 flex items-center justify-center">
+                          <span className="text-green-600 text-2xl font-bold">{service.name.charAt(0)}</span>
                         </div>
-                      </div>
-                      <div className="text-right">
-                        <span className="text-xl font-bold text-green-600">Rs. {parseFloat(service.price).toLocaleString()}</span>
-                        <div className="mt-2">
-                          <Button 
-                            size="lg" 
-                            className="h-12 w-12 rounded-full bg-green-500 hover:bg-green-600 touch-manipulation"
-                          >
-                            <Plus size={20} />
-                          </Button>
-                        </div>
-                      </div>
+                      )}
+                      <p className="font-semibold text-sm text-center leading-tight mb-1">{service.name}</p>
+                      <p className="text-xs text-gray-600 mb-2">{service.duration} min</p>
+                      <span className="text-lg font-bold text-green-600">Rs. {parseFloat(service.price).toLocaleString()}</span>
+                    </div>
+                    <div className="mt-2 flex justify-center">
+                      <Button 
+                        size="sm" 
+                        className="h-8 w-8 rounded-full bg-green-500 hover:bg-green-600 touch-manipulation"
+                      >
+                        <Plus size={16} />
+                      </Button>
                     </div>
                   </div>
                 ))}
@@ -734,52 +751,50 @@ export default function BillingModal({ isOpen, onClose, storeId }: BillingModalP
             {/* Products Section */}
             <div className="bg-white border-2 border-orange-200 rounded-xl p-4">
               <h3 className="text-xl font-bold text-gray-900 mb-4">Products</h3>
-              <div className="grid grid-cols-1 gap-3 max-h-80 overflow-y-auto">
+              <div className="grid grid-cols-2 gap-3 max-h-80 overflow-y-auto">
                 {typedProducts.map((product: any) => (
                   <div 
                     key={product.id}
-                    className="border-2 border-gray-200 rounded-xl p-4 hover:border-orange-400 hover:bg-orange-50 transition-all"
+                    className="aspect-square border-2 border-gray-200 rounded-xl p-3 hover:border-orange-400 hover:bg-orange-50 transition-all touch-manipulation cursor-pointer flex flex-col"
+                    onClick={() => addProductToBill(product)}
                   >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-3 flex-1">
-                        {product.imageUrl && (
-                          <img 
-                            src={product.imageUrl} 
-                            alt={product.name}
-                            className="w-16 h-16 object-cover rounded-lg"
-                          />
-                        )}
-                        <div className="flex-1">
-                          <p className="font-semibold text-lg">{product.name}</p>
-                          <p className="text-base text-gray-600">Stock: {product.stockQuantity}</p>
-                          {product.barcode && (
-                            <p className="text-sm text-gray-500">{product.barcode}</p>
-                          )}
+                    <div className="flex-1 flex flex-col items-center justify-center text-center">
+                      {product.imageUrl ? (
+                        <img 
+                          src={product.imageUrl} 
+                          alt={product.name}
+                          className="w-16 h-16 object-cover rounded-lg mb-2"
+                        />
+                      ) : (
+                        <div className="w-16 h-16 bg-orange-100 rounded-lg mb-2 flex items-center justify-center">
+                          <span className="text-orange-600 text-2xl font-bold">{product.name.charAt(0)}</span>
                         </div>
-                      </div>
-                      <div className="text-right">
-                        <span className="text-xl font-bold text-orange-600">Rs. {parseFloat(product.price).toLocaleString()}</span>
-                        <div className="flex gap-2 mt-2">
-                          <Button 
-                            size="lg" 
-                            onClick={() => addProductToBill(product)}
-                            disabled={product.stockQuantity <= 0}
-                            className="h-12 w-12 rounded-full bg-orange-500 hover:bg-orange-600 touch-manipulation"
-                          >
-                            <Plus size={20} />
-                          </Button>
-                          {product.barcode && (
-                            <Button 
-                              size="lg" 
-                              variant="outline"
-                              onClick={() => printBarcode(product.barcode, product.name)}
-                              className="h-12 w-12 rounded-full border-2 touch-manipulation"
-                            >
-                              <Printer size={16} />
-                            </Button>
-                          )}
-                        </div>
-                      </div>
+                      )}
+                      <p className="font-semibold text-sm text-center leading-tight mb-1">{product.name}</p>
+                      <p className="text-xs text-gray-600 mb-1">Stock: {product.stockQuantity}</p>
+                      <span className="text-lg font-bold text-orange-600">Rs. {parseFloat(product.price).toLocaleString()}</span>
+                    </div>
+                    <div className="mt-2 flex justify-center gap-1">
+                      <Button 
+                        size="sm" 
+                        disabled={product.stockQuantity <= 0}
+                        className="h-8 w-8 rounded-full bg-orange-500 hover:bg-orange-600 touch-manipulation"
+                      >
+                        <Plus size={16} />
+                      </Button>
+                      {product.barcode && (
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            printBarcode(product.barcode, product.name);
+                          }}
+                          className="h-8 w-8 rounded-full border-2 touch-manipulation"
+                        >
+                          <Printer size={12} />
+                        </Button>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -842,8 +857,27 @@ export default function BillingModal({ isOpen, onClose, storeId }: BillingModalP
                           )}
                           <div className="flex-1">
                             <p className="font-semibold text-base">{item.name}</p>
-                            <div className="flex items-center space-x-3">
-                              <span className="text-sm text-gray-600">Qty: {item.quantity}</span>
+                            <div className="flex items-center justify-between mb-2">
+                              <div className="flex items-center space-x-2">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => updateItemQuantity(item.id, item.type, -1)}
+                                  disabled={item.quantity <= 1}
+                                  className="h-8 w-8 rounded-full touch-manipulation"
+                                >
+                                  -
+                                </Button>
+                                <span className="text-lg font-semibold min-w-[2rem] text-center">{item.quantity}</span>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => updateItemQuantity(item.id, item.type, 1)}
+                                  className="h-8 w-8 rounded-full touch-manipulation"
+                                >
+                                  +
+                                </Button>
+                              </div>
                               {editingPrice?.id === item.id && editingPrice?.type === item.type ? (
                                 <div className="flex items-center space-x-1">
                                   <span className="text-sm">Rs.</span>
@@ -851,7 +885,7 @@ export default function BillingModal({ isOpen, onClose, storeId }: BillingModalP
                                     type="number"
                                     value={customPrice}
                                     onChange={(e) => setCustomPrice(e.target.value)}
-                                    className="w-20 h-6 text-sm"
+                                    className="w-20 h-8 text-sm"
                                     onKeyPress={(e) => {
                                       if (e.key === 'Enter') {
                                         updateItemPrice(item.id, item.type, parseFloat(customPrice));
@@ -861,26 +895,33 @@ export default function BillingModal({ isOpen, onClose, storeId }: BillingModalP
                                   <Button
                                     size="sm"
                                     onClick={() => updateItemPrice(item.id, item.type, parseFloat(customPrice))}
-                                    className="h-6 px-2"
+                                    className="h-8 px-2"
                                   >
                                     ✓
                                   </Button>
                                 </div>
                               ) : (
-                                <span className="text-lg font-bold text-blue-600">
-                                  Rs. {(item.price * item.quantity).toLocaleString()}
-                                  {item.isCustomPrice && <span className="text-xs text-orange-500 ml-1">(Custom)</span>}
-                                </span>
+                                <div className="text-right">
+                                  <span className="text-lg font-bold text-blue-600">
+                                    Rs. {(item.price * item.quantity).toLocaleString()}
+                                  </span>
+                                  {item.isCustomPrice && <span className="text-xs text-orange-500 block">(Custom)</span>}
+                                </div>
                               )}
+                            </div>
+                            <div className="text-sm text-gray-600">
+                              Unit Price: Rs. {item.price.toLocaleString()} 
+                              {item.duration && ` • ${item.duration} min`}
                             </div>
                           </div>
                         </div>
-                        <div className="flex items-center space-x-2">
+                        <div className="flex flex-col items-center space-y-2">
                           <Button
                             size="sm"
                             variant="outline"
                             onClick={() => handlePriceEdit(item)}
                             className="h-10 w-10 rounded-full touch-manipulation"
+                            title="Edit Price"
                           >
                             <Edit2 size={14} />
                           </Button>
@@ -889,6 +930,7 @@ export default function BillingModal({ isOpen, onClose, storeId }: BillingModalP
                             variant="destructive"
                             onClick={() => removeItem(item.id, item.type)}
                             className="h-10 w-10 rounded-full touch-manipulation"
+                            title="Remove Item"
                           >
                             <Trash2 size={14} />
                           </Button>
