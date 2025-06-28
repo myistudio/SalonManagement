@@ -64,7 +64,7 @@ export default function Staff() {
 
   const updateRoleMutation = useMutation({
     mutationFn: async ({ userId, role }: { userId: string; role: string }) => {
-      return await apiRequest(`/api/staff/${userId}/role`, "PATCH", { 
+      return await apiRequest("PATCH", `/api/staff/${userId}/role`, { 
         role, 
         storeId: selectedStoreId 
       });
@@ -100,7 +100,7 @@ export default function Staff() {
 
   const removeStaffMutation = useMutation({
     mutationFn: async (userId: string) => {
-      return await apiRequest(`/api/staff/${userId}/${selectedStoreId}`, "DELETE");
+      return await apiRequest("DELETE", `/api/staff/${userId}/${selectedStoreId}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/staff", selectedStoreId] });
@@ -131,7 +131,7 @@ export default function Staff() {
 
   const addStaffMutation = useMutation({
     mutationFn: async ({ email, role }: { email: string; role: string }) => {
-      return await apiRequest("/api/staff", "POST", {
+      return await apiRequest("POST", "/api/staff", {
         email,
         role,
         storeId: selectedStoreId,
