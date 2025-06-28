@@ -17,7 +17,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { MessageSquare, Settings, Send, Calendar, Users, AlertCircle, CheckCircle, Clock, X } from "lucide-react";
+import { MessageSquare, Settings, Send, Calendar, Users, AlertCircle, CheckCircle, Clock, X, ArrowLeft } from "lucide-react";
+import { Link } from "wouter";
 
 export default function WhatsApp() {
   const { toast } = useToast();
@@ -243,12 +244,20 @@ export default function WhatsApp() {
       />
       
       <div className="container mx-auto px-4 py-8">
-        <div className="flex items-center gap-3 mb-8">
-          <MessageSquare size={32} className="text-green-600" />
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">WhatsApp Business</h1>
-            <p className="text-gray-600">Manage automated messaging and customer communication</p>
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center gap-3">
+            <MessageSquare size={32} className="text-green-600" />
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">WhatsApp Business</h1>
+              <p className="text-gray-600">Manage automated messaging and customer communication</p>
+            </div>
           </div>
+          <Link href="/settings">
+            <Button variant="outline" className="flex items-center gap-2">
+              <ArrowLeft size={16} />
+              Back to Settings
+            </Button>
+          </Link>
         </div>
 
         <Tabs defaultValue="settings" className="space-y-6">
