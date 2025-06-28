@@ -1,7 +1,8 @@
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery } from "@tanstack/react-query";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Bell } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Bell, LogOut, User } from "lucide-react";
 
 interface HeaderProps {
   selectedStoreId: number;
@@ -54,19 +55,37 @@ export default function Header({ selectedStoreId, onStoreChange }: HeaderProps) 
               </span>
             </button>
             
-            <div className="flex items-center space-x-3">
-              <div className="text-right text-sm">
-                <div className="font-medium text-gray-900">
-                  {user?.firstName} {user?.lastName}
-                </div>
-                <div className="text-gray-500 capitalize">{user?.role?.replace('_', ' ')}</div>
-              </div>
-              <img 
-                src={user?.profileImageUrl || "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=40&h=40&fit=crop&crop=face"} 
-                alt="Profile" 
-                className="h-10 w-10 rounded-full object-cover"
-              />
-            </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="flex items-center space-x-3 hover:bg-gray-50 rounded-lg p-2 transition-colors">
+                  <div className="text-right text-sm">
+                    <div className="font-medium text-gray-900">
+                      {user?.firstName} {user?.lastName}
+                    </div>
+                    <div className="text-gray-500 capitalize">{user?.role?.replace('_', ' ')}</div>
+                  </div>
+                  <img 
+                    src={user?.profileImageUrl || "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=40&h=40&fit=crop&crop=face"} 
+                    alt="Profile" 
+                    className="h-10 w-10 rounded-full object-cover"
+                  />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuItem disabled>
+                  <User className="mr-2 h-4 w-4" />
+                  <span>{user?.email}</span>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem 
+                  onClick={() => window.location.href = '/api/logout'}
+                  className="text-red-600 focus:text-red-600"
+                >
+                  <LogOut className="mr-2 h-4 w-4" />
+                  <span>Log out</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </div>
