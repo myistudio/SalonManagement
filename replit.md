@@ -161,6 +161,7 @@ Changelog:
 - June 28, 2025. Enhanced bill item controls with +/- quantity buttons and price editing for both services and products
 - June 28, 2025. Expanded services and products display area with 3-column grid layout and increased height for better visibility
 - June 28, 2025. Fixed payment button text overflow with responsive design and vertical text stacking for better mobile display
+- June 28, 2025. Reorganized Current Bill section with compact layout - reduced item height, smaller buttons, and better space utilization
 ```
 
 ## User Preferences

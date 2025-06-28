@@ -843,96 +843,98 @@ export default function BillingModal({ isOpen, onClose, storeId }: BillingModalP
                   <p className="text-base">Add services or products to start billing</p>
                 </div>
               ) : (
-                <div className="space-y-3 max-h-96 overflow-y-auto">
+                <div className="space-y-2 max-h-80 overflow-y-auto">
                   {billItems.map((item, index) => (
-                    <div key={`${item.type}-${item.id}-${index}`} className="border-2 border-gray-200 rounded-xl p-3">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-3 flex-1">
+                    <div key={`${item.type}-${item.id}-${index}`} className="border border-gray-200 rounded-lg p-2">
+                      <div className="flex items-start gap-2">
+                        {/* Item Image and Name */}
+                        <div className="flex items-center gap-2 flex-1 min-w-0">
                           {item.imageUrl && (
                             <img 
                               src={item.imageUrl} 
                               alt={item.name}
-                              className="w-12 h-12 object-cover rounded-lg"
+                              className="w-8 h-8 object-cover rounded"
                             />
                           )}
-                          <div className="flex-1">
-                            <p className="font-semibold text-base">{item.name}</p>
-                            <div className="flex items-center justify-between mb-2">
-                              <div className="flex items-center space-x-2">
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => updateItemQuantity(item.id, item.type, -1)}
-                                  disabled={item.quantity <= 1}
-                                  className="h-8 w-8 rounded-full touch-manipulation"
-                                >
-                                  -
-                                </Button>
-                                <span className="text-lg font-semibold min-w-[2rem] text-center">{item.quantity}</span>
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => updateItemQuantity(item.id, item.type, 1)}
-                                  className="h-8 w-8 rounded-full touch-manipulation"
-                                >
-                                  +
-                                </Button>
-                              </div>
-                              {editingPrice?.id === item.id && editingPrice?.type === item.type ? (
-                                <div className="flex items-center space-x-1">
-                                  <span className="text-sm">Rs.</span>
-                                  <Input
-                                    type="number"
-                                    value={customPrice}
-                                    onChange={(e) => setCustomPrice(e.target.value)}
-                                    className="w-20 h-8 text-sm"
-                                    onKeyPress={(e) => {
-                                      if (e.key === 'Enter') {
-                                        updateItemPrice(item.id, item.type, parseFloat(customPrice));
-                                      }
-                                    }}
-                                  />
-                                  <Button
-                                    size="sm"
-                                    onClick={() => updateItemPrice(item.id, item.type, parseFloat(customPrice))}
-                                    className="h-8 px-2"
-                                  >
-                                    ✓
-                                  </Button>
-                                </div>
-                              ) : (
-                                <div className="text-right">
-                                  <span className="text-lg font-bold text-blue-600">
-                                    Rs. {(item.price * item.quantity).toLocaleString()}
-                                  </span>
-                                  {item.isCustomPrice && <span className="text-xs text-orange-500 block">(Custom)</span>}
-                                </div>
-                              )}
-                            </div>
-                            <div className="text-sm text-gray-600">
-                              Unit Price: Rs. {item.price.toLocaleString()} 
-                              {item.duration && ` • ${item.duration} min`}
-                            </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium text-sm truncate">{item.name}</p>
+                            <p className="text-xs text-gray-500">
+                              Rs. {item.price.toLocaleString()}{item.duration && ` • ${item.duration}min`}
+                            </p>
                           </div>
                         </div>
-                        <div className="flex flex-col items-center space-y-2">
+
+                        {/* Quantity Controls */}
+                        <div className="flex items-center gap-1">
                           <Button
                             size="sm"
                             variant="outline"
+                            onClick={() => updateItemQuantity(item.id, item.type, -1)}
+                            disabled={item.quantity <= 1}
+                            className="h-6 w-6 rounded text-xs p-0"
+                          >
+                            -
+                          </Button>
+                          <span className="text-sm font-medium w-6 text-center">{item.quantity}</span>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => updateItemQuantity(item.id, item.type, 1)}
+                            className="h-6 w-6 rounded text-xs p-0"
+                          >
+                            +
+                          </Button>
+                        </div>
+
+                        {/* Price and Actions */}
+                        <div className="flex items-center gap-1">
+                          {editingPrice?.id === item.id && editingPrice?.type === item.type ? (
+                            <div className="flex items-center gap-1">
+                              <Input
+                                type="number"
+                                value={customPrice}
+                                onChange={(e) => setCustomPrice(e.target.value)}
+                                className="w-16 h-6 text-xs p-1"
+                                onKeyPress={(e) => {
+                                  if (e.key === 'Enter') {
+                                    updateItemPrice(item.id, item.type, parseFloat(customPrice));
+                                  }
+                                }}
+                              />
+                              <Button
+                                size="sm"
+                                onClick={() => updateItemPrice(item.id, item.type, parseFloat(customPrice))}
+                                className="h-6 w-6 p-0 text-xs"
+                              >
+                                ✓
+                              </Button>
+                            </div>
+                          ) : (
+                            <div className="text-right min-w-[60px]">
+                              <div className="text-sm font-bold text-blue-600">
+                                Rs. {(item.price * item.quantity).toLocaleString()}
+                              </div>
+                              {item.isCustomPrice && <div className="text-xs text-orange-500">(Custom)</div>}
+                            </div>
+                          )}
+                          
+                          <Button
+                            size="sm"
+                            variant="ghost"
                             onClick={() => handlePriceEdit(item)}
-                            className="h-10 w-10 rounded-full touch-manipulation"
+                            className="h-6 w-6 p-0"
                             title="Edit Price"
                           >
-                            <Edit2 size={14} />
+                            <Edit2 size={10} />
                           </Button>
                           <Button
                             size="sm"
-                            variant="destructive"
+                            variant="ghost"
                             onClick={() => removeItem(item.id, item.type)}
-                            className="h-10 w-10 rounded-full touch-manipulation"
-                            title="Remove Item"
+                            className="h-6 w-6 p-0 text-red-500 hover:text-red-700"
+                            title="Remove"
                           >
-                            <Trash2 size={14} />
+                            <Trash2 size={10} />
                           </Button>
                         </div>
                       </div>
@@ -944,37 +946,37 @@ export default function BillingModal({ isOpen, onClose, storeId }: BillingModalP
 
             {/* Bill Summary & Checkout */}
             {billItems.length > 0 && (
-              <div className="bg-gradient-to-br from-blue-50 to-indigo-100 border-2 border-blue-300 rounded-xl p-6">
-                <h3 className="text-2xl font-bold text-gray-900 mb-6">Bill Summary</h3>
+              <div className="bg-gradient-to-br from-blue-50 to-indigo-100 border-2 border-blue-300 rounded-xl p-4">
+                <h3 className="text-xl font-bold text-gray-900 mb-4">Bill Summary</h3>
                 
                 {/* Totals */}
-                <div className="space-y-4 mb-6">
-                  <div className="flex justify-between items-center text-lg">
+                <div className="space-y-2 mb-4">
+                  <div className="flex justify-between items-center text-base">
                     <span className="font-medium">Subtotal:</span>
                     <span className="font-bold">Rs. {getSubtotal().toLocaleString()}</span>
                   </div>
                   
                   {getDiscount() > 0 && (
-                    <div className="flex justify-between items-center text-lg text-green-600">
+                    <div className="flex justify-between items-center text-base text-green-600">
                       <span className="font-medium">Discount:</span>
                       <span className="font-bold">- Rs. {getDiscount().toLocaleString()}</span>
                     </div>
                   )}
                   
-                  <div className="flex justify-between items-center text-lg">
+                  <div className="flex justify-between items-center text-base">
                     <span className="font-medium">GST (18%):</span>
                     <span className="font-bold">Rs. {getGST().toLocaleString()}</span>
                   </div>
                   
                   <Separator />
                   
-                  <div className="flex justify-between items-center text-2xl font-bold text-blue-600">
+                  <div className="flex justify-between items-center text-xl font-bold text-blue-600">
                     <span>Total:</span>
                     <span>Rs. {getTotal().toLocaleString()}</span>
                   </div>
                   
                   {getPointsEarned() > 0 && (
-                    <div className="text-center text-lg text-orange-600 font-medium">
+                    <div className="text-center text-base text-orange-600 font-medium">
                       Points to earn: {getPointsEarned()}
                     </div>
                   )}
