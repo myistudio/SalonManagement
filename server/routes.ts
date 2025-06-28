@@ -21,7 +21,7 @@ import { db } from "./db";
 import { eq, and } from "drizzle-orm";
 
 // Configure multer for logo uploads
-const storage_config = multer.diskStorage({
+const logoStorage = multer.diskStorage({
   destination: async (req, file, cb) => {
     const uploadDir = path.join(process.cwd(), 'uploads', 'logos');
     try {
@@ -37,8 +37,38 @@ const storage_config = multer.diskStorage({
   }
 });
 
-const upload = multer({ 
-  storage: storage_config,
+// Configure multer for product/service images
+const imageStorage = multer.diskStorage({
+  destination: async (req, file, cb) => {
+    const uploadDir = path.join(process.cwd(), 'uploads', 'images');
+    try {
+      await fs.mkdir(uploadDir, { recursive: true });
+      cb(null, uploadDir);
+    } catch (error) {
+      cb(error as Error, uploadDir);
+    }
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, 'image-' + uniqueSuffix + path.extname(file.originalname));
+  }
+});
+
+const uploadLogo = multer({ 
+  storage: logoStorage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    if (allowedTypes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Invalid file type. Only JPEG, PNG, GIF, and WebP are allowed.'));
+    }
+  }
+});
+
+const uploadImage = multer({ 
+  storage: imageStorage,
   limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
   fileFilter: (req, file, cb) => {
     const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
@@ -78,6 +108,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Serve uploaded files
   app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
+
+  // Image upload endpoint for products and services
+  app.post('/api/upload/image', isAuthenticated, uploadImage.single('image'), async (req: any, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ message: "No image file provided" });
+      }
+      
+      const imageUrl = `/uploads/images/${req.file.filename}`;
+      res.json({ imageUrl });
+    } catch (error) {
+      console.error("Error uploading image:", error);
+      res.status(500).json({ message: "Failed to upload image" });
+    }
+  });
 
   // Auth routes
   app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
@@ -132,7 +177,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.patch('/api/stores/:id', isAuthenticated, requireRole(['super_admin', 'store_manager']), upload.single('logo'), async (req: any, res) => {
+  app.patch('/api/stores/:id', isAuthenticated, requireRole(['super_admin', 'store_manager']), uploadLogo.single('logo'), async (req: any, res) => {
     try {
       const storeId = parseInt(req.params.id);
       const updateData: any = { ...req.body };

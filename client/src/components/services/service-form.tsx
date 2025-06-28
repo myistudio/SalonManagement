@@ -27,7 +27,11 @@ export default function ServiceForm({ storeId, service, onSuccess }: ServiceForm
     price: service?.price || "",
     duration: service?.duration || "",
     category: service?.category || "",
+    imageUrl: service?.imageUrl || "",
   });
+  
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string>(service?.imageUrl || "");
 
   const createService = useMutation({
     mutationFn: async (serviceData: any) => {
@@ -64,7 +68,7 @@ export default function ServiceForm({ storeId, service, onSuccess }: ServiceForm
     },
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!formData.name.trim() || !formData.price.trim()) {
@@ -76,8 +80,24 @@ export default function ServiceForm({ storeId, service, onSuccess }: ServiceForm
       return;
     }
 
+    let imageUrl = formData.imageUrl;
+
+    // Upload image if a new file is selected
+    if (imageFile) {
+      try {
+        imageUrl = await uploadImage(imageFile);
+      } catch (error) {
+        toast({
+          title: "Image Upload Failed",
+          description: "Failed to upload image. Service will be saved without image.",
+          variant: "destructive",
+        });
+      }
+    }
+
     const serviceData = {
       ...formData,
+      imageUrl,
       price: parseFloat(formData.price),
       duration: formData.duration ? parseInt(formData.duration) : null,
     };
@@ -87,6 +107,37 @@ export default function ServiceForm({ storeId, service, onSuccess }: ServiceForm
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setImageFile(file);
+      
+      // Create preview URL
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const uploadImage = async (file: File): Promise<string> => {
+    const formData = new FormData();
+    formData.append('image', file);
+    
+    const response = await fetch('/api/upload/image', {
+      method: 'POST',
+      body: formData,
+    });
+    
+    if (!response.ok) {
+      throw new Error('Failed to upload image');
+    }
+    
+    const data = await response.json();
+    return data.imageUrl;
   };
 
   const categories = [
@@ -135,6 +186,45 @@ export default function ServiceForm({ storeId, service, onSuccess }: ServiceForm
               placeholder="Enter service description"
               rows={3}
             />
+          </div>
+
+          {/* Service Image Upload */}
+          <div>
+            <Label htmlFor="image">Service Image</Label>
+            <div className="space-y-3">
+              <Input
+                id="image"
+                type="file"
+                accept="image/*"
+                onChange={handleImageChange}
+                className="cursor-pointer"
+              />
+              {imagePreview && (
+                <div className="flex items-start space-x-3">
+                  <img 
+                    src={imagePreview} 
+                    alt="Service preview" 
+                    className="w-24 h-24 object-cover rounded-lg border"
+                  />
+                  <div className="flex-1">
+                    <p className="text-sm text-gray-600">Image preview</p>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setImagePreview("");
+                        setImageFile(null);
+                        setFormData(prev => ({ ...prev, imageUrl: "" }));
+                      }}
+                      className="mt-2"
+                    >
+                      Remove Image
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

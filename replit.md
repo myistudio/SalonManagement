@@ -151,6 +151,7 @@ Changelog:
 - June 28, 2025. Fixed currency symbol consistency to "Rs." throughout billing interface
 - June 28, 2025. Added phone number validation - 10 digits only, cannot start with 0 or +
 - June 28, 2025. Fixed customer profile view buttons with detailed customer modal
+- June 28, 2025. Implemented complete image upload functionality for products and services with 5MB file size limits
 ```
 
 ## User Preferences
