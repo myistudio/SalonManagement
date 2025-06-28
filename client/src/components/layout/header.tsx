@@ -78,7 +78,14 @@ export default function Header({ selectedStoreId, onStoreChange }: HeaderProps) 
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem 
-                  onClick={() => window.location.href = '/api/logout'}
+                  onClick={async () => {
+                    try {
+                      await fetch('/api/logout', { method: 'POST' });
+                      window.location.href = '/';
+                    } catch (error) {
+                      window.location.href = '/';
+                    }
+                  }}
                   className="text-red-600 focus:text-red-600"
                 >
                   <LogOut className="mr-2 h-4 w-4" />

@@ -17,7 +17,7 @@ SalonPro is a comprehensive multi-store salon and nail studio billing applicatio
 ### Backend Architecture
 - **Runtime**: Node.js with Express.js
 - **Language**: TypeScript with ES modules
-- **Authentication**: Replit Auth with OpenID Connect
+- **Authentication**: Basic email/mobile + password authentication with Passport.js
 - **Session Management**: Express sessions with PostgreSQL store
 - **API Pattern**: RESTful API with structured error handling
 
@@ -132,6 +132,9 @@ Changelog:
 - June 28, 2025. Fixed store settings permissions - updated user role to store_manager
 - June 28, 2025. Added staff management with edit/delete roles functionality
 - June 28, 2025. Added "Add Staff" feature to invite new staff members by email
+- June 28, 2025. Replaced Replit Auth with basic email/password authentication for cPanel hosting
+- June 28, 2025. Created comprehensive login/registration system with proper password hashing
+- June 28, 2025. Updated database schema to support mobile numbers and password authentication
 ```
 
 ## User Preferences

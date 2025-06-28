@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { setupAuth, isAuthenticated } from "./replitAuth";
+import { setupBasicAuth, isAuthenticated } from "./auth-basic";
 import multer from "multer";
 import path from "path";
 import fs from "fs/promises";
@@ -75,7 +75,7 @@ const requireRole = (allowedRoles: string[]) => {
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware
-  await setupAuth(app);
+  setupBasicAuth(app);
 
   // Serve uploaded files
   app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));

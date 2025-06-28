@@ -26,14 +26,17 @@ export const sessions = pgTable(
   (table) => [index("IDX_session_expire").on(table.expire)],
 );
 
-// User storage table (required for Replit Auth)
+// User storage table for basic email/password authentication
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().notNull(),
   email: varchar("email").unique(),
-  firstName: varchar("first_name"),
+  mobile: varchar("mobile", { length: 15 }).unique(),
+  password: varchar("password", { length: 255 }),
+  firstName: varchar("first_name").notNull(),
   lastName: varchar("last_name"),
   profileImageUrl: varchar("profile_image_url"),
   role: varchar("role").notNull().default("cashier"), // super_admin, store_manager, cashier
+  isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
