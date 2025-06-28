@@ -66,6 +66,14 @@ export default function BillingModal({ isOpen, onClose, storeId }: BillingModalP
   const [customPrice, setCustomPrice] = useState("");
   const [showReceiptDialog, setShowReceiptDialog] = useState(false);
   const [lastTransaction, setLastTransaction] = useState<any>(null);
+  const [showNewCustomerForm, setShowNewCustomerForm] = useState(false);
+  const [newCustomer, setNewCustomer] = useState({
+    firstName: "",
+    lastName: "",
+    mobile: "",
+    dateOfBirth: "",
+    gender: "",
+  });
 
   const { data: services = [] } = useQuery({
     queryKey: [`/api/services?storeId=${storeId}`],
@@ -119,6 +127,47 @@ export default function BillingModal({ isOpen, onClose, storeId }: BillingModalP
       toast({
         title: "Customer Not Found",
         description: "Would you like to create a new customer?",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const createCustomer = useMutation({
+    mutationFn: async (customerData: any) => {
+      const response = await apiRequest("POST", "/api/customers", customerData);
+      return response.json();
+    },
+    onSuccess: (customer) => {
+      setSelectedCustomer(customer);
+      setShowNewCustomerForm(false);
+      setNewCustomer({
+        firstName: "",
+        lastName: "",
+        mobile: "",
+        dateOfBirth: "",
+        gender: "",
+      });
+      toast({
+        title: "Customer Created",
+        description: `${customer.firstName} ${customer.lastName || ''} added successfully`,
+      });
+      queryClient.invalidateQueries({ queryKey: [`/api/customers`] });
+    },
+    onError: (error) => {
+      if (isUnauthorizedError(error)) {
+        toast({
+          title: "Unauthorized",
+          description: "You are logged out. Logging in again...",
+          variant: "destructive",
+        });
+        setTimeout(() => {
+          window.location.href = "/api/login";
+        }, 500);
+        return;
+      }
+      toast({
+        title: "Error",
+        description: "Failed to create customer",
         variant: "destructive",
       });
     },
@@ -225,6 +274,14 @@ export default function BillingModal({ isOpen, onClose, storeId }: BillingModalP
     setCustomPrice("");
     setShowReceiptDialog(false);
     setLastTransaction(null);
+    setShowNewCustomerForm(false);
+    setNewCustomer({
+      firstName: "",
+      lastName: "",
+      mobile: "",
+      dateOfBirth: "",
+      gender: "",
+    });
   };
 
   const printReceiptFromTransaction = (printThermal = false) => {
@@ -460,18 +517,118 @@ export default function BillingModal({ isOpen, onClose, storeId }: BillingModalP
                   </div>
                 )}
                 
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setSelectedCustomer(null);
-                    setCustomerSearch("");
-                  }}
-                  className="w-full"
-                >
-                  Walk-in Customer (No Selection)
-                </Button>
+                <div className="flex space-x-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setSelectedCustomer(null);
+                      setCustomerSearch("");
+                      setShowNewCustomerForm(false);
+                    }}
+                    className="flex-1"
+                  >
+                    Walk-in Customer
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowNewCustomerForm(!showNewCustomerForm)}
+                    className="flex-1"
+                  >
+                    + New Customer
+                  </Button>
+                </div>
               </div>
             </div>
+
+            {/* New Customer Form */}
+            {showNewCustomerForm && (
+              <Card>
+                <CardContent className="p-4">
+                  <h3 className="text-lg font-medium text-gray-900 mb-3">Customer Details</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="firstName">First Name *</Label>
+                      <Input
+                        id="firstName"
+                        value={newCustomer.firstName}
+                        onChange={(e) => setNewCustomer({...newCustomer, firstName: e.target.value})}
+                        placeholder="Enter first name"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="lastName">Last Name</Label>
+                      <Input
+                        id="lastName"
+                        value={newCustomer.lastName}
+                        onChange={(e) => setNewCustomer({...newCustomer, lastName: e.target.value})}
+                        placeholder="Enter last name"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="mobile">Mobile Number *</Label>
+                      <Input
+                        id="mobile"
+                        value={newCustomer.mobile}
+                        onChange={(e) => setNewCustomer({...newCustomer, mobile: e.target.value})}
+                        placeholder="Enter mobile number"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="gender">Gender</Label>
+                      <select
+                        id="gender"
+                        value={newCustomer.gender}
+                        onChange={(e) => setNewCustomer({...newCustomer, gender: e.target.value})}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                      >
+                        <option value="">Select gender</option>
+                        <option value="male">Male</option>
+                        <option value="female">Female</option>
+                        <option value="other">Other</option>
+                      </select>
+                    </div>
+                    <div className="md:col-span-2">
+                      <Label htmlFor="dateOfBirth">Date of Birth</Label>
+                      <Input
+                        id="dateOfBirth"
+                        type="date"
+                        value={newCustomer.dateOfBirth}
+                        onChange={(e) => setNewCustomer({...newCustomer, dateOfBirth: e.target.value})}
+                      />
+                    </div>
+                  </div>
+                  <div className="flex space-x-2 mt-4">
+                    <Button
+                      onClick={() => {
+                        if (!newCustomer.firstName || !newCustomer.mobile) {
+                          toast({
+                            title: "Missing Information",
+                            description: "Please fill in required fields",
+                            variant: "destructive",
+                          });
+                          return;
+                        }
+                        createCustomer.mutate({
+                          ...newCustomer,
+                          storeId: storeId,
+                        });
+                      }}
+                      disabled={createCustomer.isPending}
+                      className="flex-1"
+                    >
+                      {createCustomer.isPending ? "Creating..." : "Create Customer"}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => setShowNewCustomerForm(false)}
+                      className="flex-1"
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
             {/* Customer Info */}
             {selectedCustomer && (
@@ -522,7 +679,7 @@ export default function BillingModal({ isOpen, onClose, storeId }: BillingModalP
                       </div>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <span className="font-semibold">₹{parseFloat(service.price).toLocaleString()}</span>
+                      <span className="font-semibold">Rs. {parseFloat(service.price).toLocaleString()}</span>
                       <Button 
                         size="sm" 
                         onClick={() => addServiceToBill(service)}
@@ -561,7 +718,7 @@ export default function BillingModal({ isOpen, onClose, storeId }: BillingModalP
                       </div>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <span className="font-semibold">₹{parseFloat(product.price).toLocaleString()}</span>
+                      <span className="font-semibold">Rs. {parseFloat(product.price).toLocaleString()}</span>
                       <Button 
                         size="sm" 
                         onClick={() => addProductToBill(product)}
@@ -789,10 +946,6 @@ export default function BillingModal({ isOpen, onClose, storeId }: BillingModalP
           </DialogHeader>
           
           <div className="space-y-4">
-            <div className="text-center text-green-600 font-medium text-lg">
-              Total Paid: Rs. {getTotal().toFixed(2)}
-            </div>
-            
             <div className="flex flex-col space-y-3">
               <Button 
                 onClick={() => printReceiptFromTransaction(true)} 

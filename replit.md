@@ -146,6 +146,9 @@ Changelog:
 - June 28, 2025. Made entire application responsive for mobile and tablet devices with touch-friendly interface
 - June 28, 2025. Fixed reports functionality with improved transaction fetching and type safety
 - June 28, 2025. Resolved top services and products display issues in reports by removing restrictive date filtering
+- June 28, 2025. Enhanced billing system with walk-in customer details form (name, mobile, DOB, gender)
+- June 28, 2025. Removed payment amount display from receipt completion dialog
+- June 28, 2025. Fixed currency symbol consistency to "Rs." throughout billing interface
 ```
 
 ## User Preferences
