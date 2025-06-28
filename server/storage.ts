@@ -632,12 +632,16 @@ export class DatabaseStorage implements IStorage {
       .where(
         and(
           eq(transactions.storeId, storeId),
-          eq(transactionItems.itemType, 'service')
+          eq(transactionItems.itemType, 'service'),
+          gte(transactions.createdAt, startDate),
+          lte(transactions.createdAt, adjustedEndDate)
         )
       )
       .groupBy(transactionItems.itemName)
       .orderBy(desc(sql`SUM(${transactionItems.totalPrice})`))
       .limit(5);
+
+    console.log("Top services query result:", topServices);
 
     const topProducts = await db
       .select({
@@ -650,12 +654,16 @@ export class DatabaseStorage implements IStorage {
       .where(
         and(
           eq(transactions.storeId, storeId),
-          eq(transactionItems.itemType, 'product')
+          eq(transactionItems.itemType, 'product'),
+          gte(transactions.createdAt, startDate),
+          lte(transactions.createdAt, adjustedEndDate)
         )
       )
       .groupBy(transactionItems.itemName)
       .orderBy(desc(sql`SUM(${transactionItems.totalPrice})`))
       .limit(5);
+
+    console.log("Top products query result:", topProducts);
 
     // If no results found in date range, get all-time data for this store
     if ((revenueResult.revenue === '0' || !revenueResult.revenue) && revenueResult.count === 0) {

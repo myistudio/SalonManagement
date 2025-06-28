@@ -666,8 +666,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const report = await storage.getSalesReport(storeId, startDate, endDate);
+      console.log("Sales report generated:", JSON.stringify(report, null, 2));
       res.json(report);
     } catch (error) {
+      console.error("Sales report error:", error);
       res.status(500).json({ message: "Failed to generate sales report" });
     }
   });
