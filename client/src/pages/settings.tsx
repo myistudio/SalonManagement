@@ -1,0 +1,367 @@
+import { useState } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { useAuth } from "@/hooks/useAuth";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { useToast } from "@/hooks/use-toast";
+import { queryClient, apiRequest } from "@/lib/queryClient";
+import { Settings, Upload, Building, Users, Shield } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
+
+export default function SettingsPage() {
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [selectedStore, setSelectedStore] = useState<number>(1);
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [logoPreview, setLogoPreview] = useState<string>("");
+
+  // Fetch stores
+  const { data: stores = [] } = useQuery({
+    queryKey: ["/api/stores"],
+  });
+
+  // Fetch current store details
+  const { data: store } = useQuery({
+    queryKey: ["/api/stores", selectedStore],
+    enabled: !!selectedStore,
+  });
+
+  // Store update mutation
+  const updateStoreMutation = useMutation({
+    mutationFn: async (formData: FormData) => {
+      const response = await fetch(`/api/stores/${selectedStore}`, {
+        method: "PATCH",
+        body: formData,
+      });
+      if (!response.ok) {
+        throw new Error("Failed to update store");
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/stores"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/stores", selectedStore] });
+      toast({
+        title: "Store Updated",
+        description: "Store settings have been updated successfully.",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Update Failed",
+        description: "Failed to update store settings. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setLogoFile(file);
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setLogoPreview(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    
+    if (logoFile) {
+      formData.append("logo", logoFile);
+    }
+
+    updateStoreMutation.mutate(formData);
+  };
+
+  const getRoleBadge = (role: string) => {
+    const roleConfig = {
+      super_admin: { label: "Super Admin", variant: "destructive" as const },
+      store_manager: { label: "Store Manager", variant: "default" as const },
+      cashier: { label: "Cashier", variant: "secondary" as const },
+    };
+    
+    return roleConfig[role as keyof typeof roleConfig] || { label: role, variant: "secondary" as const };
+  };
+
+  if (!user) return null;
+
+  return (
+    <div className="p-6 space-y-6">
+      <div className="flex items-center gap-2">
+        <Settings size={24} />
+        <h1 className="text-2xl font-bold">Settings</h1>
+      </div>
+
+      <Tabs defaultValue="store" className="space-y-6">
+        <TabsList>
+          <TabsTrigger value="store" className="flex items-center gap-2">
+            <Building size={16} />
+            Store Settings
+          </TabsTrigger>
+          <TabsTrigger value="account" className="flex items-center gap-2">
+            <Users size={16} />
+            Account
+          </TabsTrigger>
+          <TabsTrigger value="permissions" className="flex items-center gap-2">
+            <Shield size={16} />
+            Permissions
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="store">
+          <div className="grid gap-6 lg:grid-cols-3">
+            {/* Store Selection */}
+            <Card className="lg:col-span-1">
+              <CardHeader>
+                <CardTitle>Select Store</CardTitle>
+                <CardDescription>Choose a store to configure</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {stores.map((storeItem: any) => (
+                  <div
+                    key={storeItem.id}
+                    className={`p-3 rounded-lg border cursor-pointer transition-colors ${
+                      selectedStore === storeItem.id
+                        ? "border-primary bg-primary/5"
+                        : "border-border hover:bg-muted/50"
+                    }`}
+                    onClick={() => setSelectedStore(storeItem.id)}
+                  >
+                    <div className="flex items-center gap-3">
+                      {storeItem.logoUrl ? (
+                        <img
+                          src={storeItem.logoUrl}
+                          alt={storeItem.name}
+                          className="w-10 h-10 rounded object-cover"
+                        />
+                      ) : (
+                        <div className="w-10 h-10 rounded bg-muted flex items-center justify-center">
+                          <Building size={20} />
+                        </div>
+                      )}
+                      <div>
+                        <h3 className="font-medium">{storeItem.name}</h3>
+                        <p className="text-sm text-muted-foreground">
+                          {storeItem.address || "No address"}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+
+            {/* Store Configuration */}
+            <Card className="lg:col-span-2">
+              <CardHeader>
+                <CardTitle>Store Configuration</CardTitle>
+                <CardDescription>
+                  Update store details, logo, and branding
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {store ? (
+                  <form onSubmit={handleSubmit} className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="name">Store Name</Label>
+                        <Input
+                          id="name"
+                          name="name"
+                          defaultValue={store.name}
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="phone">Phone</Label>
+                        <Input
+                          id="phone"
+                          name="phone"
+                          type="tel"
+                          defaultValue={store.phone || ""}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="address">Address</Label>
+                      <Textarea
+                        id="address"
+                        name="address"
+                        defaultValue={store.address || ""}
+                        rows={3}
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="email">Email</Label>
+                        <Input
+                          id="email"
+                          name="email"
+                          type="email"
+                          defaultValue={store.email || ""}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="gstNumber">GST Number</Label>
+                        <Input
+                          id="gstNumber"
+                          name="gstNumber"
+                          defaultValue={store.gstNumber || ""}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Logo Upload */}
+                    <div className="space-y-4">
+                      <Label>Store Logo</Label>
+                      <div className="flex items-center gap-4">
+                        <div className="w-20 h-20 rounded border-2 border-dashed border-muted-foreground/25 flex items-center justify-center overflow-hidden">
+                          {logoPreview || store.logoUrl ? (
+                            <img
+                              src={logoPreview || store.logoUrl}
+                              alt="Store logo"
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <Upload size={24} className="text-muted-foreground" />
+                          )}
+                        </div>
+                        <div className="flex-1">
+                          <Input
+                            type="file"
+                            accept="image/*"
+                            onChange={handleLogoChange}
+                            className="hidden"
+                            id="logo-upload"
+                          />
+                          <Label
+                            htmlFor="logo-upload"
+                            className="inline-flex items-center gap-2 px-4 py-2 border border-input bg-background hover:bg-accent hover:text-accent-foreground rounded-md cursor-pointer"
+                          >
+                            <Upload size={16} />
+                            Choose Logo
+                          </Label>
+                          <p className="text-sm text-muted-foreground mt-2">
+                            Upload a square logo (recommended: 200x200px or larger)
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <Button 
+                      type="submit" 
+                      disabled={updateStoreMutation.isPending}
+                      className="w-full"
+                    >
+                      {updateStoreMutation.isPending ? "Updating..." : "Update Store"}
+                    </Button>
+                  </form>
+                ) : (
+                  <div className="text-center py-8">
+                    <p className="text-muted-foreground">Select a store to configure</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="account">
+          <Card>
+            <CardHeader>
+              <CardTitle>Account Information</CardTitle>
+              <CardDescription>Your account details and permissions</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center gap-4">
+                <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
+                  {user.profileImageUrl ? (
+                    <img
+                      src={user.profileImageUrl}
+                      alt="Profile"
+                      className="w-full h-full rounded-full object-cover"
+                    />
+                  ) : (
+                    <Users size={24} />
+                  )}
+                </div>
+                <div>
+                  <h3 className="text-lg font-medium">
+                    {user.firstName} {user.lastName}
+                  </h3>
+                  <p className="text-muted-foreground">{user.email}</p>
+                  <Badge {...getRoleBadge(user.role)} className="mt-1">
+                    {getRoleBadge(user.role).label}
+                  </Badge>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="permissions">
+          <Card>
+            <CardHeader>
+              <CardTitle>Role Permissions</CardTitle>
+              <CardDescription>
+                Your current role and associated permissions
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="p-4 rounded-lg border">
+                  <h4 className="font-medium mb-2">Current Role</h4>
+                  <Badge {...getRoleBadge(user.role)}>
+                    {getRoleBadge(user.role).label}
+                  </Badge>
+                </div>
+
+                <div className="space-y-3">
+                  <h4 className="font-medium">Permissions</h4>
+                  {user.role === "super_admin" && (
+                    <div className="space-y-2">
+                      <p className="text-sm">✓ Manage all stores and staff</p>
+                      <p className="text-sm">✓ Access all reports and analytics</p>
+                      <p className="text-sm">✓ Configure system settings</p>
+                      <p className="text-sm">✓ Full inventory management</p>
+                      <p className="text-sm">✓ Process transactions</p>
+                    </div>
+                  )}
+                  {user.role === "store_manager" && (
+                    <div className="space-y-2">
+                      <p className="text-sm">✓ Manage assigned store</p>
+                      <p className="text-sm">✓ View store reports</p>
+                      <p className="text-sm">✓ Manage inventory</p>
+                      <p className="text-sm">✓ Process transactions</p>
+                      <p className="text-sm text-muted-foreground">✗ Access other stores</p>
+                    </div>
+                  )}
+                  {user.role === "cashier" && (
+                    <div className="space-y-2">
+                      <p className="text-sm">✓ Process transactions</p>
+                      <p className="text-sm">✓ View assigned store inventory</p>
+                      <p className="text-sm">✓ Manage customers</p>
+                      <p className="text-sm text-muted-foreground">✗ Edit inventory</p>
+                      <p className="text-sm text-muted-foreground">✗ Access reports</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+}

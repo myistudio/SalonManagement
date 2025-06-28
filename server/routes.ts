@@ -2,6 +2,10 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
+import multer from "multer";
+import path from "path";
+import fs from "fs/promises";
+import express from "express";
 import {
   insertCustomerSchema,
   insertServiceSchema,
@@ -10,11 +14,67 @@ import {
   insertTransactionSchema,
   insertTransactionItemSchema,
 } from "@shared/schema";
+
+// Configure multer for logo uploads
+const storage_config = multer.diskStorage({
+  destination: async (req, file, cb) => {
+    const uploadDir = path.join(process.cwd(), 'uploads', 'logos');
+    try {
+      await fs.mkdir(uploadDir, { recursive: true });
+      cb(null, uploadDir);
+    } catch (error) {
+      cb(error, uploadDir);
+    }
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, 'logo-' + uniqueSuffix + path.extname(file.originalname));
+  }
+});
+
+const upload = multer({ 
+  storage: storage_config,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    if (allowedTypes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Invalid file type. Only JPEG, PNG, GIF, and WebP are allowed.'));
+    }
+  }
+});
+
+// Role-based authentication middleware
+const requireRole = (allowedRoles: string[]) => {
+  return async (req: any, res: any, next: any) => {
+    try {
+      const userId = req.user?.claims?.sub;
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const user = await storage.getUser(userId);
+      if (!user || !allowedRoles.includes(user.role)) {
+        return res.status(403).json({ message: "Forbidden: Insufficient permissions" });
+      }
+
+      req.userRole = user.role;
+      next();
+    } catch (error) {
+      console.error("Role check error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  };
+};
 import { z } from "zod";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware
   await setupAuth(app);
+
+  // Serve uploaded files
+  app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
   // Auth routes
   app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
@@ -56,6 +116,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(store);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch store" });
+    }
+  });
+
+  app.patch('/api/stores/:id', isAuthenticated, requireRole(['super_admin', 'store_manager']), upload.single('logo'), async (req: any, res) => {
+    try {
+      const storeId = parseInt(req.params.id);
+      const updateData: any = { ...req.body };
+
+      // Handle logo upload
+      if (req.file) {
+        const logoUrl = `/uploads/logos/${req.file.filename}`;
+        updateData.logoUrl = logoUrl;
+      }
+
+      const updatedStore = await storage.updateStore(storeId, updateData);
+      res.json(updatedStore);
+    } catch (error) {
+      console.error("Error updating store:", error);
+      res.status(500).json({ message: "Failed to update store" });
     }
   });
 

@@ -46,6 +46,7 @@ export const stores = pgTable("stores", {
   phone: varchar("phone", { length: 20 }),
   email: varchar("email"),
   gstNumber: varchar("gst_number"),
+  logoUrl: varchar("logo_url", { length: 500 }),
   isActive: boolean("is_active").default(true),
   themeColor: varchar("theme_color").default("#8B5CF6"),
   createdAt: timestamp("created_at").defaultNow(),

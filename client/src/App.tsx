@@ -12,6 +12,7 @@ import Services from "@/pages/services";
 import Memberships from "@/pages/memberships";
 import Reports from "@/pages/reports";
 import Staff from "@/pages/staff";
+import Settings from "@/pages/settings";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -30,6 +31,7 @@ function Router() {
           <Route path="/memberships" component={Memberships} />
           <Route path="/reports" component={Reports} />
           <Route path="/staff" component={Staff} />
+          <Route path="/settings" component={Settings} />
         </>
       )}
       <Route component={NotFound} />

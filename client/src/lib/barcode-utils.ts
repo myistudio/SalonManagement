@@ -435,7 +435,7 @@ export function printMultipleBarcodes(products: Array<{code: string, name: strin
   printWindow.document.close();
 }
 
-export function printGridBarcodes(product: any, quantity: number = 1): void {
+export function printGridBarcodes(product: any, quantity: number = 1, store?: any): void {
   const printWindow = window.open('', '_blank');
   if (!printWindow) {
     console.error('Failed to open print window');
@@ -449,6 +449,8 @@ export function printGridBarcodes(product: any, quantity: number = 1): void {
     if (barcodeDataUrl) {
       barcodeHTML += `
         <div class="barcode-grid-item">
+          ${store?.logoUrl ? `<img src="${store.logoUrl}" alt="${store.name}" class="salon-logo" />` : ''}
+          <div class="salon-name">${store?.name || ''}</div>
           <div class="product-name">${product.name}</div>
           <div class="product-price">₹${parseFloat(product.price).toLocaleString()}</div>
           <img src="${barcodeDataUrl}" alt="Barcode" class="barcode-image" />
@@ -546,7 +548,7 @@ export function printGridBarcodes(product: any, quantity: number = 1): void {
   printWindow.document.close();
 }
 
-export async function printGridQRCodes(product: any, quantity: number = 1): Promise<void> {
+export async function printGridQRCodes(product: any, quantity: number = 1, store?: any): Promise<void> {
   try {
     const qrData = JSON.stringify({
       id: product.id,
@@ -574,6 +576,8 @@ export async function printGridQRCodes(product: any, quantity: number = 1): Prom
     for (let i = 0; i < quantity; i++) {
       qrHTML += `
         <div class="qr-grid-item">
+          ${store?.logoUrl ? `<img src="${store.logoUrl}" alt="${store.name}" class="salon-logo" />` : ''}
+          <div class="salon-name">${store?.name || ''}</div>
           <div class="product-name">${product.name}</div>
           <div class="product-price">₹${parseFloat(product.price).toLocaleString()}</div>
           <img src="${qrCodeDataUrl}" alt="QR Code" class="qr-image" />

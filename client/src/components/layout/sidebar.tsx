@@ -8,7 +8,8 @@ import {
   Waves, 
   Users, 
   Bus,
-  LayoutDashboard
+  LayoutDashboard,
+  Settings
 } from "lucide-react";
 
 interface SidebarProps {
@@ -60,6 +61,12 @@ export default function Sidebar({ onOpenBilling }: SidebarProps) {
       label: "Staff", 
       path: "/staff", 
       active: location === "/staff" 
+    },
+    { 
+      icon: Settings, 
+      label: "Settings", 
+      path: "/settings", 
+      active: location === "/settings" 
     },
   ];
 

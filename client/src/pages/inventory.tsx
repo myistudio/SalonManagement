@@ -76,6 +76,12 @@ export default function Inventory() {
     return { label: "In Stock", variant: "default" as const };
   };
 
+  // Fetch current store details for logo
+  const { data: currentStore } = useQuery({
+    queryKey: ["/api/stores", selectedStoreId],
+    enabled: !!selectedStoreId,
+  });
+
   const handlePrintBarcode = (product: any) => {
     if (product.barcode) {
       printBarcodeWithPrice(product.barcode, product.name, parseFloat(product.price).toLocaleString());
@@ -294,19 +300,19 @@ export default function Inventory() {
                                         Multiple Barcode Labels
                                       </DropdownMenuSubTrigger>
                                       <DropdownMenuSubContent>
-                                        <DropdownMenuItem onClick={() => printGridBarcodes(product, 4)}>
+                                        <DropdownMenuItem onClick={() => printGridBarcodes(product, 4, currentStore)}>
                                           4 Labels (1 row)
                                         </DropdownMenuItem>
-                                        <DropdownMenuItem onClick={() => printGridBarcodes(product, 8)}>
+                                        <DropdownMenuItem onClick={() => printGridBarcodes(product, 8, currentStore)}>
                                           8 Labels (2 rows)
                                         </DropdownMenuItem>
-                                        <DropdownMenuItem onClick={() => printGridBarcodes(product, 12)}>
+                                        <DropdownMenuItem onClick={() => printGridBarcodes(product, 12, currentStore)}>
                                           12 Labels (3 rows)
                                         </DropdownMenuItem>
-                                        <DropdownMenuItem onClick={() => printGridBarcodes(product, 16)}>
+                                        <DropdownMenuItem onClick={() => printGridBarcodes(product, 16, currentStore)}>
                                           16 Labels (4 rows)
                                         </DropdownMenuItem>
-                                        <DropdownMenuItem onClick={() => printGridBarcodes(product, 20)}>
+                                        <DropdownMenuItem onClick={() => printGridBarcodes(product, 20, currentStore)}>
                                           20 Labels (5 rows)
                                         </DropdownMenuItem>
                                       </DropdownMenuSubContent>
@@ -317,19 +323,19 @@ export default function Inventory() {
                                         Multiple QR Code Labels
                                       </DropdownMenuSubTrigger>
                                       <DropdownMenuSubContent>
-                                        <DropdownMenuItem onClick={() => printGridQRCodes(product, 4)}>
+                                        <DropdownMenuItem onClick={() => printGridQRCodes(product, 4, currentStore)}>
                                           4 Labels (1 row)
                                         </DropdownMenuItem>
-                                        <DropdownMenuItem onClick={() => printGridQRCodes(product, 8)}>
+                                        <DropdownMenuItem onClick={() => printGridQRCodes(product, 8, currentStore)}>
                                           8 Labels (2 rows)
                                         </DropdownMenuItem>
-                                        <DropdownMenuItem onClick={() => printGridQRCodes(product, 12)}>
+                                        <DropdownMenuItem onClick={() => printGridQRCodes(product, 12, currentStore)}>
                                           12 Labels (3 rows)
                                         </DropdownMenuItem>
-                                        <DropdownMenuItem onClick={() => printGridQRCodes(product, 16)}>
+                                        <DropdownMenuItem onClick={() => printGridQRCodes(product, 16, currentStore)}>
                                           16 Labels (4 rows)
                                         </DropdownMenuItem>
-                                        <DropdownMenuItem onClick={() => printGridQRCodes(product, 20)}>
+                                        <DropdownMenuItem onClick={() => printGridQRCodes(product, 20, currentStore)}>
                                           20 Labels (5 rows)
                                         </DropdownMenuItem>
                                       </DropdownMenuSubContent>
