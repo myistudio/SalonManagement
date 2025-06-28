@@ -380,8 +380,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Validate transaction data
       const transactionData = insertTransactionSchema.parse(transactionForValidation);
       
-      // Validate items
-      const itemsData = z.array(insertTransactionItemSchema).parse(items);
+      // Prepare items data (validation will happen in storage after transaction creation)
+      const itemsData = items.map((item: any) => ({
+        itemType: item.itemType,
+        itemId: item.itemId,
+        itemName: item.itemName,
+        quantity: item.quantity || 1,
+        unitPrice: item.unitPrice,
+        totalPrice: item.totalPrice,
+      }));
       
       // Create transaction
       const newTransaction = await storage.createTransaction(transactionData, itemsData);
