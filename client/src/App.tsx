@@ -14,6 +14,7 @@ import Reports from "@/pages/reports";
 import Staff from "@/pages/staff";
 import Stores from "@/pages/stores";
 import Settings from "@/pages/settings";
+import WhatsApp from "@/pages/whatsapp";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -33,6 +34,7 @@ function Router() {
           <Route path="/reports" component={Reports} />
           <Route path="/staff" component={Staff} />
           <Route path="/stores" component={Stores} />
+          <Route path="/whatsapp" component={WhatsApp} />
           <Route path="/settings" component={Settings} />
         </>
       )}

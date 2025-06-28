@@ -12,6 +12,10 @@ import {
   transactions,
   transactionItems,
   loyaltySettings,
+  whatsappSettings,
+  whatsappTemplates,
+  whatsappMessages,
+  customerCampaigns,
   type User,
   type UpsertUser,
   type Store,
@@ -35,6 +39,14 @@ import {
   type InsertTransactionItem,
   type LoyaltySettings,
   type StoreStaff,
+  type WhatsappSettings,
+  type InsertWhatsappSettings,
+  type WhatsappTemplate,
+  type InsertWhatsappTemplate,
+  type WhatsappMessage,
+  type InsertWhatsappMessage,
+  type CustomerCampaign,
+  type InsertCustomerCampaign,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, sql, ilike, gte, lte } from "drizzle-orm";
@@ -127,6 +139,23 @@ export interface IStorage {
     topServices: { name: string; count: number; revenue: string }[];
     topProducts: { name: string; count: number; revenue: string }[];
   }>;
+
+  // WhatsApp operations
+  getWhatsappSettings(storeId: number): Promise<WhatsappSettings | undefined>;
+  updateWhatsappSettings(storeId: number, settings: Partial<InsertWhatsappSettings>): Promise<WhatsappSettings>;
+  getWhatsappTemplates(storeId: number): Promise<WhatsappTemplate[]>;
+  getWhatsappTemplate(id: number): Promise<WhatsappTemplate | undefined>;
+  createWhatsappTemplate(template: InsertWhatsappTemplate): Promise<WhatsappTemplate>;
+  updateWhatsappTemplate(id: number, template: Partial<InsertWhatsappTemplate>): Promise<WhatsappTemplate>;
+  deleteWhatsappTemplate(id: number): Promise<void>;
+  getWhatsappMessages(storeId: number, limit?: number): Promise<WhatsappMessage[]>;
+  createWhatsappMessage(message: InsertWhatsappMessage): Promise<WhatsappMessage>;
+  updateWhatsappMessageStatus(id: number, status: string, whatsappMessageId?: string, errorMessage?: string): Promise<void>;
+  getBirthdayCustomers(storeId: number, date: Date): Promise<Customer[]>;
+  getAnniversaryCustomers(storeId: number, date: Date): Promise<Customer[]>;
+  getCustomerCampaigns(storeId: number): Promise<CustomerCampaign[]>;
+  createCustomerCampaign(campaign: InsertCustomerCampaign): Promise<CustomerCampaign>;
+  updateCustomerCampaign(id: number, campaign: Partial<InsertCustomerCampaign>): Promise<CustomerCampaign>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -838,6 +867,159 @@ export class DatabaseStorage implements IStorage {
         revenue: p.revenue || '0'
       })),
     };
+  }
+
+  // WhatsApp operations
+  async getWhatsappSettings(storeId: number): Promise<WhatsappSettings | undefined> {
+    const [settings] = await db
+      .select()
+      .from(whatsappSettings)
+      .where(eq(whatsappSettings.storeId, storeId));
+    return settings;
+  }
+
+  async updateWhatsappSettings(storeId: number, settingsData: Partial<InsertWhatsappSettings>): Promise<WhatsappSettings> {
+    const existing = await this.getWhatsappSettings(storeId);
+    
+    if (existing) {
+      const [updated] = await db
+        .update(whatsappSettings)
+        .set({ ...settingsData, updatedAt: new Date() })
+        .where(eq(whatsappSettings.storeId, storeId))
+        .returning();
+      return updated;
+    } else {
+      const [created] = await db
+        .insert(whatsappSettings)
+        .values({ ...settingsData, storeId })
+        .returning();
+      return created;
+    }
+  }
+
+  async getWhatsappTemplates(storeId: number): Promise<WhatsappTemplate[]> {
+    return await db
+      .select()
+      .from(whatsappTemplates)
+      .where(eq(whatsappTemplates.storeId, storeId))
+      .orderBy(desc(whatsappTemplates.createdAt));
+  }
+
+  async getWhatsappTemplate(id: number): Promise<WhatsappTemplate | undefined> {
+    const [template] = await db
+      .select()
+      .from(whatsappTemplates)
+      .where(eq(whatsappTemplates.id, id));
+    return template;
+  }
+
+  async createWhatsappTemplate(template: InsertWhatsappTemplate): Promise<WhatsappTemplate> {
+    const [created] = await db
+      .insert(whatsappTemplates)
+      .values(template)
+      .returning();
+    return created;
+  }
+
+  async updateWhatsappTemplate(id: number, template: Partial<InsertWhatsappTemplate>): Promise<WhatsappTemplate> {
+    const [updated] = await db
+      .update(whatsappTemplates)
+      .set({ ...template, updatedAt: new Date() })
+      .where(eq(whatsappTemplates.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteWhatsappTemplate(id: number): Promise<void> {
+    await db
+      .delete(whatsappTemplates)
+      .where(eq(whatsappTemplates.id, id));
+  }
+
+  async getWhatsappMessages(storeId: number, limit = 100): Promise<WhatsappMessage[]> {
+    return await db
+      .select()
+      .from(whatsappMessages)
+      .where(eq(whatsappMessages.storeId, storeId))
+      .orderBy(desc(whatsappMessages.createdAt))
+      .limit(limit);
+  }
+
+  async createWhatsappMessage(message: InsertWhatsappMessage): Promise<WhatsappMessage> {
+    const [created] = await db
+      .insert(whatsappMessages)
+      .values(message)
+      .returning();
+    return created;
+  }
+
+  async updateWhatsappMessageStatus(id: number, status: string, whatsappMessageId?: string, errorMessage?: string): Promise<void> {
+    await db
+      .update(whatsappMessages)
+      .set({
+        status,
+        whatsappMessageId,
+        errorMessage,
+        sentAt: status === 'sent' ? new Date() : undefined
+      })
+      .where(eq(whatsappMessages.id, id));
+  }
+
+  async getBirthdayCustomers(storeId: number, date: Date): Promise<Customer[]> {
+    const month = date.getMonth() + 1;
+    const day = date.getDate();
+    
+    return await db
+      .select()
+      .from(customers)
+      .where(
+        and(
+          eq(customers.storeId, storeId),
+          sql`EXTRACT(MONTH FROM ${customers.dateOfBirth}) = ${month}`,
+          sql`EXTRACT(DAY FROM ${customers.dateOfBirth}) = ${day}`
+        )
+      );
+  }
+
+  async getAnniversaryCustomers(storeId: number, date: Date): Promise<Customer[]> {
+    const month = date.getMonth() + 1;
+    const day = date.getDate();
+    
+    return await db
+      .select()
+      .from(customers)
+      .where(
+        and(
+          eq(customers.storeId, storeId),
+          sql`EXTRACT(MONTH FROM ${customers.anniversaryDate}) = ${month}`,
+          sql`EXTRACT(DAY FROM ${customers.anniversaryDate}) = ${day}`
+        )
+      );
+  }
+
+  async getCustomerCampaigns(storeId: number): Promise<CustomerCampaign[]> {
+    return await db
+      .select()
+      .from(customerCampaigns)
+      .where(eq(customerCampaigns.storeId, storeId))
+      .orderBy(desc(customerCampaigns.createdAt));
+  }
+
+  async createCustomerCampaign(campaign: InsertCustomerCampaign): Promise<CustomerCampaign> {
+    const [created] = await db
+      .insert(customerCampaigns)
+      .values(campaign)
+      .returning();
+    return created;
+  }
+
+  async updateCustomerCampaign(id: number, campaign: Partial<InsertCustomerCampaign>): Promise<CustomerCampaign> {
+    const [updated] = await db
+      .update(customerCampaigns)
+      .set({ ...campaign, updatedAt: new Date() })
+      .where(eq(customerCampaigns.id, id))
+      .returning();
+    return updated;
   }
 }
 

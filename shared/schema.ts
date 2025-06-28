@@ -212,6 +212,75 @@ export const loyaltySettings = pgTable("loyalty_settings", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// WhatsApp Business API settings table
+export const whatsappSettings = pgTable("whatsapp_settings", {
+  id: serial("id").primaryKey(),
+  storeId: integer("store_id").references(() => stores.id, { onDelete: "cascade" }).notNull(),
+  accessToken: text("access_token"),
+  phoneNumberId: text("phone_number_id"),
+  businessAccountId: text("business_account_id"),
+  webhookVerifyToken: text("webhook_verify_token"),
+  isEnabled: boolean("is_enabled").default(false),
+  enableSaleNotifications: boolean("enable_sale_notifications").default(true),
+  enableBirthdayMessages: boolean("enable_birthday_messages").default(true),
+  enableAnniversaryMessages: boolean("enable_anniversary_messages").default(true),
+  enableCampaignMessages: boolean("enable_campaign_messages").default(true),
+  birthdayTime: text("birthday_time").default("10:00"), // HH:MM format
+  anniversaryTime: text("anniversary_time").default("10:00"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// WhatsApp message templates table
+export const whatsappTemplates = pgTable("whatsapp_templates", {
+  id: serial("id").primaryKey(),
+  storeId: integer("store_id").references(() => stores.id, { onDelete: "cascade" }).notNull(),
+  name: text("name").notNull(),
+  type: text("type").notNull(), // 'sale', 'birthday', 'anniversary', 'campaign'
+  templateId: text("template_id"), // WhatsApp template ID
+  content: text("content").notNull(),
+  variables: text("variables").array(), // template variables like {{customer_name}}, {{store_name}}
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// WhatsApp message logs table
+export const whatsappMessages = pgTable("whatsapp_messages", {
+  id: serial("id").primaryKey(),
+  storeId: integer("store_id").references(() => stores.id, { onDelete: "cascade" }).notNull(),
+  customerId: integer("customer_id").references(() => customers.id),
+  phoneNumber: text("phone_number").notNull(),
+  messageType: text("message_type").notNull(), // 'sale', 'birthday', 'anniversary', 'campaign'
+  templateId: integer("template_id").references(() => whatsappTemplates.id),
+  content: text("content").notNull(),
+  status: text("status").default("pending"), // 'pending', 'sent', 'delivered', 'failed'
+  whatsappMessageId: text("whatsapp_message_id"),
+  errorMessage: text("error_message"),
+  scheduledFor: timestamp("scheduled_for"),
+  sentAt: timestamp("sent_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Customer campaigns table
+export const customerCampaigns = pgTable("customer_campaigns", {
+  id: serial("id").primaryKey(),
+  storeId: integer("store_id").references(() => stores.id, { onDelete: "cascade" }).notNull(),
+  name: text("name").notNull(),
+  description: text("description"),
+  templateId: integer("template_id").references(() => whatsappTemplates.id),
+  targetAudience: text("target_audience").notNull(), // 'all', 'members', 'recent_customers', 'custom'
+  customFilters: jsonb("custom_filters"), // JSON filters for custom audience
+  scheduledFor: timestamp("scheduled_for"),
+  status: text("status").default("draft"), // 'draft', 'scheduled', 'sent', 'cancelled'
+  totalRecipients: integer("total_recipients").default(0),
+  sentCount: integer("sent_count").default(0),
+  deliveredCount: integer("delivered_count").default(0),
+  failedCount: integer("failed_count").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
   storeStaff: many(storeStaff),
@@ -227,6 +296,10 @@ export const storesRelations = relations(stores, ({ many }) => ({
   membershipPlans: many(membershipPlans),
   transactions: many(transactions),
   loyaltySettings: many(loyaltySettings),
+  whatsappSettings: many(whatsappSettings),
+  whatsappTemplates: many(whatsappTemplates),
+  whatsappMessages: many(whatsappMessages),
+  customerCampaigns: many(customerCampaigns),
 }));
 
 export const storeStaffRelations = relations(storeStaff, ({ one }) => ({
@@ -322,6 +395,46 @@ export const loyaltySettingsRelations = relations(loyaltySettings, ({ one }) => 
   }),
 }));
 
+export const whatsappSettingsRelations = relations(whatsappSettings, ({ one }) => ({
+  store: one(stores, {
+    fields: [whatsappSettings.storeId],
+    references: [stores.id],
+  }),
+}));
+
+export const whatsappTemplatesRelations = relations(whatsappTemplates, ({ one }) => ({
+  store: one(stores, {
+    fields: [whatsappTemplates.storeId],
+    references: [stores.id],
+  }),
+}));
+
+export const whatsappMessagesRelations = relations(whatsappMessages, ({ one }) => ({
+  store: one(stores, {
+    fields: [whatsappMessages.storeId],
+    references: [stores.id],
+  }),
+  customer: one(customers, {
+    fields: [whatsappMessages.customerId],
+    references: [customers.id],
+  }),
+  template: one(whatsappTemplates, {
+    fields: [whatsappMessages.templateId],
+    references: [whatsappTemplates.id],
+  }),
+}));
+
+export const customerCampaignsRelations = relations(customerCampaigns, ({ one }) => ({
+  store: one(stores, {
+    fields: [customerCampaigns.storeId],
+    references: [stores.id],
+  }),
+  template: one(whatsappTemplates, {
+    fields: [customerCampaigns.templateId],
+    references: [whatsappTemplates.id],
+  }),
+}));
+
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).omit({
   createdAt: true,
@@ -382,6 +495,29 @@ export const insertTransactionItemSchema = createInsertSchema(transactionItems).
   id: true,
 });
 
+export const insertWhatsappSettingsSchema = createInsertSchema(whatsappSettings).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertWhatsappTemplateSchema = createInsertSchema(whatsappTemplates).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertWhatsappMessageSchema = createInsertSchema(whatsappMessages).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertCustomerCampaignSchema = createInsertSchema(customerCampaigns).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 // Types
 export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
@@ -406,3 +542,11 @@ export type TransactionItem = typeof transactionItems.$inferSelect;
 export type InsertTransactionItem = z.infer<typeof insertTransactionItemSchema>;
 export type LoyaltySettings = typeof loyaltySettings.$inferSelect;
 export type StoreStaff = typeof storeStaff.$inferSelect;
+export type WhatsappSettings = typeof whatsappSettings.$inferSelect;
+export type InsertWhatsappSettings = z.infer<typeof insertWhatsappSettingsSchema>;
+export type WhatsappTemplate = typeof whatsappTemplates.$inferSelect;
+export type InsertWhatsappTemplate = z.infer<typeof insertWhatsappTemplateSchema>;
+export type WhatsappMessage = typeof whatsappMessages.$inferSelect;
+export type InsertWhatsappMessage = z.infer<typeof insertWhatsappMessageSchema>;
+export type CustomerCampaign = typeof customerCampaigns.$inferSelect;
+export type InsertCustomerCampaign = z.infer<typeof insertCustomerCampaignSchema>;

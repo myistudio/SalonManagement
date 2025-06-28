@@ -14,7 +14,8 @@ import {
   Settings,
   Building2,
   Menu,
-  X
+  X,
+  MessageSquare
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -80,6 +81,12 @@ export default function Sidebar({ onOpenBilling }: SidebarProps) {
       active: location === "/stores" 
     },
     { 
+      icon: MessageSquare, 
+      label: "WhatsApp", 
+      path: "/whatsapp", 
+      active: location === "/whatsapp" 
+    },
+    { 
       icon: Settings, 
       label: "Settings", 
       path: "/settings", 
@@ -94,9 +101,9 @@ export default function Sidebar({ onOpenBilling }: SidebarProps) {
     if (userRole === "store_manager") {
       return !["Stores"].includes(item.label);
     }
-    // For cashiers, hide Reports, Staff, Settings, and Stores
+    // For cashiers, hide Reports, Staff, Settings, WhatsApp, and Stores
     if (userRole === "cashier") {
-      return !["Reports", "Staff", "Settings", "Stores"].includes(item.label);
+      return !["Reports", "Staff", "Settings", "WhatsApp", "Stores"].includes(item.label);
     }
     return true;
   });
