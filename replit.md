@@ -125,7 +125,8 @@ SalonPro is a comprehensive multi-store salon and nail studio billing applicatio
 
 ```
 Changelog:
-- June 28, 2025. Initial setup
+- June 28, 2025. Initial setup with comprehensive salon management system
+- June 28, 2025. Added barcode and QR code printing for inventory labels
 ```
 
 ## User Preferences

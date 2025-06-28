@@ -13,9 +13,16 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Search, Plus, Package, AlertTriangle, QrCode, Edit } from "lucide-react";
+import { Search, Plus, Package, AlertTriangle, QrCode, Edit, Printer, Tag } from "lucide-react";
 import ProductForm from "@/components/products/product-form";
 import BillingModal from "@/components/billing/billing-modal";
+import { printBarcode, printQRCode, printBarcodeWithPrice } from "@/lib/barcode-utils";
+import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export default function Inventory() {
   const { toast } = useToast();
@@ -63,6 +70,39 @@ export default function Inventory() {
     if (product.stock <= 0) return { label: "Out of Stock", variant: "destructive" as const };
     if (product.stock <= product.minStock) return { label: "Low Stock", variant: "destructive" as const };
     return { label: "In Stock", variant: "default" as const };
+  };
+
+  const handlePrintBarcode = (product: any) => {
+    if (product.barcode) {
+      printBarcodeWithPrice(product.barcode, product.name, parseFloat(product.price).toLocaleString());
+    } else {
+      toast({
+        title: "No Barcode",
+        description: "This product doesn't have a barcode to print.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handlePrintQRCode = async (product: any) => {
+    try {
+      // Create QR code data with product information
+      const qrData = JSON.stringify({
+        id: product.id,
+        name: product.name,
+        price: product.price,
+        barcode: product.barcode || '',
+        category: product.category || ''
+      });
+      
+      await printQRCode(qrData, product.name, parseFloat(product.price).toLocaleString());
+    } catch (error) {
+      toast({
+        title: "Print Error",
+        description: "Failed to print QR code. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   if (isLoading) {
@@ -188,7 +228,7 @@ export default function Inventory() {
                         <TableHead>Stock</TableHead>
                         <TableHead>Status</TableHead>
                         <TableHead>Barcode</TableHead>
-                        <TableHead>Actions</TableHead>
+                        <TableHead>Print Labels</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -226,16 +266,36 @@ export default function Inventory() {
                               </div>
                             </TableCell>
                             <TableCell>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => {
-                                  setEditingProduct(product);
-                                  setShowProductForm(true);
-                                }}
-                              >
-                                <Edit size={16} />
-                              </Button>
+                              <div className="flex items-center space-x-2">
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <Button variant="outline" size="sm">
+                                      <Printer size={16} className="mr-1" />
+                                      Print
+                                    </Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end">
+                                    <DropdownMenuItem onClick={() => handlePrintBarcode(product)}>
+                                      <Tag size={16} className="mr-2" />
+                                      Print Barcode Label
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => handlePrintQRCode(product)}>
+                                      <QrCode size={16} className="mr-2" />
+                                      Print QR Code Label
+                                    </DropdownMenuItem>
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => {
+                                    setEditingProduct(product);
+                                    setShowProductForm(true);
+                                  }}
+                                >
+                                  <Edit size={16} />
+                                </Button>
+                              </div>
                             </TableCell>
                           </TableRow>
                         );
