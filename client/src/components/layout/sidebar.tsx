@@ -171,7 +171,7 @@ export default function Sidebar({ onOpenBilling }: SidebarProps) {
       </div>
 
       {/* Desktop sidebar */}
-      <div className="hidden lg:flex lg:flex-shrink-0 lg:fixed lg:inset-y-0 lg:top-16">
+      <div className="hidden lg:flex lg:flex-shrink-0 lg:fixed lg:inset-y-0 lg:top-16 z-10">
         <div className="flex flex-col w-64">
           <div className="flex flex-col flex-grow bg-white border-r border-gray-200 pt-5 pb-4 overflow-y-auto">
             <div className="flex-grow flex flex-col">

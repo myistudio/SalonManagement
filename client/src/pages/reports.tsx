@@ -95,8 +95,8 @@ export default function Reports() {
     <div className="min-h-screen bg-background">
       <Header selectedStoreId={selectedStoreId} onStoreChange={setSelectedStoreId} />
       <div className="flex">
-        <Sidebar />
-        <main className="flex-1 p-6">
+        <Sidebar onOpenBilling={() => setShowBillingModal(true)} />
+        <main className="flex-1 p-6 lg:ml-64">
           <div className="max-w-7xl mx-auto">
             <div className="mb-6">
               <h1 className="text-3xl font-bold text-foreground mb-2">Advanced Reports & Analytics</h1>
@@ -278,7 +278,7 @@ export default function Reports() {
                               fill="#8884d8"
                               dataKey="revenue"
                             >
-                              {(salesReport.topProducts || []).map((entry, index) => (
+                              {(salesReport.topProducts || []).map((entry: any, index: number) => (
                                 <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />
                               ))}
                             </Pie>
@@ -567,7 +567,7 @@ export default function Reports() {
         <BillingModal
           isOpen={showBillingModal}
           onClose={() => setShowBillingModal(false)}
-          selectedStoreId={selectedStoreId}
+          storeId={selectedStoreId}
         />
       )}
     </div>
