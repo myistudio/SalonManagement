@@ -466,7 +466,7 @@ export default function BillingModal({ isOpen, onClose, storeId }: BillingModalP
   return (
     <>
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-7xl max-h-[98vh] w-[98vw] overflow-y-auto p-2 sm:p-4">
+      <DialogContent className="max-w-7xl max-h-[98vh] w-[98vw] overflow-y-auto p-3 sm:p-6">
         <DialogHeader className="pb-2">
           <DialogTitle className="flex items-center justify-between text-xl sm:text-2xl font-bold">
             New Bill
@@ -477,7 +477,7 @@ export default function BillingModal({ isOpen, onClose, storeId }: BillingModalP
         </DialogHeader>
 
         {/* Customer Selection Bar - Top */}
-        <div className="bg-white border-2 border-blue-200 rounded-xl p-3 mb-4">
+        <div className="bg-white border-2 border-blue-200 rounded-xl p-4 mb-6">
           <div className="flex items-center gap-3">
             <Label className="text-base font-semibold text-gray-800 whitespace-nowrap">Customer:</Label>
             
@@ -560,66 +560,76 @@ export default function BillingModal({ isOpen, onClose, storeId }: BillingModalP
           {/* Left Column - Services & Products Side by Side */}
           <div className="lg:col-span-8 space-y-4">
             {/* Services and Products in Two Columns */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Services Section */}
-              <div className="bg-white border-2 border-green-200 rounded-xl p-4">
-                <h3 className="text-lg font-bold text-gray-900 mb-3">Services</h3>
-                <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 max-h-80 overflow-y-auto">
+              <div className="bg-white border-2 border-green-200 rounded-xl p-5 shadow-sm">
+                <h3 className="text-xl font-bold text-gray-900 mb-4">Services</h3>
+                <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 max-h-96 overflow-y-auto pr-2">
                   {typedServices.map((service: any) => (
                     <div 
                       key={service.id}
-                      className="w-24 h-24 border-2 border-gray-200 rounded-lg p-2 hover:border-green-400 hover:bg-green-50 transition-all cursor-pointer flex flex-col items-center justify-center text-center"
+                      className="w-full aspect-square min-h-[120px] border-2 border-gray-200 rounded-xl p-3 hover:border-green-400 hover:bg-green-50 hover:shadow-md transition-all duration-200 cursor-pointer flex flex-col items-center justify-center text-center touch-manipulation active:scale-95"
                       onClick={() => addServiceToBill(service)}
                     >
                       {service.imageUrl ? (
                         <img 
                           src={service.imageUrl} 
                           alt={service.name}
-                          className="w-8 h-8 object-cover rounded mb-1"
+                          className="w-12 h-12 object-cover rounded-lg mb-2"
                         />
                       ) : (
-                        <div className="w-8 h-8 bg-green-200 rounded mb-1 flex items-center justify-center">
-                          <Scissors size={12} />
+                        <div className="w-12 h-12 bg-green-200 rounded-lg mb-2 flex items-center justify-center">
+                          <Scissors size={16} className="text-green-600" />
                         </div>
                       )}
-                      <span className="text-xs font-medium text-gray-900 line-clamp-2 leading-tight">
+                      <span className="text-sm font-semibold text-gray-900 line-clamp-2 leading-tight mb-1">
                         {service.name}
                       </span>
-                      <span className="text-xs text-green-600 font-bold">
-                        Rs. {service.price}
+                      <span className="text-sm text-green-600 font-bold">
+                        Rs. {service.price.toLocaleString()}
                       </span>
+                      {service.duration && (
+                        <span className="text-xs text-gray-500 mt-1">
+                          {service.duration} min
+                        </span>
+                      )}
                     </div>
                   ))}
                 </div>
               </div>
 
               {/* Products Section */}
-              <div className="bg-white border-2 border-orange-200 rounded-xl p-4">
-                <h3 className="text-lg font-bold text-gray-900 mb-3">Products</h3>
-                <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 max-h-80 overflow-y-auto">
+              <div className="bg-white border-2 border-orange-200 rounded-xl p-5 shadow-sm">
+                <h3 className="text-xl font-bold text-gray-900 mb-4">Products</h3>
+                <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 max-h-96 overflow-y-auto pr-2">
                   {typedProducts.map((product: any) => (
                     <div 
                       key={product.id}
-                      className="w-24 h-24 border-2 border-gray-200 rounded-lg p-2 hover:border-orange-400 hover:bg-orange-50 transition-all cursor-pointer flex flex-col items-center justify-center text-center"
+                      className="w-full aspect-square min-h-[120px] border-2 border-gray-200 rounded-xl p-3 hover:border-orange-400 hover:bg-orange-50 hover:shadow-md transition-all duration-200 cursor-pointer flex flex-col items-center justify-center text-center touch-manipulation active:scale-95"
                       onClick={() => addProductToBill(product)}
                     >
                       {product.imageUrl ? (
                         <img 
                           src={product.imageUrl} 
                           alt={product.name}
-                          className="w-8 h-8 object-cover rounded mb-1"
+                          className="w-12 h-12 object-cover rounded-lg mb-2"
                         />
                       ) : (
-                        <div className="w-8 h-8 bg-orange-200 rounded mb-1 flex items-center justify-center">
-                          <Package size={12} />
+                        <div className="w-12 h-12 bg-orange-200 rounded-lg mb-2 flex items-center justify-center">
+                          <Package size={16} className="text-orange-600" />
                         </div>
                       )}
-                      <span className="text-xs font-medium text-gray-900 line-clamp-2 leading-tight">
+                      <span className="text-sm font-semibold text-gray-900 line-clamp-2 leading-tight mb-1">
                         {product.name}
                       </span>
-                      <span className="text-xs text-orange-600 font-bold">
-                        Rs. {product.price}
+                      <span className="text-sm text-orange-600 font-bold">
+                        Rs. {product.price.toLocaleString()}
                       </span>
+                      {product.stockQuantity !== undefined && (
+                        <span className="text-xs text-gray-500 mt-1">
+                          Stock: {product.stockQuantity}
+                        </span>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -627,9 +637,9 @@ export default function BillingModal({ isOpen, onClose, storeId }: BillingModalP
             </div>
 
             {/* Product Scanner */}
-            <div className="bg-white border-2 border-purple-200 rounded-xl p-3">
-              <Label className="text-base font-semibold text-gray-800 mb-2 block">Scan Product</Label>
-              <div className="flex space-x-2">
+            <div className="bg-white border-2 border-purple-200 rounded-xl p-5 shadow-sm">
+              <Label className="text-lg font-semibold text-gray-800 mb-3 block">Scan Product</Label>
+              <div className="flex space-x-3">
                 <Input
                   placeholder="Scan or enter barcode..."
                   value={productScan}
@@ -639,7 +649,7 @@ export default function BillingModal({ isOpen, onClose, storeId }: BillingModalP
                       scanProduct.mutate(productScan.trim());
                     }
                   }}
-                  className="flex-1 h-10 text-sm border-2 focus:border-purple-500"
+                  className="flex-1 h-12 text-base border-2 focus:border-purple-500 touch-manipulation"
                 />
                 <Button
                   onClick={() => {
@@ -648,9 +658,9 @@ export default function BillingModal({ isOpen, onClose, storeId }: BillingModalP
                     }
                   }}
                   disabled={!productScan.trim() || scanProduct.isPending}
-                  className="h-10 px-4 bg-purple-500 hover:bg-purple-600"
+                  className="h-12 px-6 bg-purple-500 hover:bg-purple-600 touch-manipulation active:scale-95"
                 >
-                  <QrCode size={16} />
+                  <QrCode size={20} />
                 </Button>
               </div>
             </div>
@@ -785,66 +795,66 @@ export default function BillingModal({ isOpen, onClose, storeId }: BillingModalP
             )}
 
             {/* Current Bill */}
-            <div className="bg-white border-2 border-gray-300 rounded-xl p-4">
-              <h3 className="text-lg font-bold text-gray-900 mb-4">Current Bill</h3>
+            <div className="bg-white border-2 border-gray-300 rounded-xl p-5 shadow-sm">
+              <h3 className="text-xl font-bold text-gray-900 mb-4">Current Bill</h3>
               
               {billItems.length === 0 ? (
                 <div className="text-center py-4 text-gray-500">
                   <p className="text-sm">No items added yet</p>
                 </div>
               ) : (
-                <div className="space-y-2 max-h-64 overflow-y-auto">
+                <div className="space-y-3 max-h-80 overflow-y-auto pr-2">
                   {billItems.map((item, index) => (
-                    <div key={`${item.type}-${item.id}-${index}`} className="border border-gray-200 rounded-lg p-2">
-                      <div className="flex items-start gap-2">
+                    <div key={`${item.type}-${item.id}-${index}`} className="border border-gray-200 rounded-xl p-3 bg-gray-50">
+                      <div className="flex items-start gap-3">
                         {/* Item Image and Name */}
-                        <div className="flex items-center gap-2 flex-1 min-w-0">
+                        <div className="flex items-center gap-3 flex-1 min-w-0">
                           {item.imageUrl && (
                             <img 
                               src={item.imageUrl} 
                               alt={item.name}
-                              className="w-6 h-6 object-cover rounded"
+                              className="w-10 h-10 object-cover rounded-lg"
                             />
                           )}
                           <div className="flex-1 min-w-0">
-                            <p className="font-medium text-xs truncate">{item.name}</p>
-                            <p className="text-xs text-gray-500">
-                              Rs. {item.price.toLocaleString()}
+                            <p className="font-semibold text-sm truncate text-gray-900">{item.name}</p>
+                            <p className="text-sm text-gray-600">
+                              Rs. {item.price.toLocaleString()} each
                             </p>
                           </div>
                         </div>
 
                         {/* Quantity Controls */}
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-2">
                           <Button
                             size="sm"
                             variant="outline"
                             onClick={() => updateItemQuantity(item.id, item.type, -1)}
                             disabled={item.quantity <= 1}
-                            className="h-5 w-5 rounded text-xs p-0"
+                            className="h-8 w-8 rounded-lg text-sm p-0 touch-manipulation active:scale-95"
                           >
                             -
                           </Button>
-                          <span className="text-xs font-medium w-4 text-center">{item.quantity}</span>
+                          <span className="text-sm font-bold w-8 text-center bg-white rounded px-2 py-1">{item.quantity}</span>
                           <Button
                             size="sm"
                             variant="outline"
                             onClick={() => updateItemQuantity(item.id, item.type, 1)}
-                            className="h-5 w-5 rounded text-xs p-0"
+                            className="h-8 w-8 rounded-lg text-sm p-0 touch-manipulation active:scale-95"
                           >
                             +
                           </Button>
                         </div>
 
                         {/* Price and Actions */}
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-2">
                           {editingPrice?.id === item.id && editingPrice?.type === item.type ? (
-                            <div className="flex items-center gap-1">
+                            <div className="flex items-center gap-2">
                               <Input
                                 type="number"
                                 value={customPrice}
                                 onChange={(e) => setCustomPrice(e.target.value)}
-                                className="w-12 h-5 text-xs p-1"
+                                className="w-20 h-8 text-sm p-2"
                                 onKeyPress={(e) => {
                                   if (e.key === 'Enter') {
                                     updateItemPrice(item.id, item.type, parseFloat(customPrice));
@@ -854,14 +864,14 @@ export default function BillingModal({ isOpen, onClose, storeId }: BillingModalP
                               <Button
                                 size="sm"
                                 onClick={() => updateItemPrice(item.id, item.type, parseFloat(customPrice))}
-                                className="h-5 w-5 p-0 text-xs"
+                                className="h-8 w-8 p-0 text-sm touch-manipulation"
                               >
                                 ✓
                               </Button>
                             </div>
                           ) : (
-                            <div className="text-right min-w-[40px]">
-                              <div className="text-xs font-bold text-blue-600">
+                            <div className="text-right min-w-[60px]">
+                              <div className="text-sm font-bold text-blue-600">
                                 Rs. {(item.price * item.quantity).toLocaleString()}
                               </div>
                               {item.isCustomPrice && <div className="text-xs text-orange-500">(Custom)</div>}
@@ -872,19 +882,19 @@ export default function BillingModal({ isOpen, onClose, storeId }: BillingModalP
                             size="sm"
                             variant="ghost"
                             onClick={() => handlePriceEdit(item)}
-                            className="h-5 w-5 p-0"
+                            className="h-8 w-8 p-0 touch-manipulation active:scale-95"
                             title="Edit Price"
                           >
-                            <Edit2 size={8} />
+                            <Edit2 size={12} />
                           </Button>
                           <Button
                             size="sm"
                             variant="ghost"
                             onClick={() => removeItem(item.id, item.type)}
-                            className="h-5 w-5 p-0 text-red-500 hover:text-red-700"
+                            className="h-8 w-8 p-0 text-red-500 hover:text-red-700 touch-manipulation active:scale-95"
                             title="Remove"
                           >
-                            <Trash2 size={8} />
+                            <Trash2 size={12} />
                           </Button>
                         </div>
                       </div>
@@ -896,37 +906,37 @@ export default function BillingModal({ isOpen, onClose, storeId }: BillingModalP
 
             {/* Bill Summary & Checkout */}
             {billItems.length > 0 && (
-              <div className="bg-gradient-to-br from-blue-50 to-indigo-100 border-2 border-blue-300 rounded-xl p-3">
-                <h3 className="text-lg font-bold text-gray-900 mb-3">Bill Summary</h3>
+              <div className="bg-gradient-to-br from-blue-50 to-indigo-100 border-2 border-blue-300 rounded-xl p-5 shadow-sm">
+                <h3 className="text-xl font-bold text-gray-900 mb-4">Bill Summary</h3>
                 
                 {/* Totals */}
-                <div className="space-y-2 mb-3">
-                  <div className="flex justify-between items-center text-sm">
-                    <span className="font-medium">Subtotal:</span>
-                    <span className="font-bold">Rs. {getSubtotal().toLocaleString()}</span>
+                <div className="space-y-3 mb-5">
+                  <div className="flex justify-between items-center text-base">
+                    <span className="font-semibold text-gray-700">Subtotal:</span>
+                    <span className="font-bold text-gray-900">Rs. {getSubtotal().toLocaleString()}</span>
                   </div>
                   
                   {getDiscount() > 0 && (
-                    <div className="flex justify-between items-center text-sm text-green-600">
-                      <span className="font-medium">Discount:</span>
+                    <div className="flex justify-between items-center text-base text-green-600">
+                      <span className="font-semibold">Discount:</span>
                       <span className="font-bold">- Rs. {getDiscount().toLocaleString()}</span>
                     </div>
                   )}
                   
-                  <div className="flex justify-between items-center text-sm">
-                    <span className="font-medium">GST (18%):</span>
-                    <span className="font-bold">Rs. {getGST().toLocaleString()}</span>
+                  <div className="flex justify-between items-center text-base">
+                    <span className="font-semibold text-gray-700">GST (18%):</span>
+                    <span className="font-bold text-gray-900">Rs. {getGST().toLocaleString()}</span>
                   </div>
                   
-                  <Separator />
+                  <Separator className="my-3" />
                   
-                  <div className="flex justify-between items-center text-lg font-bold text-blue-600">
+                  <div className="flex justify-between items-center text-xl font-bold text-blue-600">
                     <span>Total:</span>
                     <span>Rs. {getTotal().toLocaleString()}</span>
                   </div>
                   
                   {getPointsEarned() > 0 && (
-                    <div className="text-center text-sm text-orange-600 font-medium">
+                    <div className="text-center text-base text-orange-600 font-semibold bg-orange-50 rounded-lg p-2">
                       Points to earn: {getPointsEarned()}
                     </div>
                   )}
@@ -934,27 +944,30 @@ export default function BillingModal({ isOpen, onClose, storeId }: BillingModalP
 
                 {/* Loyalty Points */}
                 {selectedCustomer && selectedCustomer.loyaltyPoints > 0 && (
-                  <div className="mb-3 p-2 bg-white rounded-lg border border-orange-200">
-                    <Label className="text-sm font-semibold text-gray-800 mb-2 block">
+                  <div className="mb-5 p-4 bg-white rounded-xl border-2 border-orange-200 shadow-sm">
+                    <Label className="text-base font-semibold text-gray-800 mb-3 block">
                       Redeem Points ({selectedCustomer.loyaltyPoints} available)
                     </Label>
-                    <div className="flex items-center space-x-2">
+                    <div className="flex items-center space-x-3">
                       <Input
                         type="number"
                         value={pointsToRedeem}
                         onChange={(e) => setPointsToRedeem(Math.min(parseInt(e.target.value) || 0, selectedCustomer.loyaltyPoints, getSubtotal()))}
                         max={Math.min(selectedCustomer.loyaltyPoints, getSubtotal())}
-                        placeholder="Points"
-                        className="flex-1 h-8 text-sm"
+                        placeholder="Points to redeem"
+                        className="flex-1 h-12 text-base border-2 touch-manipulation"
                       />
                       <Button
                         variant="outline"
                         onClick={() => setPointsToRedeem(Math.min(selectedCustomer.loyaltyPoints, getSubtotal()))}
-                        className="h-8 px-3 text-xs"
+                        className="h-12 px-6 text-base font-semibold touch-manipulation active:scale-95"
                       >
-                        Max
+                        Use Max
                       </Button>
                     </div>
+                    <p className="text-sm text-gray-600 mt-2">
+                      Max redemption: Rs. {Math.min(selectedCustomer.loyaltyPoints, getSubtotal()).toLocaleString()}
+                    </p>
                   </div>
                 )}
 
@@ -962,14 +975,14 @@ export default function BillingModal({ isOpen, onClose, storeId }: BillingModalP
                 <Button
                   onClick={handlePayment}
                   disabled={createTransaction.isPending}
-                  className="w-full h-12 text-sm font-bold bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white shadow-lg"
+                  className="w-full h-16 text-lg font-bold bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white shadow-lg rounded-xl touch-manipulation active:scale-95 transition-all duration-200"
                 >
                   <div className="flex flex-col items-center justify-center text-center">
-                    <span className="text-xs">
-                      {createTransaction.isPending ? "Processing..." : "Complete Payment"}
+                    <span className="text-sm font-semibold">
+                      {createTransaction.isPending ? "Processing Payment..." : "Complete Payment"}
                     </span>
                     {!createTransaction.isPending && (
-                      <span className="text-sm font-bold">
+                      <span className="text-xl font-bold mt-1">
                         Rs. {getTotal().toLocaleString()}
                       </span>
                     )}

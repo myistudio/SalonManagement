@@ -163,6 +163,7 @@ Changelog:
 - June 28, 2025. Fixed payment button text overflow with responsive design and vertical text stacking for better mobile display
 - June 28, 2025. Reorganized Current Bill section with compact layout - reduced item height, smaller buttons, and better space utilization
 - June 28, 2025. Major billing interface redesign - moved customer selection to horizontal top bar, reduced product/service boxes to 100x100px for optimal space usage
+- June 28, 2025. iPad-optimized billing interface with proper margins, larger touch targets (120px min-height), enhanced spacing, and touch-friendly controls
 ```
 
 ## User Preferences
