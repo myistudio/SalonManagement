@@ -77,9 +77,13 @@ const ReceiptDialog = ({ isOpen, onClose, transaction, setShowReceiptDialog }: R
           mobile: transaction.customer.mobile || ""
         } : undefined,
         items: (transaction.items || []).map((item: any) => ({
-          name: item.name || item.product?.name || item.service?.name || "",
+          name: item.itemName || item.name || "",
           quantity: item.quantity || 1,
-          price: typeof item.price === 'number' ? item.price : parseFloat(item.price || "0")
+          price: typeof item.totalPrice === 'number' ? item.totalPrice : parseFloat(item.totalPrice || "0"),
+          type: item.itemType || 'product',
+          serviceStaff: item.itemType === 'service' && item.serviceStaffId ? 
+            (transaction.staff?.find((s: any) => s.id === item.serviceStaffId)?.firstName + ' ' + 
+             transaction.staff?.find((s: any) => s.id === item.serviceStaffId)?.lastName) : undefined
         })),
         subtotal: parseFloat(transaction.subtotal || "0"),
         discount: parseFloat(transaction.discountAmount || "0"),
@@ -179,7 +183,7 @@ export default function BillingModal({ isOpen, onClose, storeId }: BillingModalP
     enabled: isOpen && !!storeId,
   });
 
-  const { data: staff = [] } = useQuery({
+  const { data: storeStaff = [] } = useQuery({
     queryKey: [`/api/stores/${storeId}/staff`],
     enabled: isOpen && !!storeId,
   });
@@ -1145,14 +1149,14 @@ export default function BillingModal({ isOpen, onClose, storeId }: BillingModalP
                     </Label>
                     
                     <div className="space-y-3">
-                      {staff && staff.length > 0 ? (
+                      {storeStaff && storeStaff.length > 0 ? (
                         <select
                           value={selectedStaffId}
                           onChange={(e) => setSelectedStaffId(e.target.value)}
                           className="w-full h-12 px-3 border-2 border-gray-300 rounded-lg text-sm"
                         >
                           <option value="">Select Staff Member</option>
-                          {staff.map((member: any) => (
+                          {storeStaff.map((member: any) => (
                             <option key={member.user.id} value={member.user.id}>
                               {member.user.firstName} {member.user.lastName} ({member.role})
                             </option>

@@ -15,6 +15,8 @@ interface ReceiptData {
     name: string;
     quantity: number;
     price: number;
+    type?: 'service' | 'product';
+    serviceStaff?: string;
   }>;
   subtotal: number;
   discount: number;
@@ -117,6 +119,13 @@ export function generateThermalReceipt(data: ReceiptData): string {
   data.items.forEach(item => {
     receipt.push(item.name);
     receipt.push(commands.newLine);
+    
+    // Add staff information for services
+    if (item.type === 'service' && item.serviceStaff) {
+      receipt.push(`  Staff: ${item.serviceStaff}`);
+      receipt.push(commands.newLine);
+    }
+    
     receipt.push(formatLine(
       '', 
       item.quantity.toString(), 
@@ -158,7 +167,10 @@ export function generateThermalReceipt(data: ReceiptData): string {
   receipt.push(commands.newLine);
   
   // Payment method
-  receipt.push(`Payment: ${data.paymentMethod}`);
+  const paymentMethodDisplay = data.paymentMethod.charAt(0).toUpperCase() + data.paymentMethod.slice(1);
+  receipt.push(commands.bold);
+  receipt.push(`Payment Method: ${paymentMethodDisplay}`);
+  receipt.push(commands.boldOff);
   receipt.push(commands.newLine);
   
   // Loyalty points
