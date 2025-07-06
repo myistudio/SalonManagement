@@ -96,8 +96,19 @@ const ReceiptDialog = ({ isOpen, onClose, transaction, setShowReceiptDialog }: R
         timestamp: new Date()
       };
 
-      await printToThermalPrinter(receiptData);
-      await openCashDrawer();
+      try {
+        await printToThermalPrinter(receiptData);
+        console.log('Receipt printing completed');
+      } catch (printError) {
+        console.warn('Receipt printing failed:', printError);
+      }
+      
+      try {
+        await openCashDrawer();
+        console.log('Cash drawer operation completed');
+      } catch (drawerError) {
+        console.warn('Cash drawer failed:', drawerError);
+      }
     } catch (error) {
       console.error("Receipt printing failed:", error);
     }

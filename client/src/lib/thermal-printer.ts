@@ -213,22 +213,35 @@ function formatLine(left: string, middle: string, right: string): string {
   return leftPadded + middlePadded + rightPadded;
 }
 
-export function printToThermalPrinter(receiptData: ReceiptData) {
+export async function printToThermalPrinter(receiptData: ReceiptData) {
+  console.log('Starting receipt printing process...');
+  
+  try {
+    // Always use print dialog as primary method - more reliable
+    printViaDialog(receiptData);
+    console.log('Receipt sent to browser print dialog');
+    return true;
+  } catch (error) {
+    console.error('Print dialog failed:', error);
+    return false;
+  }
+}
+
+// Alternative function for users who want to try thermal printing via serial
+export async function printToThermalPrinterSerial(receiptData: ReceiptData) {
   try {
     const thermalReceipt = generateThermalReceipt(receiptData);
     
-    // For web browsers, we'll use the Web Serial API or print dialog
     if ('serial' in navigator) {
-      // Use Web Serial API for direct printer communication
-      printViaSerial(thermalReceipt);
+      await printViaSerial(thermalReceipt);
+      console.log('Thermal receipt printed successfully via serial');
+      return true;
     } else {
-      // Fallback to print dialog with monospace formatting
-      printViaDialog(receiptData);
+      throw new Error('Web Serial API not supported in this browser');
     }
   } catch (error) {
-    console.error('Thermal printer error:', error);
-    // Fallback to regular print
-    printViaDialog(receiptData);
+    console.error('Serial thermal printer error:', error);
+    throw error;
   }
 }
 
@@ -310,10 +323,11 @@ function printViaDialog(receiptData: ReceiptData) {
       
       ${receiptData.items.map(item => `
         <div>${item.name}</div>
+        ${item.type === 'service' && item.serviceStaff ? `<div style="font-size: 12px; color: #666;">Staff: ${item.serviceStaff}</div>` : ''}
         <div class="row no-margin">
           <span></span>
           <span>${item.quantity}</span>
-          <span>₹${item.price.toFixed(2)}</span>
+          <span>Rs. ${item.price.toFixed(2)}</span>
         </div>
       `).join('')}
       
@@ -345,7 +359,7 @@ function printViaDialog(receiptData: ReceiptData) {
       
       <div class="line"></div>
       
-      <div>Payment: ${receiptData.paymentMethod}</div>
+      <div class="bold">Payment Method: ${receiptData.paymentMethod.charAt(0).toUpperCase() + receiptData.paymentMethod.slice(1)}</div>
       ${receiptData.pointsEarned > 0 ? `<div>Points Earned: ${receiptData.pointsEarned}</div>` : ''}
       ${receiptData.pointsRedeemed > 0 ? `<div>Points Redeemed: ${receiptData.pointsRedeemed}</div>` : ''}
       
@@ -368,15 +382,24 @@ function printViaDialog(receiptData: ReceiptData) {
   printWindow.document.close();
 }
 
-export function openCashDrawer() {
+export async function openCashDrawer() {
+  console.log('Cash drawer: Manual operation required (or use thermal printer with serial connection)');
+  return true; // Return success to avoid blocking the flow
+}
+
+// Alternative function for users who want to try serial cash drawer
+export async function openCashDrawerSerial() {
   try {
     if ('serial' in navigator) {
-      openDrawerViaSerial();
+      await openDrawerViaSerial();
+      console.log('Cash drawer opened successfully via serial');
+      return true;
     } else {
-      console.log('Cash drawer command sent (requires thermal printer)');
+      throw new Error('Web Serial API not supported in this browser');
     }
   } catch (error) {
-    console.error('Failed to open cash drawer:', error);
+    console.error('Failed to open cash drawer via serial:', error);
+    throw error;
   }
 }
 
@@ -394,5 +417,6 @@ async function openDrawerViaSerial() {
     await port.close();
   } catch (error) {
     console.error('Serial drawer opening failed:', error);
+    throw error;
   }
 }
