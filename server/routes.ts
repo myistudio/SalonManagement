@@ -915,10 +915,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put('/api/whatsapp/settings/:storeId', isAuthenticated, hasStoreAccess, async (req: any, res) => {
     try {
       const storeId = parseInt(req.params.storeId);
+      console.log('Updating WhatsApp settings for store:', storeId, 'with data:', req.body);
       const settings = await storage.updateWhatsappSettings(storeId, req.body);
+      console.log('WhatsApp settings updated successfully:', settings);
       res.json(settings);
     } catch (error) {
-      res.status(500).json({ message: "Failed to update WhatsApp settings" });
+      console.error("Error updating WhatsApp settings:", error);
+      res.status(500).json({ message: "Failed to update WhatsApp settings", error: error.message });
     }
   });
 
@@ -995,112 +998,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ success: result.success, message: result.error || 'Message sent successfully' });
     } catch (error) {
       console.error('WhatsApp send error:', error);
-      res.status(500).json({ message: "Failed to send test message" });
-    }
-  });
-
-  // WhatsApp Business API routes
-  app.get('/api/whatsapp/settings/:storeId', async (req: any, res) => {
-    try {
-      const storeId = parseInt(req.params.storeId);
-      const settings = await storage.getWhatsappSettings(storeId);
-      res.json(settings || {});
-    } catch (error) {
-      console.error("Error fetching WhatsApp settings:", error);
-      res.status(500).json({ message: "Failed to fetch WhatsApp settings" });
-    }
-  });
-
-  app.put('/api/whatsapp/settings/:storeId', async (req: any, res) => {
-    try {
-      const storeId = parseInt(req.params.storeId);
-      const settingsData = req.body;
-      const settings = await storage.updateWhatsappSettings(storeId, settingsData);
-      res.json(settings);
-    } catch (error) {
-      console.error("Error updating WhatsApp settings:", error);
-      res.status(500).json({ message: "Failed to update WhatsApp settings" });
-    }
-  });
-
-  app.get('/api/whatsapp/templates', async (req: any, res) => {
-    try {
-      const storeId = parseInt(req.query.storeId) || 1;
-      const templates = await storage.getWhatsappTemplates(storeId);
-      res.json(templates);
-    } catch (error) {
-      console.error("Error fetching WhatsApp templates:", error);
-      res.status(500).json({ message: "Failed to fetch WhatsApp templates" });
-    }
-  });
-
-  app.post('/api/whatsapp/templates', async (req: any, res) => {
-    try {
-      const templateData = req.body;
-      const template = await storage.createWhatsappTemplate(templateData);
-      res.status(201).json(template);
-    } catch (error) {
-      console.error("Error creating WhatsApp template:", error);
-      res.status(500).json({ message: "Failed to create WhatsApp template" });
-    }
-  });
-
-  app.put('/api/whatsapp/templates/:id', async (req: any, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      const templateData = req.body;
-      const template = await storage.updateWhatsappTemplate(id, templateData);
-      res.json(template);
-    } catch (error) {
-      console.error("Error updating WhatsApp template:", error);
-      res.status(500).json({ message: "Failed to update WhatsApp template" });
-    }
-  });
-
-  app.delete('/api/whatsapp/templates/:id', async (req: any, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      await storage.deleteWhatsappTemplate(id);
-      res.status(204).send();
-    } catch (error) {
-      console.error("Error deleting WhatsApp template:", error);
-      res.status(500).json({ message: "Failed to delete WhatsApp template" });
-    }
-  });
-
-  app.get('/api/whatsapp/messages', async (req: any, res) => {
-    try {
-      const storeId = parseInt(req.query.storeId) || 1;
-      const messages = await storage.getWhatsappMessages(storeId);
-      res.json(messages);
-    } catch (error) {
-      console.error("Error fetching WhatsApp messages:", error);
-      res.status(500).json({ message: "Failed to fetch WhatsApp messages" });
-    }
-  });
-
-  app.post('/api/whatsapp/send-test', async (req: any, res) => {
-    try {
-      const { phoneNumber, message, storeId } = req.body;
-      
-      // Get WhatsApp settings for the store
-      const settings = await storage.getWhatsappSettings(storeId);
-      if (!settings || !settings.isEnabled) {
-        return res.status(400).json({ message: "WhatsApp is not configured for this store" });
-      }
-
-      // Create message record
-      await storage.createWhatsappMessage({
-        storeId,
-        phoneNumber,
-        messageType: 'test',
-        content: message,
-        status: 'sent'
-      });
-
-      res.json({ success: true, message: "Test message sent successfully" });
-    } catch (error) {
-      console.error("Error sending test message:", error);
       res.status(500).json({ message: "Failed to send test message" });
     }
   });

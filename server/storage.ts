@@ -1143,21 +1143,32 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateWhatsappSettings(storeId: number, settingsData: Partial<InsertWhatsappSettings>): Promise<WhatsappSettings> {
-    const existing = await this.getWhatsappSettings(storeId);
-    
-    if (existing) {
-      const [updated] = await db
-        .update(whatsappSettings)
-        .set({ ...settingsData, updatedAt: new Date() })
-        .where(eq(whatsappSettings.storeId, storeId))
-        .returning();
-      return updated;
-    } else {
-      const [created] = await db
-        .insert(whatsappSettings)
-        .values({ ...settingsData, storeId })
-        .returning();
-      return created;
+    try {
+      console.log('updateWhatsappSettings called with:', { storeId, settingsData });
+      const existing = await this.getWhatsappSettings(storeId);
+      console.log('Existing WhatsApp settings:', existing);
+      
+      if (existing) {
+        console.log('Updating existing WhatsApp settings...');
+        const [updated] = await db
+          .update(whatsappSettings)
+          .set({ ...settingsData, updatedAt: new Date() })
+          .where(eq(whatsappSettings.storeId, storeId))
+          .returning();
+        console.log('WhatsApp settings updated:', updated);
+        return updated;
+      } else {
+        console.log('Creating new WhatsApp settings...');
+        const [created] = await db
+          .insert(whatsappSettings)
+          .values({ ...settingsData, storeId })
+          .returning();
+        console.log('WhatsApp settings created:', created);
+        return created;
+      }
+    } catch (error) {
+      console.error('Error in updateWhatsappSettings:', error);
+      throw error;
     }
   }
 
