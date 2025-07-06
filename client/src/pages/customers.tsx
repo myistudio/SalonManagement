@@ -361,7 +361,7 @@ export default function Customers() {
                               {new Date(transaction.createdAt).toLocaleDateString()}
                             </TableCell>
                             <TableCell>
-                              Rs. {parseFloat(transaction.totalAmount).toLocaleString()}
+                              Rs. {transaction.totalAmount ? parseFloat(transaction.totalAmount).toLocaleString() : "0"}
                             </TableCell>
                             <TableCell>
                               <Badge variant="outline" className="capitalize">

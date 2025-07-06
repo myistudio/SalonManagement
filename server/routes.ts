@@ -270,7 +270,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/customers/:id/transactions', isAuthenticated, hasStoreAccess, async (req: any, res) => {
+  app.get('/api/customers/:id/transactions', isAuthenticated, async (req: any, res) => {
     try {
       const customerId = parseInt(req.params.id);
       const transactions = await storage.getCustomerTransactions(customerId);
