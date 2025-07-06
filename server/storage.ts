@@ -52,7 +52,7 @@ import {
   type InsertLoginPageSettings,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, desc, sql, ilike, gte, lte } from "drizzle-orm";
+import { eq, and, desc, sql, ilike, gte, lte, isNotNull } from "drizzle-orm";
 
 export interface IStorage {
   // User operations (for basic email/password auth)
@@ -143,6 +143,27 @@ export interface IStorage {
     topServices: { name: string; count: number; revenue: string }[];
     topProducts: { name: string; count: number; revenue: string }[];
   }>;
+
+  // Daily reports
+  getDailySalesReport(storeId: number, date: Date): Promise<{
+    totalRevenue: string;
+    totalTransactions: number;
+    totalDiscount: string;
+    cashCollection: string;
+    upiCollection: string;
+    cardCollection: string;
+    paymentBreakdown: { method: string; amount: string; count: number }[];
+  }>;
+
+  // Staff performance reports
+  getStaffPerformanceReport(storeId: number, startDate: Date, endDate: Date): Promise<{
+    staffId: string;
+    staffName: string;
+    totalServices: number;
+    totalRevenue: string;
+    avgServiceValue: string;
+    serviceBreakdown: { serviceName: string; count: number; revenue: string }[];
+  }[]>;
   
   // Advanced analytics
   getAdvancedAnalytics(storeId: number, startDate: Date, endDate: Date): Promise<{
@@ -1290,6 +1311,153 @@ export class DatabaseStorage implements IStorage {
         .returning();
       return created;
     }
+  }
+
+  async getDailySalesReport(storeId: number, date: Date): Promise<{
+    totalRevenue: string;
+    totalTransactions: number;
+    totalDiscount: string;
+    cashCollection: string;
+    upiCollection: string;
+    cardCollection: string;
+    paymentBreakdown: { method: string; amount: string; count: number }[];
+  }> {
+    const startOfDay = new Date(date);
+    startOfDay.setHours(0, 0, 0, 0);
+    
+    const endOfDay = new Date(date);
+    endOfDay.setHours(23, 59, 59, 999);
+
+    // Get overall daily stats
+    const [dailyStats] = await db
+      .select({
+        totalRevenue: sql<string>`COALESCE(SUM(${transactions.totalAmount}), 0)`,
+        totalTransactions: sql<number>`COUNT(*)`,
+        totalDiscount: sql<string>`COALESCE(SUM(${transactions.discountAmount}), 0)`
+      })
+      .from(transactions)
+      .where(
+        and(
+          eq(transactions.storeId, storeId),
+          gte(transactions.createdAt, startOfDay),
+          lte(transactions.createdAt, endOfDay)
+        )
+      );
+
+    // Get payment method breakdown
+    const paymentBreakdown = await db
+      .select({
+        method: transactions.paymentMethod,
+        amount: sql<string>`COALESCE(SUM(${transactions.totalAmount}), 0)`,
+        count: sql<number>`COUNT(*)`
+      })
+      .from(transactions)
+      .where(
+        and(
+          eq(transactions.storeId, storeId),
+          gte(transactions.createdAt, startOfDay),
+          lte(transactions.createdAt, endOfDay)
+        )
+      )
+      .groupBy(transactions.paymentMethod);
+
+    // Calculate individual payment method totals
+    const cashCollection = paymentBreakdown.find(p => p.method === 'cash')?.amount || '0';
+    const upiCollection = paymentBreakdown.find(p => p.method === 'upi')?.amount || '0';
+    const cardCollection = paymentBreakdown.find(p => p.method === 'card')?.amount || '0';
+
+    return {
+      totalRevenue: dailyStats.totalRevenue || '0',
+      totalTransactions: dailyStats.totalTransactions || 0,
+      totalDiscount: dailyStats.totalDiscount || '0',
+      cashCollection,
+      upiCollection,
+      cardCollection,
+      paymentBreakdown: paymentBreakdown.map(p => ({
+        method: p.method || 'cash',
+        amount: p.amount || '0',
+        count: p.count || 0
+      }))
+    };
+  }
+
+  async getStaffPerformanceReport(storeId: number, startDate: Date, endDate: Date): Promise<{
+    staffId: string;
+    staffName: string;
+    totalServices: number;
+    totalRevenue: string;
+    avgServiceValue: string;
+    serviceBreakdown: { serviceName: string; count: number; revenue: string }[];
+  }[]> {
+    const adjustedEndDate = new Date(endDate);
+    adjustedEndDate.setHours(23, 59, 59, 999);
+
+    // Get staff performance data
+    const staffPerformance = await db
+      .select({
+        staffId: transactionItems.serviceStaffId,
+        staffName: sql<string>`${users.firstName} || ' ' || ${users.lastName}`,
+        totalServices: sql<number>`COUNT(*)`,
+        totalRevenue: sql<string>`SUM(${transactionItems.totalPrice})`
+      })
+      .from(transactionItems)
+      .innerJoin(transactions, eq(transactionItems.transactionId, transactions.id))
+      .innerJoin(users, eq(transactionItems.serviceStaffId, users.id))
+      .where(
+        and(
+          eq(transactions.storeId, storeId),
+          eq(transactionItems.itemType, 'service'),
+          isNotNull(transactionItems.serviceStaffId),
+          gte(transactions.createdAt, startDate),
+          lte(transactions.createdAt, adjustedEndDate)
+        )
+      )
+      .groupBy(transactionItems.serviceStaffId, users.firstName, users.lastName);
+
+    // Get service breakdown for each staff member
+    const result = [];
+    for (const staff of staffPerformance) {
+      if (!staff.staffId) continue;
+      
+      const serviceBreakdown = await db
+        .select({
+          serviceName: transactionItems.itemName,
+          count: sql<number>`COUNT(*)`,
+          revenue: sql<string>`SUM(${transactionItems.totalPrice})`
+        })
+        .from(transactionItems)
+        .innerJoin(transactions, eq(transactionItems.transactionId, transactions.id))
+        .where(
+          and(
+            eq(transactions.storeId, storeId),
+            eq(transactionItems.itemType, 'service'),
+            eq(transactionItems.serviceStaffId, staff.staffId),
+            gte(transactions.createdAt, startDate),
+            lte(transactions.createdAt, adjustedEndDate)
+          )
+        )
+        .groupBy(transactionItems.itemName)
+        .orderBy(desc(sql`SUM(${transactionItems.totalPrice})`));
+
+      const avgServiceValue = staff.totalServices > 0 
+        ? (parseFloat(staff.totalRevenue) / staff.totalServices).toFixed(2)
+        : '0';
+
+      result.push({
+        staffId: staff.staffId,
+        staffName: staff.staffName,
+        totalServices: staff.totalServices,
+        totalRevenue: staff.totalRevenue,
+        avgServiceValue,
+        serviceBreakdown: serviceBreakdown.map(s => ({
+          serviceName: s.serviceName,
+          count: s.count,
+          revenue: s.revenue
+        }))
+      });
+    }
+
+    return result;
   }
 }
 

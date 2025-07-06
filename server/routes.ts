@@ -866,6 +866,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get('/api/reports/daily-sales', isAuthenticated, async (req: any, res) => {
+    try {
+      const storeId = parseInt(req.query.storeId as string);
+      const date = new Date(req.query.date as string);
+      
+      if (!storeId || !date) {
+        return res.status(400).json({ message: "Store ID and date are required" });
+      }
+      
+      const report = await storage.getDailySalesReport(storeId, date);
+      res.json(report);
+    } catch (error) {
+      console.error("Daily sales report error:", error);
+      res.status(500).json({ message: "Failed to generate daily sales report" });
+    }
+  });
+
+  app.get('/api/reports/staff-performance', isAuthenticated, async (req: any, res) => {
+    try {
+      const storeId = parseInt(req.query.storeId as string);
+      const startDate = new Date(req.query.startDate as string);
+      const endDate = new Date(req.query.endDate as string);
+      
+      if (!storeId || !startDate || !endDate) {
+        return res.status(400).json({ message: "Store ID, start date, and end date are required" });
+      }
+      
+      const report = await storage.getStaffPerformanceReport(storeId, startDate, endDate);
+      res.json(report);
+    } catch (error) {
+      console.error("Staff performance report error:", error);
+      res.status(500).json({ message: "Failed to generate staff performance report" });
+    }
+  });
+
   // WhatsApp Business API routes
   app.get('/api/whatsapp/settings/:storeId', isAuthenticated, hasStoreAccess, async (req: any, res) => {
     try {

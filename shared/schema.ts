@@ -202,6 +202,7 @@ export const transactionItems = pgTable("transaction_items", {
   quantity: integer("quantity").default(1),
   unitPrice: decimal("unit_price", { precision: 10, scale: 2 }).notNull(),
   totalPrice: decimal("total_price", { precision: 10, scale: 2 }).notNull(),
+  serviceStaffId: varchar("service_staff_id").references(() => users.id), // staff who provided the service
 });
 
 // Loyalty settings table

@@ -25,6 +25,7 @@ export default function Reports() {
     startDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 30 days ago
     endDate: new Date().toISOString().split('T')[0], // today
   });
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -43,6 +44,20 @@ export default function Reports() {
   const { data: salesReport = {}, isLoading: reportLoading } = useQuery({
     queryKey: [`/api/reports/sales`, selectedStoreId, dateRange.startDate, dateRange.endDate],
     queryFn: () => fetch(`/api/reports/sales?storeId=${selectedStoreId}&startDate=${dateRange.startDate}&endDate=${dateRange.endDate}`).then(res => res.json()),
+    enabled: !!selectedStoreId && !!dateRange.startDate && !!dateRange.endDate,
+    retry: false,
+  });
+
+  const { data: dailySalesReport = {}, isLoading: dailySalesLoading } = useQuery({
+    queryKey: [`/api/reports/daily-sales`, selectedStoreId, selectedDate],
+    queryFn: () => fetch(`/api/reports/daily-sales?storeId=${selectedStoreId}&date=${selectedDate}`).then(res => res.json()),
+    enabled: !!selectedStoreId && !!selectedDate,
+    retry: false,
+  });
+
+  const { data: staffPerformance = [], isLoading: staffLoading } = useQuery({
+    queryKey: [`/api/reports/staff-performance`, selectedStoreId, dateRange.startDate, dateRange.endDate],
+    queryFn: () => fetch(`/api/reports/staff-performance?storeId=${selectedStoreId}&startDate=${dateRange.startDate}&endDate=${dateRange.endDate}`).then(res => res.json()),
     enabled: !!selectedStoreId && !!dateRange.startDate && !!dateRange.endDate,
     retry: false,
   });
@@ -384,8 +399,10 @@ export default function Reports() {
             </Card>
 
             <Tabs defaultValue="overview" className="space-y-6">
-              <TabsList className="grid w-full grid-cols-5">
+              <TabsList className="grid w-full grid-cols-7">
                 <TabsTrigger value="overview">Overview</TabsTrigger>
+                <TabsTrigger value="daily-sales">Daily Sales</TabsTrigger>
+                <TabsTrigger value="staff-performance">Staff</TabsTrigger>
                 <TabsTrigger value="analytics">Analytics</TabsTrigger>
                 <TabsTrigger value="products">Products</TabsTrigger>
                 <TabsTrigger value="services">Services</TabsTrigger>
@@ -503,6 +520,197 @@ export default function Reports() {
                     </CardContent>
                   </Card>
                 </div>
+              </TabsContent>
+
+              {/* Daily Sales Tab */}
+              <TabsContent value="daily-sales" className="space-y-6">
+                <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+                  <div className="space-y-2">
+                    <Label>Select Date</Label>
+                    <Input
+                      type="date"
+                      value={selectedDate}
+                      onChange={(e) => setSelectedDate(e.target.value)}
+                      className="w-full sm:w-auto"
+                    />
+                  </div>
+                </div>
+
+                {dailySalesLoading ? (
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                    {[1, 2, 3, 4].map((i) => (
+                      <Card key={i}>
+                        <CardHeader>
+                          <Skeleton className="h-6 w-32" />
+                        </CardHeader>
+                        <CardContent>
+                          <Skeleton className="h-8 w-20" />
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                ) : (
+                  <>
+                    {/* Daily Summary Cards */}
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                      <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                          <CardTitle className="text-sm font-medium">Total Sales</CardTitle>
+                          <DollarSign className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                          <div className="text-2xl font-bold">Rs. {dailySalesReport.totalRevenue || '0'}</div>
+                          <p className="text-xs text-muted-foreground">
+                            {dailySalesReport.totalTransactions || 0} transactions
+                          </p>
+                        </CardContent>
+                      </Card>
+
+                      <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                          <CardTitle className="text-sm font-medium">Cash Collection</CardTitle>
+                          <DollarSign className="h-4 w-4 text-green-600" />
+                        </CardHeader>
+                        <CardContent>
+                          <div className="text-2xl font-bold text-green-600">Rs. {dailySalesReport.cashCollection || '0'}</div>
+                        </CardContent>
+                      </Card>
+
+                      <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                          <CardTitle className="text-sm font-medium">Card Collection</CardTitle>
+                          <DollarSign className="h-4 w-4 text-blue-600" />
+                        </CardHeader>
+                        <CardContent>
+                          <div className="text-2xl font-bold text-blue-600">Rs. {dailySalesReport.cardCollection || '0'}</div>
+                        </CardContent>
+                      </Card>
+
+                      <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                          <CardTitle className="text-sm font-medium">UPI Collection</CardTitle>
+                          <DollarSign className="h-4 w-4 text-purple-600" />
+                        </CardHeader>
+                        <CardContent>
+                          <div className="text-2xl font-bold text-purple-600">Rs. {dailySalesReport.upiCollection || '0'}</div>
+                        </CardContent>
+                      </Card>
+                    </div>
+
+                    {/* Payment Method Breakdown Chart */}
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>Payment Method Breakdown</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <ResponsiveContainer width="100%" height={300}>
+                          <PieChart>
+                            <Pie
+                              data={dailySalesReport.paymentBreakdown || []}
+                              cx="50%"
+                              cy="50%"
+                              labelLine={false}
+                              label={({ method, amount, percent }) => `${method}: Rs. ${amount} (${(percent * 100).toFixed(0)}%)`}
+                              outerRadius={80}
+                              fill="#8884d8"
+                              dataKey="amount"
+                            >
+                              {(dailySalesReport.paymentBreakdown || []).map((entry: any, index: number) => (
+                                <Cell key={`cell-${index}`} fill={['#0088FE', '#00C49F', '#FFBB28'][index % 3]} />
+                              ))}
+                            </Pie>
+                            <Tooltip formatter={(value) => [`Rs. ${value}`, 'Amount']} />
+                          </PieChart>
+                        </ResponsiveContainer>
+                      </CardContent>
+                    </Card>
+                  </>
+                )}
+              </TabsContent>
+
+              {/* Staff Performance Tab */}
+              <TabsContent value="staff-performance" className="space-y-6">
+                {staffLoading ? (
+                  <div className="grid grid-cols-1 gap-6">
+                    {[1, 2, 3].map((i) => (
+                      <Card key={i}>
+                        <CardHeader>
+                          <Skeleton className="h-6 w-32" />
+                        </CardHeader>
+                        <CardContent>
+                          <Skeleton className="h-20 w-full" />
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                ) : (
+                  <>
+                    {staffPerformance && staffPerformance.length > 0 ? (
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        {staffPerformance.map((staff: any, index: number) => (
+                          <Card key={staff.staffId}>
+                            <CardHeader>
+                              <CardTitle className="flex items-center gap-2">
+                                <Users className="h-5 w-5" />
+                                {staff.staffName}
+                              </CardTitle>
+                            </CardHeader>
+                            <CardContent className="space-y-4">
+                              <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                  <p className="text-sm font-medium text-muted-foreground">Total Services</p>
+                                  <p className="text-2xl font-bold">{staff.totalServices}</p>
+                                </div>
+                                <div>
+                                  <p className="text-sm font-medium text-muted-foreground">Total Revenue</p>
+                                  <p className="text-2xl font-bold">Rs. {staff.totalRevenue}</p>
+                                </div>
+                                <div>
+                                  <p className="text-sm font-medium text-muted-foreground">Avg. Service Value</p>
+                                  <p className="text-2xl font-bold">Rs. {staff.avgServiceValue}</p>
+                                </div>
+                              </div>
+
+                              {/* Service Breakdown */}
+                              <div className="space-y-2">
+                                <h4 className="font-semibold">Service Breakdown:</h4>
+                                {staff.serviceBreakdown && staff.serviceBreakdown.length > 0 ? (
+                                  <div className="space-y-1">
+                                    {staff.serviceBreakdown.slice(0, 3).map((service: any, idx: number) => (
+                                      <div key={idx} className="flex justify-between text-sm">
+                                        <span>{service.serviceName}</span>
+                                        <span className="font-medium">{service.count}x (Rs. {service.revenue})</span>
+                                      </div>
+                                    ))}
+                                    {staff.serviceBreakdown.length > 3 && (
+                                      <p className="text-xs text-muted-foreground">
+                                        +{staff.serviceBreakdown.length - 3} more services
+                                      </p>
+                                    )}
+                                  </div>
+                                ) : (
+                                  <p className="text-sm text-muted-foreground">No services recorded</p>
+                                )}
+                              </div>
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
+                    ) : (
+                      <Card>
+                        <CardContent className="flex items-center justify-center h-64">
+                          <div className="text-center">
+                            <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                            <h3 className="text-lg font-semibold mb-2">No Staff Performance Data</h3>
+                            <p className="text-muted-foreground">
+                              No staff service records found for the selected date range.
+                            </p>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )}
+                  </>
+                )}
               </TabsContent>
 
               {/* Analytics Tab */}

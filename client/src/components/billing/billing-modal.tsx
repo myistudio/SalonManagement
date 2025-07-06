@@ -35,6 +35,7 @@ interface BillItem {
   duration?: number;
   imageUrl?: string;
   isCustomPrice?: boolean;
+  serviceStaffId?: string; // Staff member who provides the service
 }
 
 interface Customer {
@@ -164,6 +165,8 @@ export default function BillingModal({ isOpen, onClose, storeId }: BillingModalP
   });
   const [discountType, setDiscountType] = useState<'none' | 'percentage' | 'amount'>('none');
   const [discountValue, setDiscountValue] = useState(0);
+  const [paymentMethod, setPaymentMethod] = useState<'cash' | 'card' | 'upi'>('cash');
+  const [selectedStaffId, setSelectedStaffId] = useState<string>("");
 
   // Queries
   const { data: services = [] } = useQuery({
@@ -173,6 +176,11 @@ export default function BillingModal({ isOpen, onClose, storeId }: BillingModalP
 
   const { data: products = [] } = useQuery({
     queryKey: [`/api/products?storeId=${storeId}`],
+    enabled: isOpen && !!storeId,
+  });
+
+  const { data: staff = [] } = useQuery({
+    queryKey: [`/api/stores/${storeId}/staff`],
     enabled: isOpen && !!storeId,
   });
 
@@ -481,7 +489,7 @@ export default function BillingModal({ isOpen, onClose, storeId }: BillingModalP
         pointsEarned: getPointsEarned(),
         pointsRedeemed: pointsToRedeem,
         membershipDiscount: ((selectedCustomer?.membership?.membershipPlan?.discountPercentage || 0) / 100 * getSubtotal()).toFixed(2),
-        paymentMethod: "cash",
+        paymentMethod: paymentMethod,
       },
       items: billItems.map(item => ({
         itemType: item.type,
@@ -490,6 +498,7 @@ export default function BillingModal({ isOpen, onClose, storeId }: BillingModalP
         quantity: item.quantity,
         unitPrice: Number(item.price || 0).toFixed(2),
         totalPrice: (Number(item.price || 0) * Number(item.quantity || 0)).toFixed(2),
+        serviceStaffId: item.type === 'service' ? item.serviceStaffId || null : null,
       })),
     };
 
@@ -1093,6 +1102,90 @@ export default function BillingModal({ isOpen, onClose, storeId }: BillingModalP
                     )}
                   </div>
                 </div>
+
+                {/* Payment Method Selection */}
+                <div className="mb-5 p-4 bg-white rounded-xl border-2 border-blue-200 shadow-sm">
+                  <Label className="text-base font-semibold text-gray-800 mb-3 block">
+                    Payment Method
+                  </Label>
+                  
+                  <div className="grid grid-cols-3 gap-2">
+                    <Button
+                      type="button"
+                      variant={paymentMethod === 'cash' ? "default" : "outline"}
+                      onClick={() => setPaymentMethod('cash')}
+                      className="h-12 text-sm font-semibold"
+                    >
+                      💰 Cash
+                    </Button>
+                    <Button
+                      type="button"
+                      variant={paymentMethod === 'card' ? "default" : "outline"}
+                      onClick={() => setPaymentMethod('card')}
+                      className="h-12 text-sm font-semibold"
+                    >
+                      💳 Card
+                    </Button>
+                    <Button
+                      type="button"
+                      variant={paymentMethod === 'upi' ? "default" : "outline"}
+                      onClick={() => setPaymentMethod('upi')}
+                      className="h-12 text-sm font-semibold"
+                    >
+                      📱 UPI
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Staff Assignment for Services */}
+                {billItems.some(item => item.type === 'service') && (
+                  <div className="mb-5 p-4 bg-white rounded-xl border-2 border-orange-200 shadow-sm">
+                    <Label className="text-base font-semibold text-gray-800 mb-3 block">
+                      Assign Staff for Services
+                    </Label>
+                    
+                    <div className="space-y-3">
+                      {staff && staff.length > 0 ? (
+                        <select
+                          value={selectedStaffId}
+                          onChange={(e) => setSelectedStaffId(e.target.value)}
+                          className="w-full h-12 px-3 border-2 border-gray-300 rounded-lg text-sm"
+                        >
+                          <option value="">Select Staff Member</option>
+                          {staff.map((member: any) => (
+                            <option key={member.user.id} value={member.user.id}>
+                              {member.user.firstName} {member.user.lastName} ({member.role})
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        <p className="text-sm text-gray-500">No staff members available</p>
+                      )}
+                      
+                      {selectedStaffId && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => {
+                            // Assign selected staff to all service items
+                            setBillItems(items => items.map(item => 
+                              item.type === 'service' 
+                                ? { ...item, serviceStaffId: selectedStaffId }
+                                : item
+                            ));
+                            toast({
+                              title: "Staff Assigned",
+                              description: "Staff member assigned to all services in this bill",
+                            });
+                          }}
+                          className="w-full h-10 text-sm"
+                        >
+                          Assign to All Services
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                )}
 
                 {/* Payment Button */}
                 <Button
