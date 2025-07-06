@@ -928,19 +928,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/whatsapp/templates', isAuthenticated, hasStoreAccess, async (req: any, res) => {
     try {
       const storeId = parseInt(req.query.storeId as string);
+      console.log('Fetching WhatsApp templates for store:', storeId);
       const templates = await storage.getWhatsappTemplates(storeId);
+      console.log('WhatsApp templates fetched:', templates.length, 'templates');
       res.json(templates);
     } catch (error) {
-      res.status(500).json({ message: "Failed to fetch WhatsApp templates" });
+      console.error("Error fetching WhatsApp templates:", error);
+      res.status(500).json({ message: "Failed to fetch WhatsApp templates", error: error.message });
     }
   });
 
   app.post('/api/whatsapp/templates', isAuthenticated, hasStoreAccess, async (req: any, res) => {
     try {
+      console.log('Creating WhatsApp template with data:', req.body);
       const template = await storage.createWhatsappTemplate(req.body);
+      console.log('WhatsApp template created successfully:', template);
       res.status(201).json(template);
     } catch (error) {
-      res.status(500).json({ message: "Failed to create WhatsApp template" });
+      console.error("Error creating WhatsApp template:", error);
+      res.status(500).json({ message: "Failed to create WhatsApp template", error: error.message });
     }
   });
 
@@ -948,10 +954,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const storeId = parseInt(req.query.storeId as string);
       const limit = parseInt(req.query.limit as string) || 50;
+      console.log('Fetching WhatsApp messages for store:', storeId, 'limit:', limit);
       const messages = await storage.getWhatsappMessages(storeId, limit);
+      console.log('WhatsApp messages fetched:', messages.length, 'messages');
       res.json(messages);
     } catch (error) {
-      res.status(500).json({ message: "Failed to fetch WhatsApp messages" });
+      console.error("Error fetching WhatsApp messages:", error);
+      res.status(500).json({ message: "Failed to fetch WhatsApp messages", error: error.message });
     }
   });
 

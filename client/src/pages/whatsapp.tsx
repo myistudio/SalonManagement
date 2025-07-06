@@ -197,6 +197,7 @@ export default function WhatsApp() {
 
   const handleSaveTemplate = () => {
     createTemplateMutation.mutate({
+      storeId: selectedStoreId,
       name: templateName,
       type: templateType,
       content: templateContent,

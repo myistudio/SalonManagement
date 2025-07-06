@@ -1189,11 +1189,18 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createWhatsappTemplate(template: InsertWhatsappTemplate): Promise<WhatsappTemplate> {
-    const [created] = await db
-      .insert(whatsappTemplates)
-      .values(template)
-      .returning();
-    return created;
+    try {
+      console.log('createWhatsappTemplate called with:', template);
+      const [created] = await db
+        .insert(whatsappTemplates)
+        .values(template)
+        .returning();
+      console.log('WhatsApp template created in database:', created);
+      return created;
+    } catch (error) {
+      console.error('Error in createWhatsappTemplate:', error);
+      throw error;
+    }
   }
 
   async updateWhatsappTemplate(id: number, template: Partial<InsertWhatsappTemplate>): Promise<WhatsappTemplate> {
@@ -1212,12 +1219,20 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getWhatsappMessages(storeId: number, limit = 100): Promise<WhatsappMessage[]> {
-    return await db
-      .select()
-      .from(whatsappMessages)
-      .where(eq(whatsappMessages.storeId, storeId))
-      .orderBy(desc(whatsappMessages.createdAt))
-      .limit(limit);
+    try {
+      console.log('getWhatsappMessages called with:', { storeId, limit });
+      const messages = await db
+        .select()
+        .from(whatsappMessages)
+        .where(eq(whatsappMessages.storeId, storeId))
+        .orderBy(desc(whatsappMessages.createdAt))
+        .limit(limit);
+      console.log('WhatsApp messages fetched from database:', messages.length, 'messages');
+      return messages;
+    } catch (error) {
+      console.error('Error in getWhatsappMessages:', error);
+      throw error;
+    }
   }
 
   async createWhatsappMessage(message: InsertWhatsappMessage): Promise<WhatsappMessage> {
