@@ -270,6 +270,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get('/api/customers/:id/transactions', isAuthenticated, hasStoreAccess, async (req: any, res) => {
+    try {
+      const customerId = parseInt(req.params.id);
+      const transactions = await storage.getCustomerTransactions(customerId);
+      res.json(transactions);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch customer transactions" });
+    }
+  });
+
   // Service category routes
   app.get("/api/service-categories", isAuthenticated, async (req: any, res) => {
     try {

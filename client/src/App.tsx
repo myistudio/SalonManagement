@@ -11,6 +11,7 @@ import Inventory from "@/pages/inventory";
 import Services from "@/pages/services";
 import Memberships from "@/pages/memberships";
 import Reports from "@/pages/reports";
+import Bills from "@/pages/bills-simple";
 import Staff from "@/pages/staff";
 import Stores from "@/pages/stores";
 import Settings from "@/pages/settings";
@@ -40,6 +41,7 @@ function Router() {
           <Route path="/services" component={Services} />
           <Route path="/memberships" component={Memberships} />
           <Route path="/reports" component={Reports} />
+          <Route path="/bills" component={Bills} />
           <Route path="/staff" component={Staff} />
           <Route path="/stores" component={Stores} />
           <Route path="/whatsapp" component={WhatsApp} />

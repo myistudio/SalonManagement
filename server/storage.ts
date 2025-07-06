@@ -78,6 +78,7 @@ export interface IStorage {
   createCustomer(customer: InsertCustomer): Promise<Customer>;
   updateCustomer(id: number, customer: Partial<InsertCustomer>): Promise<Customer>;
   updateCustomerLoyalty(id: number, points: number, visits: number, spent: string): Promise<void>;
+  getCustomerTransactions(customerId: number): Promise<(Transaction & { customer?: Customer; staff: User; items: TransactionItem[] })[]>;
 
   // Service category operations
   getServiceCategories(storeId: number): Promise<ServiceCategory[]>;
@@ -334,6 +335,41 @@ export class DatabaseStorage implements IStorage {
         updatedAt: new Date(),
       })
       .where(eq(customers.id, id));
+  }
+
+  async getCustomerTransactions(customerId: number): Promise<(Transaction & { customer?: Customer; staff: User; items: TransactionItem[] })[]> {
+    const transactionList = await db
+      .select()
+      .from(transactions)
+      .leftJoin(customers, eq(transactions.customerId, customers.id))
+      .leftJoin(users, eq(transactions.staffId, users.id))
+      .where(eq(transactions.customerId, customerId))
+      .orderBy(desc(transactions.createdAt))
+      .limit(10);
+
+    const result: (Transaction & { customer?: Customer; staff: User; items: TransactionItem[] })[] = [];
+
+    for (const row of transactionList) {
+      const transaction = row.transactions;
+      const customer = row.customers;
+      const staff = row.users;
+
+      if (!staff) continue;
+
+      const items = await db
+        .select()
+        .from(transactionItems)
+        .where(eq(transactionItems.transactionId, transaction.id));
+
+      result.push({
+        ...transaction,
+        customer: customer || undefined,
+        staff,
+        items,
+      });
+    }
+
+    return result;
   }
 
   // Product category operations

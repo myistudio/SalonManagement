@@ -12,7 +12,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Search, Plus, User, Phone, Calendar, Award } from "lucide-react";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Search, Plus, User, Phone, Calendar, Award, Receipt, Eye } from "lucide-react";
 import CustomerForm from "@/components/customers/customer-form";
 import BillingModal from "@/components/billing/billing-modal";
 
@@ -26,6 +27,8 @@ export default function Customers() {
   const [showBillingModal, setShowBillingModal] = useState(false);
   const [showCustomerProfile, setShowCustomerProfile] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
+  const [showBillDetails, setShowBillDetails] = useState(false);
+  const [selectedTransaction, setSelectedTransaction] = useState<any>(null);
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -43,6 +46,13 @@ export default function Customers() {
 
   const { data: customers = [], isLoading: customersLoading } = useQuery({
     queryKey: ["/api/customers"],
+    retry: false,
+  });
+
+  // Customer transaction history
+  const { data: customerTransactions = [], isLoading: transactionsLoading } = useQuery({
+    queryKey: ["/api/customers", selectedCustomer?.id, "transactions"],
+    enabled: !!selectedCustomer?.id,
     retry: false,
   });
 
@@ -316,6 +326,69 @@ export default function Customers() {
                 </Card>
               )}
 
+              {/* Transaction History */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Recent Transactions</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {transactionsLoading ? (
+                    <div className="space-y-2">
+                      <Skeleton className="h-4 w-full" />
+                      <Skeleton className="h-4 w-full" />
+                      <Skeleton className="h-4 w-full" />
+                    </div>
+                  ) : customerTransactions.length === 0 ? (
+                    <p className="text-gray-500 text-center py-4">No transactions found</p>
+                  ) : (
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Invoice</TableHead>
+                          <TableHead>Date</TableHead>
+                          <TableHead>Amount</TableHead>
+                          <TableHead>Method</TableHead>
+                          <TableHead>Action</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {customerTransactions.slice(0, 10).map((transaction: any) => (
+                          <TableRow key={transaction.id}>
+                            <TableCell className="font-medium">
+                              {transaction.invoiceNumber}
+                            </TableCell>
+                            <TableCell>
+                              {new Date(transaction.createdAt).toLocaleDateString()}
+                            </TableCell>
+                            <TableCell>
+                              Rs. {parseFloat(transaction.totalAmount).toLocaleString()}
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant="outline" className="capitalize">
+                                {transaction.paymentMethod}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => {
+                                  setSelectedTransaction(transaction);
+                                  setShowBillDetails(true);
+                                }}
+                              >
+                                <Eye size={16} className="mr-1" />
+                                View
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  )}
+                </CardContent>
+              </Card>
+
               {/* Action Buttons */}
               <div className="flex space-x-3 pt-4 border-t">
                 <Button 
@@ -330,6 +403,99 @@ export default function Customers() {
                 <Button 
                   variant="outline"
                   onClick={() => setShowCustomerProfile(false)}
+                >
+                  Close
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Bill Details Modal */}
+      <Dialog open={showBillDetails} onOpenChange={setShowBillDetails}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Bill Details</DialogTitle>
+          </DialogHeader>
+          {selectedTransaction && (
+            <div className="space-y-4">
+              <div className="text-center pb-4 border-b">
+                <h2 className="text-xl font-bold">VEEPRESS</h2>
+                <p className="text-sm text-gray-600">Invoice: {selectedTransaction.invoiceNumber}</p>
+                <p className="text-sm text-gray-600">Date: {new Date(selectedTransaction.createdAt).toLocaleString()}</p>
+              </div>
+              
+              {selectedTransaction.customer && (
+                <div className="pb-4 border-b">
+                  <h3 className="font-semibold mb-2">Customer Details</h3>
+                  <p>{selectedTransaction.customer.firstName} {selectedTransaction.customer.lastName}</p>
+                  <p>Mobile: {selectedTransaction.customer.mobile}</p>
+                </div>
+              )}
+              
+              <div className="pb-4 border-b">
+                <h3 className="font-semibold mb-2">Items</h3>
+                {selectedTransaction.items && selectedTransaction.items.length > 0 ? (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Description</TableHead>
+                        <TableHead>Qty</TableHead>
+                        <TableHead>Rate</TableHead>
+                        <TableHead>Amount</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {selectedTransaction.items.map((item: any, index: number) => (
+                        <TableRow key={index}>
+                          <TableCell>{item.itemName}</TableCell>
+                          <TableCell>{item.quantity}</TableCell>
+                          <TableCell>Rs. {parseFloat(item.unitPrice).toLocaleString()}</TableCell>
+                          <TableCell>Rs. {parseFloat(item.totalPrice).toLocaleString()}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                ) : (
+                  <p className="text-gray-500">No items found</p>
+                )}
+              </div>
+              
+              <div className="space-y-2">
+                <div className="flex justify-between">
+                  <span>Subtotal:</span>
+                  <span>Rs. {parseFloat(selectedTransaction.subtotal).toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Discount:</span>
+                  <span>Rs. {parseFloat(selectedTransaction.discountAmount).toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>GST:</span>
+                  <span>Rs. {parseFloat(selectedTransaction.taxAmount).toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between font-semibold text-lg border-t pt-2">
+                  <span>Total:</span>
+                  <span>Rs. {parseFloat(selectedTransaction.totalAmount).toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Payment Method:</span>
+                  <span className="capitalize">{selectedTransaction.paymentMethod}</span>
+                </div>
+              </div>
+              
+              <div className="flex space-x-3 pt-4 border-t">
+                <Button 
+                  className="flex-1"
+                  onClick={() => window.print()}
+                >
+                  <Receipt className="mr-2 h-4 w-4" />
+                  Print Bill
+                </Button>
+                <Button 
+                  variant="outline"
+                  onClick={() => setShowBillDetails(false)}
                 >
                   Close
                 </Button>

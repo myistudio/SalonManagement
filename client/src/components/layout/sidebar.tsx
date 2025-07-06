@@ -15,7 +15,8 @@ import {
   Building2,
   Menu,
   X,
-  MessageSquare
+  MessageSquare,
+  Receipt
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -67,6 +68,12 @@ export default function Sidebar({ onOpenBilling }: SidebarProps) {
       label: "Reports", 
       path: "/reports", 
       active: location === "/reports" 
+    },
+    { 
+      icon: Receipt, 
+      label: "Bills", 
+      path: "/bills", 
+      active: location === "/bills" 
     },
     { 
       icon: Bus, 
