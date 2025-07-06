@@ -17,7 +17,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { MessageSquare, Settings, Send, Calendar, Users, AlertCircle, CheckCircle, Clock, X, ArrowLeft } from "lucide-react";
+import { MessageSquare, Settings, Send, Calendar, Users, AlertCircle, CheckCircle, Clock, X, ArrowLeft, RefreshCw } from "lucide-react";
 import { Link } from "wouter";
 
 export default function WhatsApp() {
@@ -262,7 +262,7 @@ export default function WhatsApp() {
         </div>
 
         <Tabs defaultValue="settings" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="settings" className="flex items-center gap-2">
               <Settings size={16} />
               Settings
@@ -274,6 +274,10 @@ export default function WhatsApp() {
             <TabsTrigger value="messages" className="flex items-center gap-2">
               <Send size={16} />
               Messages
+            </TabsTrigger>
+            <TabsTrigger value="incoming" className="flex items-center gap-2">
+              <MessageSquare size={16} />
+              Incoming
             </TabsTrigger>
             <TabsTrigger value="campaigns" className="flex items-center gap-2">
               <Users size={16} />
@@ -509,6 +513,70 @@ export default function WhatsApp() {
                     ))}
                   </TableBody>
                 </Table>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="incoming">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <MessageSquare size={20} />
+                  Incoming Messages (Customer Replies)
+                </CardTitle>
+                <CardDescription>
+                  View messages received from customers who replied to your WhatsApp messages
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <h4 className="font-medium text-blue-900 mb-2">How to Receive Customer Replies:</h4>
+                  <ol className="list-decimal list-inside text-sm text-blue-800 space-y-1">
+                    <li>Set up webhook URL in Facebook Developer Console: <code className="bg-blue-100 px-1 rounded">{window.location.origin}/api/whatsapp/webhook</code></li>
+                    <li>Add verify token in your WhatsApp settings (below)</li>
+                    <li>Customer replies will automatically appear here</li>
+                    <li>You can link replies to existing customers by phone number</li>
+                  </ol>
+                </div>
+                
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="webhookToken">Webhook Verify Token</Label>
+                    <Input
+                      id="webhookToken"
+                      placeholder="Enter webhook verify token (must match Facebook settings)"
+                      defaultValue={whatsappSettings?.webhookVerifyToken || ""}
+                      onChange={(e) => {
+                        updateSettingsMutation.mutate({
+                          webhookVerifyToken: e.target.value
+                        });
+                      }}
+                    />
+                    <p className="text-sm text-gray-500 mt-1">
+                      This token must match what you configure in Facebook Developer Console
+                    </p>
+                  </div>
+                </div>
+
+                <div className="mt-6">
+                  <h4 className="font-medium mb-3">Recent Customer Replies</h4>
+                  <div className="border rounded-lg">
+                    <div className="p-4 border-b bg-gray-50">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium">No customer replies yet</span>
+                        <Button variant="outline" size="sm">
+                          <RefreshCw size={16} className="mr-2" />
+                          Refresh
+                        </Button>
+                      </div>
+                    </div>
+                    <div className="p-4 text-center text-gray-500">
+                      <MessageSquare size={48} className="mx-auto mb-3 text-gray-300" />
+                      <p>Customer replies will appear here once webhook is configured</p>
+                      <p className="text-sm mt-1">Send a test message and ask customer to reply to see it here</p>
+                    </div>
+                  </div>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>

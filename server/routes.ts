@@ -17,10 +17,12 @@ import {
   insertTransactionItemSchema,
   users,
   storeStaff,
+  whatsappMessages,
+  customers,
 } from "@shared/schema";
 import { z } from "zod";
 import { db } from "./db";
-import { eq, and } from "drizzle-orm";
+import { eq, and, desc } from "drizzle-orm";
 
 // Configure multer for logo uploads
 const logoStorage = multer.diskStorage({
@@ -921,7 +923,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(settings);
     } catch (error) {
       console.error("Error updating WhatsApp settings:", error);
-      res.status(500).json({ message: "Failed to update WhatsApp settings", error: error.message });
+      res.status(500).json({ message: "Failed to update WhatsApp settings", error: error instanceof Error ? error.message : String(error) });
     }
   });
 
@@ -961,6 +963,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching WhatsApp messages:", error);
       res.status(500).json({ message: "Failed to fetch WhatsApp messages", error: error.message });
+    }
+  });
+
+  // Get incoming WhatsApp messages (customer replies)
+  app.get('/api/whatsapp/incoming-messages', isAuthenticated, hasStoreAccess, async (req: any, res) => {
+    try {
+      const storeId = parseInt(req.query.storeId as string);
+      const limit = parseInt(req.query.limit as string) || 50;
+      
+      console.log('Fetching incoming WhatsApp messages for store:', storeId);
+      
+      // Get messages where messageType is 'incoming' (customer replies)
+      const messages = await db
+        .select({
+          id: whatsappMessages.id,
+          phoneNumber: whatsappMessages.phoneNumber,
+          content: whatsappMessages.content,
+          createdAt: whatsappMessages.createdAt,
+          customer: {
+            id: customers.id,
+            firstName: customers.firstName,
+            lastName: customers.lastName,
+            mobile: customers.mobile
+          }
+        })
+        .from(whatsappMessages)
+        .leftJoin(customers, eq(whatsappMessages.customerId, customers.id))
+        .where(and(
+          eq(whatsappMessages.storeId, storeId),
+          eq(whatsappMessages.messageType, 'incoming')
+        ))
+        .orderBy(desc(whatsappMessages.createdAt))
+        .limit(limit);
+      
+      res.json(messages);
+    } catch (error) {
+      console.error("Error fetching incoming WhatsApp messages:", error);
+      res.status(500).json({ message: "Failed to fetch incoming messages" });
     }
   });
 
@@ -1010,6 +1050,111 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to send test message" });
     }
   });
+
+  // WhatsApp Webhook endpoints for receiving customer messages
+  app.get('/api/whatsapp/webhook', async (req, res) => {
+    try {
+      const mode = req.query['hub.mode'];
+      const token = req.query['hub.verify_token'];
+      const challenge = req.query['hub.challenge'];
+
+      console.log('WhatsApp webhook verification:', { mode, token, challenge });
+
+      // Verify the webhook (this should match your webhook verify token in settings)
+      if (mode === 'subscribe' && token === process.env.WHATSAPP_VERIFY_TOKEN) {
+        console.log('WhatsApp webhook verified successfully');
+        res.status(200).send(challenge);
+      } else {
+        console.log('WhatsApp webhook verification failed');
+        res.status(403).send('Forbidden');
+      }
+    } catch (error) {
+      console.error('WhatsApp webhook verification error:', error);
+      res.status(500).send('Error');
+    }
+  });
+
+  app.post('/api/whatsapp/webhook', async (req, res) => {
+    try {
+      console.log('WhatsApp webhook received:', JSON.stringify(req.body, null, 2));
+      
+      const body = req.body;
+      
+      // Check if this is a WhatsApp API event
+      if (body.object === 'whatsapp_business_account') {
+        // Process each entry
+        for (const entry of body.entry || []) {
+          for (const change of entry.changes || []) {
+            if (change.field === 'messages') {
+              await processIncomingMessage(change.value);
+            }
+          }
+        }
+      }
+      
+      res.status(200).send('OK');
+    } catch (error) {
+      console.error('WhatsApp webhook processing error:', error);
+      res.status(500).send('Error');
+    }
+  });
+
+  // Function to process incoming WhatsApp messages
+  async function processIncomingMessage(messageData: any) {
+    try {
+      console.log('Processing incoming WhatsApp message:', messageData);
+      
+      const messages = messageData.messages || [];
+      
+      for (const message of messages) {
+        // Extract message details
+        const fromNumber = message.from;
+        const messageType = message.type;
+        const messageId = message.id;
+        const timestamp = new Date(parseInt(message.timestamp) * 1000);
+        
+        // Get message content based on type
+        let content = '';
+        if (messageType === 'text') {
+          content = message.text?.body || '';
+        } else if (messageType === 'image') {
+          content = `[Image] ${message.image?.caption || ''}`;
+        } else if (messageType === 'document') {
+          content = `[Document] ${message.document?.filename || ''}`;
+        } else {
+          content = `[${messageType.toUpperCase()}] Unsupported message type`;
+        }
+        
+        // Try to find customer by phone number
+        const customer = await storage.getCustomerByMobile(fromNumber);
+        
+        // Find which store this message belongs to (you might need to implement logic based on phone number routing)
+        const storeId = 1; // Default to store 1, or implement your routing logic
+        
+        // Save the incoming message
+        await storage.createWhatsappMessage({
+          storeId,
+          customerId: customer?.id || null,
+          phoneNumber: fromNumber,
+          messageType: 'incoming',
+          content,
+          status: 'received',
+          whatsappMessageId: messageId,
+        });
+        
+        console.log('Incoming WhatsApp message saved:', {
+          from: fromNumber,
+          customer: customer?.firstName,
+          content: content.substring(0, 50) + '...'
+        });
+        
+        // You can add auto-reply logic here if needed
+        // await sendAutoReply(fromNumber, customer, storeId);
+      }
+    } catch (error) {
+      console.error('Error processing incoming message:', error);
+    }
+  }
 
   // Public login page settings endpoint
   app.get("/api/login-settings", async (req, res) => {

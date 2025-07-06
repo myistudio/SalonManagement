@@ -68,11 +68,11 @@ const ReceiptDialog = ({ isOpen, onClose, transaction, setShowReceiptDialog }: R
     try {
       const receiptData = {
         invoiceNumber: transaction.invoiceNumber || `INV-${transaction.id}`,
-        storeName: store?.name || "VEEPRESS",
-        storeAddress: store?.address || "",
-        storePhone: store?.phone || "",
-        storeEmail: store?.email || "",
-        storeWebsite: store?.website || "",
+        storeName: "VEEPRESS",
+        storeAddress: "",
+        storePhone: "",
+        storeEmail: "",
+        storeWebsite: "",
         customer: transaction.customer ? {
           firstName: transaction.customer.firstName,
           lastName: transaction.customer.lastName || "",
@@ -201,14 +201,14 @@ export default function BillingModal({ isOpen, onClose, storeId }: BillingModalP
     enabled: isOpen && !!storeId,
   });
 
-  const { data: customers = [] } = useQuery({
-    queryKey: ["/api/customers"],
-    enabled: isOpen,
-  });
-
   const { data: store } = useQuery({
     queryKey: [`/api/stores/${storeId}`],
     enabled: isOpen && !!storeId,
+  });
+
+  const { data: customers = [] } = useQuery({
+    queryKey: ["/api/customers"],
+    enabled: isOpen,
   });
 
   // Type the data
