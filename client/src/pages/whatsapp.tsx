@@ -23,7 +23,7 @@ import { Link } from "wouter";
 export default function WhatsApp() {
   const { toast } = useToast();
   const { isAuthenticated, isLoading, user } = useAuth();
-  const [selectedStoreId, setSelectedStoreId] = useState<number>(1);
+  const [selectedStoreId, setSelectedStoreId] = useState<number>(7);
   const [showTemplateDialog, setShowTemplateDialog] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState<any>(null);
   const [templateName, setTemplateName] = useState("");

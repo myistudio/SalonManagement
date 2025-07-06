@@ -21,7 +21,7 @@ export default function Customers() {
   const { toast } = useToast();
   const { isAuthenticated, isLoading } = useAuth();
   const queryClient = useQueryClient();
-  const [selectedStoreId, setSelectedStoreId] = useState<number>(1);
+  const [selectedStoreId, setSelectedStoreId] = useState<number>(7);
   const [searchTerm, setSearchTerm] = useState("");
   const [showCustomerForm, setShowCustomerForm] = useState(false);
   const [showBillingModal, setShowBillingModal] = useState(false);
