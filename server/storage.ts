@@ -361,12 +361,15 @@ export class DatabaseStorage implements IStorage {
         .from(transactionItems)
         .where(eq(transactionItems.transactionId, transaction.id));
 
-      result.push({
-        ...transaction,
-        customer: customer || undefined,
-        staff,
-        items,
-      });
+      // Only include transactions that have actual items (actual bills)
+      if (items.length > 0) {
+        result.push({
+          ...transaction,
+          customer: customer || undefined,
+          staff,
+          items,
+        });
+      }
     }
 
     return result;

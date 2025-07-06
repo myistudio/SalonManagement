@@ -176,6 +176,7 @@ Changelog:
 - June 28, 2025. Resolved authentication infinite loop causing 401 errors - improved session handling and query optimization
 - June 28, 2025. Successfully debugged and tested complete salon management system - all major features now fully operational
 - July 8, 2025. Enhanced billing system with payment method selection (Cash/Card/UPI), staff service tracking, daily sales reports with payment breakdown, staff performance analytics, and thermal receipt printing with payment method and staff information
+- July 8, 2025. Fixed customer transaction history to show only actual bills with items and flushed/seeded database with realistic salon data for proper testing
 ```
 
 ## User Preferences
