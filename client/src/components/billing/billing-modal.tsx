@@ -183,7 +183,20 @@ export default function BillingModal({ isOpen, onClose, storeId }: BillingModalP
         description: "Transaction completed successfully",
       });
       
-      setCompletedTransaction(transaction);
+      // Attach the current billItems to the transaction before clearing
+      const transactionWithItems = {
+        ...transaction,
+        items: billItems.map(item => ({
+          itemName: item.name,
+          itemType: item.type,
+          quantity: item.quantity,
+          unitPrice: item.price,
+          totalPrice: item.price * item.quantity,
+          serviceStaffId: item.serviceStaffId || null
+        }))
+      };
+      
+      setCompletedTransaction(transactionWithItems);
       setShowReceiptDialog(true);
       resetForm();
       queryClient.invalidateQueries({ queryKey: ["/api/transactions"] });
