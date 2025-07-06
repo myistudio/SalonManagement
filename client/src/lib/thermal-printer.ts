@@ -6,6 +6,8 @@ interface ReceiptData {
   storeName: string;
   storeAddress?: string;
   storePhone?: string;
+  storeEmail?: string;
+  storeWebsite?: string;
   customer?: {
     firstName: string;
     lastName?: string;
@@ -299,6 +301,8 @@ function printViaDialog(receiptData: ReceiptData) {
         <div class="bold large">${receiptData.storeName.toUpperCase()}</div>
         ${receiptData.storeAddress ? `<div>${receiptData.storeAddress}</div>` : ''}
         ${receiptData.storePhone ? `<div>Tel: ${receiptData.storePhone}</div>` : ''}
+        ${receiptData.storeEmail ? `<div>Email: ${receiptData.storeEmail}</div>` : ''}
+        ${receiptData.storeWebsite ? `<div>Web: ${receiptData.storeWebsite}</div>` : ''}
       </div>
       
       <div class="line"></div>
@@ -335,18 +339,18 @@ function printViaDialog(receiptData: ReceiptData) {
       
       <div class="row">
         <span>Subtotal:</span>
-        <span>₹${receiptData.subtotal.toFixed(2)}</span>
+        <span>Rs. ${receiptData.subtotal.toFixed(2)}</span>
       </div>
       ${receiptData.discount > 0 ? `
         <div class="row">
           <span>Discount:</span>
-          <span>-₹${receiptData.discount.toFixed(2)}</span>
+          <span>-Rs. ${receiptData.discount.toFixed(2)}</span>
         </div>
       ` : ''}
       ${receiptData.gst > 0 ? `
         <div class="row">
           <span>GST:</span>
-          <span>₹${receiptData.gst.toFixed(2)}</span>
+          <span>Rs. ${receiptData.gst.toFixed(2)}</span>
         </div>
       ` : ''}
       
@@ -354,7 +358,7 @@ function printViaDialog(receiptData: ReceiptData) {
       
       <div class="row bold large">
         <span>TOTAL:</span>
-        <span>₹${receiptData.total.toFixed(2)}</span>
+        <span>Rs. ${receiptData.total.toFixed(2)}</span>
       </div>
       
       <div class="line"></div>

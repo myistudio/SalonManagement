@@ -68,9 +68,11 @@ const ReceiptDialog = ({ isOpen, onClose, transaction, setShowReceiptDialog }: R
     try {
       const receiptData = {
         invoiceNumber: transaction.invoiceNumber || `INV-${transaction.id}`,
-        storeName: "VEEPRESS",
-        storeAddress: "",
-        storePhone: "",
+        storeName: store?.name || "VEEPRESS",
+        storeAddress: store?.address || "",
+        storePhone: store?.phone || "",
+        storeEmail: store?.email || "",
+        storeWebsite: store?.website || "",
         customer: transaction.customer ? {
           firstName: transaction.customer.firstName,
           lastName: transaction.customer.lastName || "",
