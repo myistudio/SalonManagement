@@ -158,11 +158,11 @@ export default function WhatsApp() {
   });
 
   const sendTestMessageMutation = useMutation({
-    mutationFn: async ({ phoneNumber, templateId }: { phoneNumber: string; templateId: number }) => {
-      return await apiRequest("POST", "/api/whatsapp/send-test", {
+    mutationFn: async ({ phoneNumber, message }: { phoneNumber: string; message: string }) => {
+      return await apiRequest("POST", "/api/whatsapp/send-test-message", {
         storeId: selectedStoreId,
         phoneNumber,
-        templateId,
+        message,
       });
     },
     onSuccess: () => {
@@ -172,9 +172,20 @@ export default function WhatsApp() {
       });
     },
     onError: (error) => {
+      if (isUnauthorizedError(error)) {
+        toast({
+          title: "Unauthorized",
+          description: "You are logged out. Logging in again...",
+          variant: "destructive",
+        });
+        setTimeout(() => {
+          window.location.href = "/api/login";
+        }, 500);
+        return;
+      }
       toast({
         title: "Send Failed",
-        description: "Failed to send test message. Please check your settings.",
+        description: "Failed to send test message. Please check your WhatsApp settings.",
         variant: "destructive",
       });
     },
@@ -232,6 +243,25 @@ export default function WhatsApp() {
       default:
         return <MessageSquare size={16} className="text-gray-600" />;
     }
+  };
+
+  const handleSendTestMessage = async () => {
+    const phoneElement = document.getElementById('testPhone') as HTMLInputElement;
+    const messageElement = document.getElementById('testMessage') as HTMLInputElement;
+    
+    if (!phoneElement?.value || !messageElement?.value) {
+      toast({
+        title: "Missing Information",
+        description: "Please enter both phone number and message.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    sendTestMessageMutation.mutate({
+      phoneNumber: phoneElement.value,
+      message: messageElement.value,
+    });
   };
 
   if (!user) return null;
@@ -433,6 +463,33 @@ export default function WhatsApp() {
                 </Button>
               </CardHeader>
               <CardContent>
+                <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+                  <h4 className="font-medium text-green-900 mb-3">Send Test Message</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <div>
+                      <Label htmlFor="testPhone">Phone Number</Label>
+                      <Input
+                        id="testPhone"
+                        placeholder="+917415850508"
+                        defaultValue="+917415850508"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="testMessage">Message</Label>
+                      <Input
+                        id="testMessage"
+                        placeholder="Hello! This is a test message from our salon system."
+                        defaultValue="Hello! This is a test message from our salon system."
+                      />
+                    </div>
+                    <div className="flex items-end">
+                      <Button onClick={handleSendTestMessage} className="w-full">
+                        Send Test Message
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+                
                 <Table>
                   <TableHeader>
                     <TableRow>

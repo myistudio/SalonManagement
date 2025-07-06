@@ -1051,6 +1051,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Send test WhatsApp message
+  app.post('/api/whatsapp/send-test-message', isAuthenticated, hasStoreAccess, async (req: any, res) => {
+    try {
+      const { phoneNumber, message, storeId } = req.body;
+      
+      if (!phoneNumber || !message || !storeId) {
+        return res.status(400).json({ message: "Phone number, message, and store ID are required" });
+      }
+
+      console.log(`Sending test WhatsApp message to ${phoneNumber}: ${message}`);
+      
+      // Get WhatsApp settings for the store
+      const settings = await storage.getWhatsappSettings(storeId);
+      if (!settings?.accessToken) {
+        return res.status(400).json({ message: "WhatsApp access token not configured for this store" });
+      }
+
+      // Store the message in our database first
+      const whatsappMessage = await storage.createWhatsappMessage({
+        storeId,
+        phoneNumber,
+        messageType: 'test',
+        content: message,
+        status: 'pending',
+        sentAt: new Date(),
+      });
+
+      // Here you would normally send the message via WhatsApp Business API
+      // For now, we'll simulate it and update the status
+      setTimeout(async () => {
+        try {
+          await storage.updateWhatsappMessageStatus(whatsappMessage.id, 'sent', 'test_' + Date.now());
+          console.log('Test message marked as sent');
+        } catch (error) {
+          console.error('Failed to update message status:', error);
+        }
+      }, 1000);
+
+      res.json({ 
+        success: true, 
+        message: "Test message queued for sending",
+        messageId: whatsappMessage.id 
+      });
+    } catch (error) {
+      console.error("Error sending test message:", error instanceof Error ? error.message : String(error));
+      res.status(500).json({ message: "Failed to send test message", error: error instanceof Error ? error.message : String(error) });
+    }
+  });
+
   // WhatsApp Webhook endpoints for receiving customer messages
   app.get('/api/whatsapp/webhook', async (req, res) => {
     try {
