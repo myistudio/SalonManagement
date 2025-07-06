@@ -59,62 +59,10 @@ interface ReceiptDialogProps {
   onClose: () => void;
   transaction: any;
   setShowReceiptDialog: (show: boolean) => void;
+  onPrintReceipt: (transaction: any) => void;
 }
 
-const ReceiptDialog = ({ isOpen, onClose, transaction, setShowReceiptDialog }: ReceiptDialogProps) => {
-  const printReceiptFromTransaction = async (transaction: any) => {
-    if (!transaction) return;
-    
-    try {
-      const receiptData = {
-        invoiceNumber: transaction.invoiceNumber || `INV-${transaction.id}`,
-        storeName: "VEEPRESS",
-        storeAddress: "",
-        storePhone: "",
-        storeEmail: "",
-        storeWebsite: "",
-        customer: transaction.customer ? {
-          firstName: transaction.customer.firstName,
-          lastName: transaction.customer.lastName || "",
-          mobile: transaction.customer.mobile || ""
-        } : undefined,
-        items: (transaction.items || []).map((item: any) => ({
-          name: item.itemName || item.name || "",
-          quantity: item.quantity || 1,
-          price: typeof item.totalPrice === 'number' ? item.totalPrice : parseFloat(item.totalPrice || "0"),
-          type: item.itemType || 'product',
-          serviceStaff: item.itemType === 'service' && item.serviceStaffId ? 
-            (transaction.staff?.find((s: any) => s.id === item.serviceStaffId)?.firstName + ' ' + 
-             transaction.staff?.find((s: any) => s.id === item.serviceStaffId)?.lastName) : undefined
-        })),
-        subtotal: parseFloat(transaction.subtotal || "0"),
-        discount: parseFloat(transaction.discountAmount || "0"),
-        gst: parseFloat(transaction.taxAmount || "0"),
-        total: parseFloat(transaction.totalAmount || "0"),
-        pointsEarned: parseInt(transaction.pointsEarned || "0"),
-        pointsRedeemed: parseInt(transaction.pointsRedeemed || "0"),
-        paymentMethod: transaction.paymentMethod || "cash",
-        cashier: "Staff",
-        timestamp: new Date()
-      };
-
-      try {
-        await printToThermalPrinter(receiptData);
-        console.log('Receipt printing completed');
-      } catch (printError) {
-        console.warn('Receipt printing failed:', printError);
-      }
-      
-      try {
-        await openCashDrawer();
-        console.log('Cash drawer operation completed');
-      } catch (drawerError) {
-        console.warn('Cash drawer failed:', drawerError);
-      }
-    } catch (error) {
-      console.error("Receipt printing failed:", error);
-    }
-  };
+const ReceiptDialog = ({ isOpen, onClose, transaction, setShowReceiptDialog, onPrintReceipt }: ReceiptDialogProps) => {
 
   return (
     <Dialog open={isOpen} onOpenChange={setShowReceiptDialog}>
@@ -136,7 +84,7 @@ const ReceiptDialog = ({ isOpen, onClose, transaction, setShowReceiptDialog }: R
           
           <div className="flex space-x-2">
             <Button
-              onClick={() => printReceiptFromTransaction(transaction)}
+              onClick={() => onPrintReceipt(transaction)}
               variant="outline"
               className="flex-1"
             >
@@ -520,6 +468,81 @@ export default function BillingModal({ isOpen, onClose, storeId }: BillingModalP
     };
 
     createTransaction.mutate(transactionData);
+  };
+
+  const printReceiptFromTransaction = async (transaction: any) => {
+    if (!transaction) return;
+    
+    try {
+      // Debug: log the transaction structure
+      console.log("Transaction for receipt:", transaction);
+      console.log("Transaction items:", transaction.items);
+      console.log("Current billItems:", billItems);
+      
+      const receiptData = {
+        invoiceNumber: transaction.invoiceNumber || `INV-${transaction.id}`,
+        storeName: store?.name || "VEEPRESS",
+        storeAddress: store?.address || "",
+        storePhone: store?.phone || "",
+        storeEmail: store?.email || "",
+        storeWebsite: store?.website || "",
+        customer: transaction.customer ? {
+          firstName: transaction.customer.firstName,
+          lastName: transaction.customer.lastName || "",
+          mobile: transaction.customer.mobile || ""
+        } : undefined,
+        items: (transaction.items || billItems || []).map((item: any) => {
+          // Handle different item structures
+          const itemName = item.itemName || item.name || "";
+          const itemQuantity = item.quantity || 1;
+          const itemPrice = item.totalPrice || (item.price * itemQuantity) || item.price || 0;
+          
+          console.log("Processing item for receipt:", {
+            name: itemName,
+            quantity: itemQuantity,
+            price: itemPrice,
+            originalItem: item
+          });
+          
+          return {
+            name: itemName,
+            quantity: itemQuantity,
+            price: typeof itemPrice === 'number' ? itemPrice : parseFloat(itemPrice.toString() || "0"),
+            type: item.itemType || item.type || 'product',
+            serviceStaff: item.itemType === 'service' && item.serviceStaffId ? 
+              (storeStaff?.find((s: any) => s.user?.id === item.serviceStaffId)?.user?.firstName + ' ' + 
+               (storeStaff?.find((s: any) => s.user?.id === item.serviceStaffId)?.user?.lastName || '')) : undefined
+          };
+        }),
+        subtotal: parseFloat(transaction.subtotal || "0"),
+        discount: parseFloat(transaction.discountAmount || "0"),
+        gst: parseFloat(transaction.taxAmount || "0"),
+        total: parseFloat(transaction.totalAmount || "0"),
+        pointsEarned: parseInt(transaction.pointsEarned || "0"),
+        pointsRedeemed: parseInt(transaction.pointsRedeemed || "0"),
+        paymentMethod: transaction.paymentMethod || "cash",
+        cashier: "Staff",
+        timestamp: new Date()
+      };
+      
+      console.log("Receipt data prepared:", receiptData);
+
+      try {
+        await printToThermalPrinter(receiptData);
+        console.log('Receipt printing completed');
+      } catch (printError) {
+        console.warn('Receipt printing failed:', printError);
+      }
+      
+      try {
+        await openCashDrawer();
+        console.log('Cash drawer operation completed');
+      } catch (drawerError) {
+        console.warn('Cash drawer failed:', drawerError);
+      }
+    } catch (error) {
+      console.error("Receipt printing failed:", error);
+    }
   };
 
   useEffect(() => {
@@ -1234,6 +1257,7 @@ export default function BillingModal({ isOpen, onClose, storeId }: BillingModalP
       onClose={() => setShowReceiptDialog(false)}
       transaction={completedTransaction}
       setShowReceiptDialog={setShowReceiptDialog}
+      onPrintReceipt={printReceiptFromTransaction}
     />
     </>
   );
