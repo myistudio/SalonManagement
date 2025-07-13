@@ -18,8 +18,6 @@ export default function Header({ selectedStoreId, onStoreChange }: HeaderProps) 
     queryKey: ["/api/stores"],
   });
 
-  const selectedStore = (stores as any[]).find((store: any) => store.id === selectedStoreId);
-
   const navigationItems = [
     { name: "Dashboard", href: "/dashboard", icon: Home },
     { name: "New Bill", href: "/new-bill", icon: ShoppingCart },
@@ -37,64 +35,22 @@ export default function Header({ selectedStoreId, onStoreChange }: HeaderProps) 
     <nav className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
-          <div className="flex items-center">
+          <div className="flex items-center space-x-6">
             <div className="flex-shrink-0">
               <Link href="/dashboard">
                 <h1 className="text-2xl font-bold text-primary cursor-pointer hover:text-primary/80">SalonPro</h1>
               </Link>
             </div>
-            <div className="hidden md:block ml-10">
-              <div className="flex items-baseline space-x-4">
-                <Select 
-                  value={selectedStoreId?.toString()} 
-                  onValueChange={(value) => onStoreChange(parseInt(value))}
-                >
-                  <SelectTrigger className="w-48">
-                    <SelectValue placeholder="Select store" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {(stores as any[]).map((store: any) => (
-                      <SelectItem key={store.id} value={store.id.toString()}>
-                        {store.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          </div>
-          
-          {/* Navigation Menu */}
-          <div className="hidden lg:flex items-center space-x-1">
-            {navigationItems.map((item) => {
-              const IconComponent = item.icon;
-              return (
-                <Link key={item.name} href={item.href}>
-                  <span 
-                    className={`px-3 py-2 rounded-md text-sm font-medium transition-colors flex items-center space-x-2 cursor-pointer ${
-                      isActive(item.href) 
-                        ? 'bg-primary text-white' 
-                        : 'text-gray-700 hover:text-primary hover:bg-gray-50'
-                    }`}
-                  >
-                    <IconComponent size={16} />
-                    <span>{item.name}</span>
-                  </span>
-                </Link>
-              );
-            })}
-          </div>
-
-          <div className="flex items-center space-x-4">
+            
             {/* Mobile Navigation Menu */}
             <div className="lg:hidden">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <button className="text-gray-700 hover:text-primary p-2">
+                  <button className="text-gray-700 hover:text-primary p-2 rounded-md">
                     <Menu size={20} />
                   </button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuContent align="start" className="w-56">
                   {navigationItems.map((item) => {
                     const IconComponent = item.icon;
                     return (
@@ -108,6 +64,48 @@ export default function Header({ selectedStoreId, onStoreChange }: HeaderProps) 
                   })}
                 </DropdownMenuContent>
               </DropdownMenu>
+            </div>
+
+            {/* Desktop Navigation Menu */}
+            <div className="hidden lg:flex items-center space-x-1">
+              {navigationItems.map((item) => {
+                const IconComponent = item.icon;
+                return (
+                  <Link key={item.name} href={item.href}>
+                    <span 
+                      className={`px-3 py-2 rounded-md text-sm font-medium transition-colors flex items-center space-x-2 cursor-pointer ${
+                        isActive(item.href) 
+                          ? 'bg-primary text-white' 
+                          : 'text-gray-700 hover:text-primary hover:bg-gray-50'
+                      }`}
+                    >
+                      <IconComponent size={16} />
+                      <span>{item.name}</span>
+                    </span>
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="flex items-center space-x-4">
+            {/* Store Selector */}
+            <div className="hidden md:block">
+              <Select 
+                value={selectedStoreId?.toString()} 
+                onValueChange={(value) => onStoreChange(parseInt(value))}
+              >
+                <SelectTrigger className="w-48">
+                  <SelectValue placeholder="Select store" />
+                </SelectTrigger>
+                <SelectContent>
+                  {(stores as any[]).map((store: any) => (
+                    <SelectItem key={store.id} value={store.id.toString()}>
+                      {store.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             {/* Notifications */}
