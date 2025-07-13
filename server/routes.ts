@@ -643,7 +643,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (email) {
         const existingUserByEmail = await storage.getUserByEmail(email);
         if (existingUserByEmail) {
-          return res.status(400).json({ message: "User already exists with this email address" });
+          // Check if user is already assigned to this store
+          const existingStaff = await db
+            .select()
+            .from(storeStaff)
+            .where(and(eq(storeStaff.userId, existingUserByEmail.id), eq(storeStaff.storeId, storeId)));
+          
+          if (existingStaff.length > 0) {
+            return res.status(400).json({ message: "This user is already a staff member at this store" });
+          }
+          
+          // User exists but not at this store - we can add them
+          const newStaff = await storage.assignUserToStore(existingUserByEmail.id, storeId, role);
+          
+          // Update user's role if different
+          if (existingUserByEmail.role !== role) {
+            await db
+              .update(users)
+              .set({ role, updatedAt: new Date() })
+              .where(eq(users.id, existingUserByEmail.id));
+          }
+          
+          return res.status(201).json({
+            id: existingUserByEmail.id,
+            email: existingUserByEmail.email,
+            mobile: existingUserByEmail.mobile,
+            firstName: existingUserByEmail.firstName,
+            lastName: existingUserByEmail.lastName,
+            role: role,
+          });
         }
       }
 
@@ -651,7 +679,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (mobile) {
         const existingUserByMobile = await storage.getUserByMobile(mobile);
         if (existingUserByMobile) {
-          return res.status(400).json({ message: "User already exists with this mobile number" });
+          // Check if user is already assigned to this store
+          const existingStaff = await db
+            .select()
+            .from(storeStaff)
+            .where(and(eq(storeStaff.userId, existingUserByMobile.id), eq(storeStaff.storeId, storeId)));
+          
+          if (existingStaff.length > 0) {
+            return res.status(400).json({ message: "This user is already a staff member at this store" });
+          }
+          
+          // User exists but not at this store - we can add them
+          const newStaff = await storage.assignUserToStore(existingUserByMobile.id, storeId, role);
+          
+          // Update user's role if different
+          if (existingUserByMobile.role !== role) {
+            await db
+              .update(users)
+              .set({ role, updatedAt: new Date() })
+              .where(eq(users.id, existingUserByMobile.id));
+          }
+          
+          return res.status(201).json({
+            id: existingUserByMobile.id,
+            email: existingUserByMobile.email,
+            mobile: existingUserByMobile.mobile,
+            firstName: existingUserByMobile.firstName,
+            lastName: existingUserByMobile.lastName,
+            role: role,
+          });
         }
       }
 
