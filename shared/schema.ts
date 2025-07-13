@@ -476,6 +476,8 @@ export const insertServiceSchema = createInsertSchema(services).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
+}).extend({
+  price: z.union([z.string(), z.number()]).transform(val => val.toString()),
 });
 
 export const insertProductCategorySchema = createInsertSchema(productCategories).omit({
@@ -494,6 +496,9 @@ export const insertProductSchema = createInsertSchema(products).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
+}).extend({
+  price: z.union([z.string(), z.number()]).transform(val => val.toString()),
+  cost: z.union([z.string(), z.number()]).transform(val => val.toString()).optional(),
 });
 
 export const insertMembershipPlanSchema = createInsertSchema(membershipPlans).omit({

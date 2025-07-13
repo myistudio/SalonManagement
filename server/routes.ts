@@ -356,6 +356,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(201).json(service);
     } catch (error) {
       if (error instanceof z.ZodError) {
+        console.error("Service validation errors:", error.errors);
         return res.status(400).json({ message: "Invalid service data", errors: error.errors });
       }
       console.error("Error creating service:", error);
@@ -470,8 +471,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(201).json(product);
     } catch (error) {
       if (error instanceof z.ZodError) {
+        console.error("Product validation errors:", error.errors);
         return res.status(400).json({ message: "Invalid product data", errors: error.errors });
       }
+      console.error("Error creating product:", error);
       res.status(500).json({ message: "Failed to create product" });
     }
   });
