@@ -50,23 +50,22 @@ export default function Appointments() {
   // Fetch stores
   const { data: stores = [] } = useQuery({
     queryKey: ['/api/stores'],
-    queryFn: () => apiRequest('/api/stores'),
   });
 
   // Fetch appointments
   const { data: appointments = [], isLoading } = useQuery({
     queryKey: ['/api/appointments', selectedStoreId, selectedDate],
-    queryFn: () => apiRequest(`/api/appointments?storeId=${selectedStoreId}&date=${selectedDate}`),
+    queryFn: async () => {
+      const response = await apiRequest('GET', `/api/appointments?storeId=${selectedStoreId}&date=${selectedDate}`);
+      return response.json();
+    },
     enabled: !!selectedStoreId,
   });
 
   // Update appointment status
   const updateAppointmentStatus = useMutation({
     mutationFn: ({ id, status }: { id: number; status: string }) => 
-      apiRequest(`/api/appointments/${id}`, {
-        method: 'PUT',
-        body: { status },
-      }),
+      apiRequest('PUT', `/api/appointments/${id}`, { status }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/appointments'] });
       toast({
@@ -86,9 +85,7 @@ export default function Appointments() {
   // Delete appointment
   const deleteAppointment = useMutation({
     mutationFn: (id: number) => 
-      apiRequest(`/api/appointments/${id}`, {
-        method: 'DELETE',
-      }),
+      apiRequest('DELETE', `/api/appointments/${id}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/appointments'] });
       toast({

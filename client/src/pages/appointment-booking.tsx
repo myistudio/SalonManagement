@@ -64,29 +64,31 @@ export default function AppointmentBooking() {
   // Fetch stores
   const { data: stores = [] } = useQuery({
     queryKey: ['/api/appointments/stores'],
-    queryFn: () => apiRequest('/api/appointments/stores'),
   });
 
   // Fetch services for selected store
   const { data: services = [] } = useQuery({
     queryKey: ['/api/appointments/services', selectedStore?.id],
-    queryFn: () => apiRequest(`/api/appointments/services/${selectedStore?.id}`),
+    queryFn: async () => {
+      const response = await apiRequest('GET', `/api/appointments/services/${selectedStore?.id}`);
+      return response.json();
+    },
     enabled: !!selectedStore,
   });
 
   // Fetch available time slots
   const { data: timeSlots = [] } = useQuery({
     queryKey: ['/api/appointments/time-slots', selectedStore?.id, selectedDate],
-    queryFn: () => apiRequest(`/api/appointments/time-slots/${selectedStore?.id}/${selectedDate}`),
+    queryFn: async () => {
+      const response = await apiRequest('GET', `/api/appointments/time-slots/${selectedStore?.id}/${selectedDate}`);
+      return response.json();
+    },
     enabled: !!selectedStore && !!selectedDate,
   });
 
   // Create appointment mutation
   const createAppointment = useMutation({
-    mutationFn: (appointment: AppointmentForm) => apiRequest('/api/appointments', {
-      method: 'POST',
-      body: appointment,
-    }),
+    mutationFn: (appointment: AppointmentForm) => apiRequest('POST', '/api/appointments', appointment),
     onSuccess: () => {
       toast({
         title: "Success",
