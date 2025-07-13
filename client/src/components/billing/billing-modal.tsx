@@ -149,11 +149,6 @@ export default function BillingModal({ isOpen, onClose, storeId }: BillingModalP
     enabled: isOpen && !!storeId,
   });
 
-  // Debug logging
-  console.log('Store Staff Data:', storeStaff);
-  console.log('Store ID:', storeId);
-  console.log('Is Modal Open:', isOpen);
-
   const { data: store } = useQuery({
     queryKey: [`/api/stores/${storeId}`],
     enabled: isOpen && !!storeId,

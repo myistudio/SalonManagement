@@ -637,6 +637,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Staff routes for billing modal (alternative endpoint)
+  app.get('/api/stores/:id/staff', isAuthenticated, async (req: any, res) => {
+    try {
+      const storeId = parseInt(req.params.id);
+      console.log(`Fetching staff for store ${storeId}`);
+      const staff = await storage.getStoreStaff(storeId);
+      console.log(`Found ${staff.length} staff members:`, staff);
+      res.json(staff);
+    } catch (error) {
+      console.error("Error fetching store staff:", error);
+      res.status(500).json({ message: "Failed to fetch staff" });
+    }
+  });
+
   // Create staff with password
   app.post('/api/staff/create', isAuthenticated, requireRole(['super_admin', 'store_manager']), async (req: any, res) => {
     try {
