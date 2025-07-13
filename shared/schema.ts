@@ -539,6 +539,41 @@ export const insertLoginPageSettingsSchema = createInsertSchema(loginPageSetting
   updatedAt: true,
 });
 
+// Appointments table
+export const appointments = pgTable("appointments", {
+  id: serial("id").primaryKey(),
+  storeId: integer("store_id").references(() => stores.id).notNull(),
+  customerName: varchar("customer_name", { length: 255 }).notNull(),
+  customerMobile: varchar("customer_mobile", { length: 15 }).notNull(),
+  customerEmail: varchar("customer_email"),
+  dateOfBirth: date("date_of_birth"),
+  gender: varchar("gender", { length: 10 }), // male, female, other
+  appointmentDate: date("appointment_date").notNull(),
+  appointmentTime: varchar("appointment_time", { length: 10 }).notNull(), // HH:MM format
+  serviceIds: text("service_ids").array().notNull(), // Array of service IDs
+  serviceName: text("service_name").notNull(), // Concatenated service names
+  totalAmount: decimal("total_amount", { precision: 10, scale: 2 }).notNull(),
+  duration: integer("duration").notNull(), // Total duration in minutes
+  status: varchar("status", { length: 20 }).notNull().default("pending"), // pending, confirmed, completed, cancelled
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Appointment relations
+export const appointmentRelations = relations(appointments, ({ one }) => ({
+  store: one(stores, {
+    fields: [appointments.storeId],
+    references: [stores.id],
+  }),
+}));
+
+export const insertAppointmentSchema = createInsertSchema(appointments).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 // Types
 export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
@@ -573,3 +608,5 @@ export type CustomerCampaign = typeof customerCampaigns.$inferSelect;
 export type InsertCustomerCampaign = z.infer<typeof insertCustomerCampaignSchema>;
 export type LoginPageSettings = typeof loginPageSettings.$inferSelect;
 export type InsertLoginPageSettings = z.infer<typeof insertLoginPageSettingsSchema>;
+export type Appointment = typeof appointments.$inferSelect;
+export type InsertAppointment = z.infer<typeof insertAppointmentSchema>;

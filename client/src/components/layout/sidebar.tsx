@@ -16,7 +16,8 @@ import {
   Menu,
   X,
   MessageSquare,
-  Receipt
+  Receipt,
+  Calendar
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -92,6 +93,12 @@ export default function Sidebar({ onOpenBilling }: SidebarProps) {
       label: "WhatsApp", 
       path: "/whatsapp", 
       active: location === "/whatsapp" 
+    },
+    { 
+      icon: Calendar, 
+      label: "Appointments", 
+      path: "/appointments", 
+      active: location === "/appointments" 
     },
     { 
       icon: Settings, 

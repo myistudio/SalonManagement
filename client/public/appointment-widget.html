@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Book Appointment - SalonPro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        
+        .widget-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .step-indicator {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 2rem;
+        }
+        
+        .step {
+            display: flex;
+            align-items: center;
+            margin: 0 1rem;
+        }
+        
+        .step-number {
+            width: 2rem;
+            height: 2rem;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin-right: 0.5rem;
+        }
+        
+        .step.active .step-number {
+            background-color: #8B5CF6;
+            color: white;
+        }
+        
+        .step.completed .step-number {
+            background-color: #10B981;
+            color: white;
+        }
+        
+        .step.inactive .step-number {
+            background-color: #E5E7EB;
+            color: #6B7280;
+        }
+        
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: #374151;
+        }
+        
+        .form-input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #D1D5DB;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+        }
+        
+        .form-input:focus {
+            outline: none;
+            border-color: #8B5CF6;
+            box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+        }
+        
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .btn-primary {
+            background-color: #8B5CF6;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background-color: #7C3AED;
+        }
+        
+        .btn-secondary {
+            background-color: #F3F4F6;
+            color: #374151;
+        }
+        
+        .btn-secondary:hover {
+            background-color: #E5E7EB;
+        }
+        
+        .store-card {
+            border: 2px solid #E5E7EB;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .store-card:hover {
+            border-color: #8B5CF6;
+        }
+        
+        .store-card.selected {
+            border-color: #8B5CF6;
+            background-color: #F3F4F6;
+        }
+        
+        .time-slot {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            margin: 0.25rem;
+            border: 1px solid #D1D5DB;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .time-slot:hover {
+            border-color: #8B5CF6;
+        }
+        
+        .time-slot.selected {
+            background-color: #8B5CF6;
+            color: white;
+        }
+        
+        .service-card {
+            border: 2px solid #E5E7EB;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .service-card:hover {
+            border-color: #8B5CF6;
+        }
+        
+        .service-card.selected {
+            border-color: #8B5CF6;
+            background-color: #F3F4F6;
+        }
+        
+        .success-message {
+            text-align: center;
+            padding: 2rem;
+            background-color: #F0FDF4;
+            border-radius: 0.5rem;
+            border: 1px solid #BBF7D0;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 2rem;
+        }
+        
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #8B5CF6;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="widget-container">
+        <h1 class="text-3xl font-bold text-center mb-8 text-gray-800">Book Your Appointment</h1>
+        
+        <!-- Step Indicator -->
+        <div class="step-indicator">
+            <div class="step active" id="step1">
+                <div class="step-number">1</div>
+                <span>Select Salon</span>
+            </div>
+            <div class="step inactive" id="step2">
+                <div class="step-number">2</div>
+                <span>Choose Date & Time</span>
+            </div>
+            <div class="step inactive" id="step3">
+                <div class="step-number">3</div>
+                <span>Select Services</span>
+            </div>
+            <div class="step inactive" id="step4">
+                <div class="step-number">4</div>
+                <span>Your Details</span>
+            </div>
+        </div>
+        
+        <!-- Loading State -->
+        <div id="loading" class="loading hidden">
+            <div class="spinner"></div>
+            <p>Loading...</p>
+        </div>
+        
+        <!-- Step 1: Select Salon -->
+        <div id="step1-content" class="step-content">
+            <h2 class="text-2xl font-bold mb-6">Select Your Salon</h2>
+            <div id="stores-container">
+                <!-- Stores will be loaded here -->
+            </div>
+            <div class="flex justify-end mt-6">
+                <button class="btn btn-primary" onclick="nextStep(2)" id="next-step1" disabled>Next</button>
+            </div>
+        </div>
+        
+        <!-- Step 2: Choose Date & Time -->
+        <div id="step2-content" class="step-content hidden">
+            <h2 class="text-2xl font-bold mb-6">Choose Date & Time</h2>
+            <div class="form-group">
+                <label class="form-label">Select Date</label>
+                <input type="date" class="form-input" id="appointment-date" min="">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Available Time Slots</label>
+                <div id="time-slots-container">
+                    <!-- Time slots will be loaded here -->
+                </div>
+            </div>
+            <div class="flex justify-between mt-6">
+                <button class="btn btn-secondary" onclick="prevStep(1)">Previous</button>
+                <button class="btn btn-primary" onclick="nextStep(3)" id="next-step2" disabled>Next</button>
+            </div>
+        </div>
+        
+        <!-- Step 3: Select Services -->
+        <div id="step3-content" class="step-content hidden">
+            <h2 class="text-2xl font-bold mb-6">Select Services</h2>
+            <div id="services-container">
+                <!-- Services will be loaded here -->
+            </div>
+            <div id="service-summary" class="mt-6 p-4 bg-gray-50 rounded-lg hidden">
+                <h3 class="font-bold mb-2">Selected Services</h3>
+                <div id="selected-services-list"></div>
+                <div class="mt-4 pt-4 border-t">
+                    <div class="flex justify-between items-center">
+                        <span class="font-bold">Total Duration:</span>
+                        <span id="total-duration">0 minutes</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="font-bold">Total Amount:</span>
+                        <span id="total-amount">Rs. 0</span>
+                    </div>
+                </div>
+            </div>
+            <div class="flex justify-between mt-6">
+                <button class="btn btn-secondary" onclick="prevStep(2)">Previous</button>
+                <button class="btn btn-primary" onclick="nextStep(4)" id="next-step3" disabled>Next</button>
+            </div>
+        </div>
+        
+        <!-- Step 4: Your Details -->
+        <div id="step4-content" class="step-content hidden">
+            <h2 class="text-2xl font-bold mb-6">Your Details</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="form-group">
+                    <label class="form-label">Full Name *</label>
+                    <input type="text" class="form-input" id="customer-name" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Mobile Number *</label>
+                    <input type="tel" class="form-input" id="customer-mobile" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Email Address</label>
+                    <input type="email" class="form-input" id="customer-email">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Gender</label>
+                    <select class="form-input" id="customer-gender">
+                        <option value="">Select Gender</option>
+                        <option value="male">Male</option>
+                        <option value="female">Female</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Date of Birth</label>
+                    <input type="date" class="form-input" id="customer-dob">
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Special Notes</label>
+                <textarea class="form-input" id="customer-notes" rows="3" placeholder="Any special requests or notes..."></textarea>
+            </div>
+            
+            <!-- Booking Summary -->
+            <div class="mt-6 p-4 bg-gray-50 rounded-lg">
+                <h3 class="font-bold mb-4">Booking Summary</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                    <div>
+                        <strong>Salon:</strong> <span id="summary-salon"></span>
+                    </div>
+                    <div>
+                        <strong>Date:</strong> <span id="summary-date"></span>
+                    </div>
+                    <div>
+                        <strong>Time:</strong> <span id="summary-time"></span>
+                    </div>
+                    <div>
+                        <strong>Duration:</strong> <span id="summary-duration"></span>
+                    </div>
+                    <div class="md:col-span-2">
+                        <strong>Services:</strong> <span id="summary-services"></span>
+                    </div>
+                    <div class="md:col-span-2 pt-2 border-t">
+                        <strong>Total Amount:</strong> <span id="summary-amount" class="text-lg text-purple-600"></span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="flex justify-between mt-6">
+                <button class="btn btn-secondary" onclick="prevStep(3)">Previous</button>
+                <button class="btn btn-primary" onclick="bookAppointment()" id="book-btn">Book Appointment</button>
+            </div>
+        </div>
+        
+        <!-- Success Message -->
+        <div id="success-content" class="step-content hidden">
+            <div class="success-message">
+                <h2 class="text-2xl font-bold text-green-800 mb-4">Appointment Booked Successfully!</h2>
+                <p class="text-green-700 mb-4">Thank you for booking with us. We'll confirm your appointment soon.</p>
+                <p class="text-sm text-green-600">You will receive a confirmation message on your mobile number.</p>
+                <button class="btn btn-primary mt-6" onclick="resetForm()">Book Another Appointment</button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Configuration - Update this with your actual API endpoint
+        const API_BASE_URL = window.location.origin; // Use current domain
+        
+        // State management
+        let currentStep = 1;
+        let selectedStore = null;
+        let selectedDate = '';
+        let selectedTime = '';
+        let selectedServices = [];
+        let stores = [];
+        let services = [];
+        let timeSlots = [];
+        
+        // Initialize the widget
+        async function init() {
+            // Set minimum date to today
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('appointment-date').min = today;
+            
+            // Load stores
+            await loadStores();
+            
+            // Setup event listeners
+            document.getElementById('appointment-date').addEventListener('change', loadTimeSlots);
+        }
+        
+        // Load available stores
+        async function loadStores() {
+            try {
+                showLoading();
+                const response = await fetch(`${API_BASE_URL}/api/appointments/stores`);
+                stores = await response.json();
+                
+                const container = document.getElementById('stores-container');
+                container.innerHTML = stores.map(store => `
+                    <div class="store-card" onclick="selectStore(${store.id})">
+                        <h3 class="font-bold text-lg">${store.name}</h3>
+                        <p class="text-gray-600">${store.address}</p>
+                        <p class="text-purple-600">${store.phone}</p>
+                    </div>
+                `).join('');
+                
+                hideLoading();
+            } catch (error) {
+                console.error('Error loading stores:', error);
+                hideLoading();
+            }
+        }
+        
+        // Select store
+        function selectStore(storeId) {
+            selectedStore = stores.find(s => s.id === storeId);
+            
+            // Update UI
+            document.querySelectorAll('.store-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+            event.target.closest('.store-card').classList.add('selected');
+            
+            document.getElementById('next-step1').disabled = false;
+        }
+        
+        // Load available time slots
+        async function loadTimeSlots() {
+            if (!selectedStore || !selectedDate) return;
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/appointments/time-slots/${selectedStore.id}/${selectedDate}`);
+                timeSlots = await response.json();
+                
+                const container = document.getElementById('time-slots-container');
+                if (timeSlots.length === 0) {
+                    container.innerHTML = '<p class="text-gray-500">No available time slots for this date</p>';
+                } else {
+                    container.innerHTML = timeSlots.map(slot => `
+                        <span class="time-slot" onclick="selectTime('${slot}')">${slot}</span>
+                    `).join('');
+                }
+            } catch (error) {
+                console.error('Error loading time slots:', error);
+            }
+        }
+        
+        // Select time slot
+        function selectTime(time) {
+            selectedTime = time;
+            selectedDate = document.getElementById('appointment-date').value;
+            
+            // Update UI
+            document.querySelectorAll('.time-slot').forEach(slot => {
+                slot.classList.remove('selected');
+            });
+            event.target.classList.add('selected');
+            
+            document.getElementById('next-step2').disabled = false;
+        }
+        
+        // Load services for selected store
+        async function loadServices() {
+            if (!selectedStore) return;
+            
+            try {
+                showLoading();
+                const response = await fetch(`${API_BASE_URL}/api/appointments/services/${selectedStore.id}`);
+                services = await response.json();
+                
+                const container = document.getElementById('services-container');
+                container.innerHTML = services.map(service => `
+                    <div class="service-card" onclick="toggleService(${service.id})">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <h4 class="font-medium">${service.name}</h4>
+                                <p class="text-sm text-gray-600">${service.description}</p>
+                                <div class="flex items-center gap-4 mt-2">
+                                    <span class="text-sm bg-gray-100 px-2 py-1 rounded">Rs. ${service.price}</span>
+                                    <span class="text-sm bg-gray-100 px-2 py-1 rounded">${service.duration} min</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+                
+                hideLoading();
+            } catch (error) {
+                console.error('Error loading services:', error);
+                hideLoading();
+            }
+        }
+        
+        // Toggle service selection
+        function toggleService(serviceId) {
+            const service = services.find(s => s.id === serviceId);
+            const existingIndex = selectedServices.findIndex(s => s.id === serviceId);
+            
+            if (existingIndex > -1) {
+                selectedServices.splice(existingIndex, 1);
+                event.target.closest('.service-card').classList.remove('selected');
+            } else {
+                selectedServices.push(service);
+                event.target.closest('.service-card').classList.add('selected');
+            }
+            
+            updateServiceSummary();
+        }
+        
+        // Update service summary
+        function updateServiceSummary() {
+            const summaryDiv = document.getElementById('service-summary');
+            const servicesList = document.getElementById('selected-services-list');
+            const totalDuration = document.getElementById('total-duration');
+            const totalAmount = document.getElementById('total-amount');
+            
+            if (selectedServices.length === 0) {
+                summaryDiv.classList.add('hidden');
+                document.getElementById('next-step3').disabled = true;
+                return;
+            }
+            
+            summaryDiv.classList.remove('hidden');
+            document.getElementById('next-step3').disabled = false;
+            
+            // Update services list
+            servicesList.innerHTML = selectedServices.map(service => `
+                <div class="flex justify-between items-center py-1">
+                    <span>${service.name}</span>
+                    <span>Rs. ${service.price}</span>
+                </div>
+            `).join('');
+            
+            // Update totals
+            const duration = selectedServices.reduce((sum, service) => sum + service.duration, 0);
+            const amount = selectedServices.reduce((sum, service) => sum + parseFloat(service.price), 0);
+            
+            totalDuration.textContent = `${duration} minutes`;
+            totalAmount.textContent = `Rs. ${amount.toFixed(2)}`;
+        }
+        
+        // Navigation functions
+        function nextStep(step) {
+            if (step === 3) {
+                loadServices();
+            } else if (step === 4) {
+                updateBookingSummary();
+            }
+            
+            showStep(step);
+        }
+        
+        function prevStep(step) {
+            showStep(step);
+        }
+        
+        function showStep(step) {
+            // Hide all steps
+            document.querySelectorAll('.step-content').forEach(content => {
+                content.classList.add('hidden');
+            });
+            
+            // Show current step
+            document.getElementById(`step${step}-content`).classList.remove('hidden');
+            
+            // Update step indicators
+            document.querySelectorAll('.step').forEach((stepEl, index) => {
+                stepEl.classList.remove('active', 'completed', 'inactive');
+                if (index + 1 < step) {
+                    stepEl.classList.add('completed');
+                } else if (index + 1 === step) {
+                    stepEl.classList.add('active');
+                } else {
+                    stepEl.classList.add('inactive');
+                }
+            });
+            
+            currentStep = step;
+        }
+        
+        // Update booking summary
+        function updateBookingSummary() {
+            document.getElementById('summary-salon').textContent = selectedStore.name;
+            document.getElementById('summary-date').textContent = selectedDate;
+            document.getElementById('summary-time').textContent = selectedTime;
+            
+            const duration = selectedServices.reduce((sum, service) => sum + service.duration, 0);
+            const amount = selectedServices.reduce((sum, service) => sum + parseFloat(service.price), 0);
+            
+            document.getElementById('summary-duration').textContent = `${duration} minutes`;
+            document.getElementById('summary-services').textContent = selectedServices.map(s => s.name).join(', ');
+            document.getElementById('summary-amount').textContent = `Rs. ${amount.toFixed(2)}`;
+        }
+        
+        // Book appointment
+        async function bookAppointment() {
+            const customerName = document.getElementById('customer-name').value;
+            const customerMobile = document.getElementById('customer-mobile').value;
+            
+            if (!customerName || !customerMobile) {
+                alert('Please fill in all required fields');
+                return;
+            }
+            
+            const appointmentData = {
+                storeId: selectedStore.id,
+                customerName: customerName,
+                customerMobile: customerMobile,
+                customerEmail: document.getElementById('customer-email').value,
+                dateOfBirth: document.getElementById('customer-dob').value,
+                gender: document.getElementById('customer-gender').value,
+                appointmentDate: selectedDate,
+                appointmentTime: selectedTime,
+                serviceIds: selectedServices.map(s => s.id.toString()),
+                serviceName: selectedServices.map(s => s.name).join(', '),
+                totalAmount: selectedServices.reduce((sum, service) => sum + parseFloat(service.price), 0).toFixed(2),
+                duration: selectedServices.reduce((sum, service) => sum + service.duration, 0),
+                notes: document.getElementById('customer-notes').value
+            };
+            
+            try {
+                document.getElementById('book-btn').disabled = true;
+                document.getElementById('book-btn').textContent = 'Booking...';
+                
+                const response = await fetch(`${API_BASE_URL}/api/appointments`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(appointmentData)
+                });
+                
+                if (response.ok) {
+                    showSuccessMessage();
+                } else {
+                    const error = await response.json();
+                    alert(error.message || 'Failed to book appointment');
+                }
+            } catch (error) {
+                console.error('Error booking appointment:', error);
+                alert('Failed to book appointment. Please try again.');
+            } finally {
+                document.getElementById('book-btn').disabled = false;
+                document.getElementById('book-btn').textContent = 'Book Appointment';
+            }
+        }
+        
+        // Show success message
+        function showSuccessMessage() {
+            document.querySelectorAll('.step-content').forEach(content => {
+                content.classList.add('hidden');
+            });
+            document.getElementById('success-content').classList.remove('hidden');
+        }
+        
+        // Reset form
+        function resetForm() {
+            selectedStore = null;
+            selectedDate = '';
+            selectedTime = '';
+            selectedServices = [];
+            
+            document.querySelectorAll('input, select, textarea').forEach(input => {
+                input.value = '';
+            });
+            
+            showStep(1);
+        }
+        
+        // Utility functions
+        function showLoading() {
+            document.getElementById('loading').classList.remove('hidden');
+        }
+        
+        function hideLoading() {
+            document.getElementById('loading').classList.add('hidden');
+        }
+        
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>

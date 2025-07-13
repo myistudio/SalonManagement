@@ -177,6 +177,7 @@ Changelog:
 - June 28, 2025. Successfully debugged and tested complete salon management system - all major features now fully operational
 - July 8, 2025. Enhanced billing system with payment method selection (Cash/Card/UPI), staff service tracking, daily sales reports with payment breakdown, staff performance analytics, and thermal receipt printing with payment method and staff information
 - July 8, 2025. Fixed customer transaction history to show only actual bills with items and flushed/seeded database with realistic salon data for proper testing
+- July 13, 2025. Created comprehensive appointment booking system with public embeddable booking page (/book-appointment) and internal appointment management page (/appointments) for staff - customers can select store, date/time, services, and enter personal details, while staff can view, confirm, and manage all appointments with real-time availability checking
 ```
 
 ## User Preferences

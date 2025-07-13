@@ -17,6 +17,7 @@ import {
   whatsappMessages,
   customerCampaigns,
   loginPageSettings,
+  appointments,
   type User,
   type UpsertUser,
   type Store,
@@ -50,6 +51,8 @@ import {
   type InsertCustomerCampaign,
   type LoginPageSettings,
   type InsertLoginPageSettings,
+  type Appointment,
+  type InsertAppointment,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, sql, ilike, gte, lte, isNotNull } from "drizzle-orm";
@@ -195,6 +198,14 @@ export interface IStorage {
   // Login page customization operations
   getLoginPageSettings(): Promise<LoginPageSettings | undefined>;
   updateLoginPageSettings(settings: Partial<InsertLoginPageSettings>): Promise<LoginPageSettings>;
+
+  // Appointment operations
+  getAppointments(storeId: number, date?: Date): Promise<Appointment[]>;
+  getAppointment(id: number): Promise<Appointment | undefined>;
+  createAppointment(appointment: InsertAppointment): Promise<Appointment>;
+  updateAppointment(id: number, appointment: Partial<InsertAppointment>): Promise<Appointment>;
+  deleteAppointment(id: number): Promise<void>;
+  getAvailableTimeSlots(storeId: number, date: Date): Promise<string[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1523,6 +1534,76 @@ export class DatabaseStorage implements IStorage {
     }
 
     return result;
+  }
+
+  // Appointment operations
+  async getAppointments(storeId: number, date?: Date): Promise<Appointment[]> {
+    if (date) {
+      const dateStr = date.toISOString().split('T')[0];
+      return db.select().from(appointments)
+        .where(
+          and(
+            eq(appointments.storeId, storeId),
+            eq(appointments.appointmentDate, dateStr)
+          )
+        )
+        .orderBy(appointments.appointmentDate, appointments.appointmentTime);
+    }
+    
+    return db.select().from(appointments)
+      .where(eq(appointments.storeId, storeId))
+      .orderBy(appointments.appointmentDate, appointments.appointmentTime);
+  }
+
+  async getAppointment(id: number): Promise<Appointment | undefined> {
+    const [appointment] = await db.select().from(appointments).where(eq(appointments.id, id));
+    return appointment;
+  }
+
+  async createAppointment(appointment: InsertAppointment): Promise<Appointment> {
+    const [created] = await db.insert(appointments).values(appointment).returning();
+    return created;
+  }
+
+  async updateAppointment(id: number, appointment: Partial<InsertAppointment>): Promise<Appointment> {
+    const [updated] = await db
+      .update(appointments)
+      .set({ ...appointment, updatedAt: new Date() })
+      .where(eq(appointments.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteAppointment(id: number): Promise<void> {
+    await db.delete(appointments).where(eq(appointments.id, id));
+  }
+
+  async getAvailableTimeSlots(storeId: number, date: Date): Promise<string[]> {
+    const dateStr = date.toISOString().split('T')[0];
+    
+    // Get existing appointments for the date
+    const existingAppointments = await db
+      .select({ appointmentTime: appointments.appointmentTime })
+      .from(appointments)
+      .where(
+        and(
+          eq(appointments.storeId, storeId),
+          eq(appointments.appointmentDate, dateStr),
+          eq(appointments.status, 'confirmed')
+        )
+      );
+    
+    // Define all possible time slots (every 30 minutes from 9 AM to 8 PM)
+    const allSlots = [
+      '09:00', '09:30', '10:00', '10:30', '11:00', '11:30',
+      '12:00', '12:30', '13:00', '13:30', '14:00', '14:30',
+      '15:00', '15:30', '16:00', '16:30', '17:00', '17:30',
+      '18:00', '18:30', '19:00', '19:30', '20:00'
+    ];
+    
+    // Filter out booked slots
+    const bookedSlots = existingAppointments.map(a => a.appointmentTime);
+    return allSlots.filter(slot => !bookedSlots.includes(slot));
   }
 }
 

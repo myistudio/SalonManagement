@@ -17,6 +17,8 @@ import Stores from "@/pages/stores";
 import Settings from "@/pages/settings";
 import WhatsApp from "@/pages/whatsapp";
 import LoginPageSettings from "@/pages/login-page-settings";
+import Appointments from "@/pages/appointments";
+import AppointmentBooking from "@/pages/appointment-booking";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -30,6 +32,7 @@ function Router() {
   return (
     <Switch>
       <Route path="/login" component={AuthPage} />
+      <Route path="/book-appointment" component={AppointmentBooking} />
       {!isAuthenticated ? (
         <Route component={AuthPage} />
       ) : (
@@ -45,6 +48,7 @@ function Router() {
           <Route path="/staff" component={Staff} />
           <Route path="/stores" component={Stores} />
           <Route path="/whatsapp" component={WhatsApp} />
+          <Route path="/appointments" component={Appointments} />
           <Route path="/settings" component={Settings} />
           <Route path="/settings/login-page" component={LoginPageSettings} />
         </>

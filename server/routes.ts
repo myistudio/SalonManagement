@@ -1269,6 +1269,101 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Appointment API routes (public - no authentication required)
+  app.get("/api/appointments/stores", async (req, res) => {
+    try {
+      const stores = await storage.getStores();
+      res.json(stores.filter(store => store.isActive));
+    } catch (error) {
+      console.error("Error fetching stores:", error);
+      res.status(500).json({ message: "Failed to fetch stores" });
+    }
+  });
+
+  app.get("/api/appointments/services/:storeId", async (req, res) => {
+    try {
+      const storeId = parseInt(req.params.storeId);
+      const services = await storage.getServices(storeId);
+      res.json(services.filter(service => service.isActive));
+    } catch (error) {
+      console.error("Error fetching services:", error);
+      res.status(500).json({ message: "Failed to fetch services" });
+    }
+  });
+
+  app.get("/api/appointments/time-slots/:storeId/:date", async (req, res) => {
+    try {
+      const storeId = parseInt(req.params.storeId);
+      const date = new Date(req.params.date);
+      const slots = await storage.getAvailableTimeSlots(storeId, date);
+      res.json(slots);
+    } catch (error) {
+      console.error("Error fetching time slots:", error);
+      res.status(500).json({ message: "Failed to fetch time slots" });
+    }
+  });
+
+  app.post("/api/appointments", async (req, res) => {
+    try {
+      const appointment = await storage.createAppointment(req.body);
+      res.status(201).json(appointment);
+    } catch (error) {
+      console.error("Error creating appointment:", error);
+      res.status(500).json({ message: "Failed to create appointment" });
+    }
+  });
+
+  // Appointment management routes (protected - requires authentication)
+  app.get("/api/appointments", isAuthenticated, async (req: any, res) => {
+    try {
+      const user = await storage.getUser(req.user.id);
+      if (!user) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const storeId = parseInt(req.query.storeId as string);
+      const date = req.query.date ? new Date(req.query.date as string) : undefined;
+      
+      const appointments = await storage.getAppointments(storeId, date);
+      res.json(appointments);
+    } catch (error) {
+      console.error("Error fetching appointments:", error);
+      res.status(500).json({ message: "Failed to fetch appointments" });
+    }
+  });
+
+  app.put("/api/appointments/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const user = await storage.getUser(req.user.id);
+      if (!user) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const id = parseInt(req.params.id);
+      const appointment = await storage.updateAppointment(id, req.body);
+      res.json(appointment);
+    } catch (error) {
+      console.error("Error updating appointment:", error);
+      res.status(500).json({ message: "Failed to update appointment" });
+    }
+  });
+
+  app.delete("/api/appointments/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const user = await storage.getUser(req.user.id);
+      if (!user) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const id = parseInt(req.params.id);
+      await storage.deleteAppointment(id);
+      res.json({ message: "Appointment deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting appointment:", error);
+      res.status(500).json({ message: "Failed to delete appointment" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
