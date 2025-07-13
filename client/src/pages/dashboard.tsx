@@ -15,6 +15,7 @@ export default function Dashboard() {
   const { isAuthenticated, isLoading } = useAuth();
   const [selectedStoreId, setSelectedStoreId] = useState<number>(7);
   const [showBillingModal, setShowBillingModal] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -40,10 +41,18 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Header selectedStoreId={selectedStoreId} onStoreChange={setSelectedStoreId} />
+      <Header 
+        selectedStoreId={selectedStoreId} 
+        onStoreChange={setSelectedStoreId}
+        onToggleMobileMenu={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+      />
       
       <div className="flex">
-        <Sidebar onOpenBilling={() => setShowBillingModal(true)} />
+        <Sidebar 
+          onOpenBilling={() => setShowBillingModal(true)}
+          isMobileMenuOpen={isMobileMenuOpen}
+          setIsMobileMenuOpen={setIsMobileMenuOpen}
+        />
         
         <main className="flex-1 lg:ml-64">
           <div className="p-4 sm:p-6">

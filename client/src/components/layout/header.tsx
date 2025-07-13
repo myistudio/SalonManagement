@@ -2,15 +2,17 @@ import { useAuth } from "@/hooks/useAuth";
 import { useQuery } from "@tanstack/react-query";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Bell, LogOut, User } from "lucide-react";
+import { Bell, LogOut, User, Menu } from "lucide-react";
 import { Link } from "wouter";
+import { Button } from "@/components/ui/button";
 
 interface HeaderProps {
   selectedStoreId: number;
   onStoreChange: (storeId: number) => void;
+  onToggleMobileMenu?: () => void;
 }
 
-export default function Header({ selectedStoreId, onStoreChange }: HeaderProps) {
+export default function Header({ selectedStoreId, onStoreChange, onToggleMobileMenu }: HeaderProps) {
   const { user } = useAuth();
   
   const { data: stores = [] } = useQuery({
@@ -22,9 +24,21 @@ export default function Header({ selectedStoreId, onStoreChange }: HeaderProps) 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           <div className="flex items-center">
+            {/* Mobile menu button - positioned before project title */}
+            <div className="lg:hidden mr-3">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onToggleMobileMenu}
+                className="p-2"
+              >
+                <Menu size={20} />
+              </Button>
+            </div>
+            
             <div className="flex-shrink-0">
               <Link href="/dashboard">
-                <h1 className="text-2xl font-bold text-primary cursor-pointer hover:text-primary/80 lg:ml-0 ml-0">SalonPro</h1>
+                <h1 className="text-2xl font-bold text-primary cursor-pointer hover:text-primary/80">SalonPro</h1>
               </Link>
             </div>
           </div>

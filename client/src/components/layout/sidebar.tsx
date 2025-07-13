@@ -23,12 +23,13 @@ import { Button } from "@/components/ui/button";
 
 interface SidebarProps {
   onOpenBilling: () => void;
+  isMobileMenuOpen: boolean;
+  setIsMobileMenuOpen: (open: boolean) => void;
 }
 
-export default function Sidebar({ onOpenBilling }: SidebarProps) {
+export default function Sidebar({ onOpenBilling, isMobileMenuOpen, setIsMobileMenuOpen }: SidebarProps) {
   const [location] = useLocation();
   const { user } = useAuth();
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   
   // Get user role for navigation filtering
   const userRole = (user as any)?.role || "cashier";
@@ -187,17 +188,6 @@ export default function Sidebar({ onOpenBilling }: SidebarProps) {
 
   return (
     <>
-      {/* Mobile menu button */}
-      <div className="lg:hidden fixed top-4 right-4 z-50">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          className="bg-white shadow-md"
-        >
-          {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
-        </Button>
-      </div>
 
       {/* Mobile menu overlay */}
       {isMobileMenuOpen && (
