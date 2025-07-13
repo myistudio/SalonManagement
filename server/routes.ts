@@ -711,14 +711,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      // Hash password
-      const { scrypt, randomBytes } = await import('crypto');
-      const { promisify } = await import('util');
-      const scryptAsync = promisify(scrypt);
-      
-      const salt = randomBytes(16).toString("hex");
-      const buf = (await scryptAsync(password, salt, 64)) as Buffer;
-      const hashedPassword = `${buf.toString("hex")}.${salt}`;
+      // Hash password using bcrypt (same as auth system)
+      const bcrypt = await import('bcrypt');
+      const hashedPassword = await bcrypt.hash(password, 10);
 
       // Create new user
       const userId = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
