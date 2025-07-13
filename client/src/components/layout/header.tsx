@@ -2,8 +2,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { useQuery } from "@tanstack/react-query";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Bell, LogOut, User, Home, ShoppingCart, Calendar, Package, Wrench, Users, BarChart, Settings, Menu } from "lucide-react";
-import { Link, useLocation } from "wouter";
+import { Bell, LogOut, User } from "lucide-react";
+import { Link } from "wouter";
 
 interface HeaderProps {
   selectedStoreId: number;
@@ -12,79 +12,20 @@ interface HeaderProps {
 
 export default function Header({ selectedStoreId, onStoreChange }: HeaderProps) {
   const { user } = useAuth();
-  const [location] = useLocation();
   
   const { data: stores = [] } = useQuery({
     queryKey: ["/api/stores"],
   });
 
-  const navigationItems = [
-    { name: "Dashboard", href: "/dashboard", icon: Home },
-    { name: "New Bill", href: "/new-bill", icon: ShoppingCart },
-    { name: "Appointments", href: "/appointments", icon: Calendar },
-    { name: "Products", href: "/products", icon: Package },
-    { name: "Services", href: "/services", icon: Wrench },
-    { name: "Customers", href: "/customers", icon: Users },
-    { name: "Reports", href: "/reports", icon: BarChart },
-    { name: "Settings", href: "/settings", icon: Settings },
-  ];
-
-  const isActive = (path: string) => location === path;
-
   return (
     <nav className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
-          <div className="flex items-center space-x-6">
+          <div className="flex items-center">
             <div className="flex-shrink-0">
               <Link href="/dashboard">
                 <h1 className="text-2xl font-bold text-primary cursor-pointer hover:text-primary/80">SalonPro</h1>
               </Link>
-            </div>
-            
-            {/* Mobile Navigation Menu */}
-            <div className="lg:hidden">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <button className="text-gray-700 hover:text-primary p-2 rounded-md">
-                    <Menu size={20} />
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" className="w-56">
-                  {navigationItems.map((item) => {
-                    const IconComponent = item.icon;
-                    return (
-                      <Link key={item.name} href={item.href}>
-                        <DropdownMenuItem className="flex items-center space-x-2 cursor-pointer">
-                          <IconComponent size={16} />
-                          <span>{item.name}</span>
-                        </DropdownMenuItem>
-                      </Link>
-                    );
-                  })}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-
-            {/* Desktop Navigation Menu */}
-            <div className="hidden lg:flex items-center space-x-1">
-              {navigationItems.map((item) => {
-                const IconComponent = item.icon;
-                return (
-                  <Link key={item.name} href={item.href}>
-                    <span 
-                      className={`px-3 py-2 rounded-md text-sm font-medium transition-colors flex items-center space-x-2 cursor-pointer ${
-                        isActive(item.href) 
-                          ? 'bg-primary text-white' 
-                          : 'text-gray-700 hover:text-primary hover:bg-gray-50'
-                      }`}
-                    >
-                      <IconComponent size={16} />
-                      <span>{item.name}</span>
-                    </span>
-                  </Link>
-                );
-              })}
             </div>
           </div>
 
