@@ -628,7 +628,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Staff routes
   app.get('/api/staff', isAuthenticated, requirePermission(Permission.MANAGE_STORE_STAFF), hasStoreAccess, async (req: any, res) => {
     try {
-      const storeId = parseInt(req.query.storeId as string) || 7;
+      const storeId = parseInt(req.query.storeId as string) || 9;
       const staff = await storage.getStoreStaff(storeId);
       res.json(staff);
     } catch (error) {

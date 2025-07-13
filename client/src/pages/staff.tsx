@@ -21,7 +21,7 @@ import BillingModal from "@/components/billing/billing-modal";
 export default function Staff() {
   const { toast } = useToast();
   const { isAuthenticated, isLoading, user } = useAuth();
-  const [selectedStoreId, setSelectedStoreId] = useState<number>(7);
+  const [selectedStoreId, setSelectedStoreId] = useState<number>(9);
   const [searchTerm, setSearchTerm] = useState("");
   const [showBillingModal, setShowBillingModal] = useState(false);
   const [editingStaff, setEditingStaff] = useState<any>(null);

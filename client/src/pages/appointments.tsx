@@ -44,7 +44,7 @@ export default function Appointments() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
-  const [selectedStoreId, setSelectedStoreId] = useState<number>(7); // Default to VEEPRESS
+  const [selectedStoreId, setSelectedStoreId] = useState<number>(9); // Default to VEEPRESS
   const [selectedDate, setSelectedDate] = useState<string>(''); // Show all appointments by default
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
   const [showDetails, setShowDetails] = useState(false);

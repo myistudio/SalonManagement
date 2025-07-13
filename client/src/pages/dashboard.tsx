@@ -13,7 +13,7 @@ import BillingModal from "@/components/billing/billing-modal";
 export default function Dashboard() {
   const { toast } = useToast();
   const { isAuthenticated, isLoading } = useAuth();
-  const [selectedStoreId, setSelectedStoreId] = useState<number>(7);
+  const [selectedStoreId, setSelectedStoreId] = useState<number>(9);
   const [showBillingModal, setShowBillingModal] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
