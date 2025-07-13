@@ -37,10 +37,10 @@ export default function CustomerForm({ onSuccess, selectedStoreId }: CustomerFor
         title: "Success",
         description: "Customer created successfully",
       });
-      queryClient.invalidateQueries({ queryKey: ["/api/customers"] });
+      queryClient.invalidateQueries({ queryKey: [`/api/customers?storeId=${selectedStoreId}`] });
       onSuccess();
     },
-    onError: (error) => {
+    onError: (error: any) => {
       if (isUnauthorizedError(error)) {
         toast({
           title: "Unauthorized",
@@ -52,9 +52,21 @@ export default function CustomerForm({ onSuccess, selectedStoreId }: CustomerFor
         }, 500);
         return;
       }
+      
+      // Handle duplicate mobile number error
+      if (error.message && error.message.includes("duplicate") || 
+          error.message && error.message.includes("mobile")) {
+        toast({
+          title: "Duplicate Mobile Number",
+          description: "A customer with this mobile number already exists",
+          variant: "destructive",
+        });
+        return;
+      }
+      
       toast({
         title: "Error",
-        description: "Failed to create customer",
+        description: error.message || "Failed to create customer",
         variant: "destructive",
       });
     },

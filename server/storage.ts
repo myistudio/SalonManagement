@@ -324,10 +324,15 @@ export class DatabaseStorage implements IStorage {
 
   // Customer operations
   async getCustomers(storeId?: number): Promise<Customer[]> {
-    return await db
-      .select()
-      .from(customers)
-      .orderBy(desc(customers.createdAt));
+    const query = db.select().from(customers);
+    
+    if (storeId) {
+      return await query
+        .where(eq(customers.storeId, storeId))
+        .orderBy(desc(customers.createdAt));
+    }
+    
+    return await query.orderBy(desc(customers.createdAt));
   }
 
   async getCustomer(id: number): Promise<Customer | undefined> {
@@ -341,6 +346,19 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createCustomer(customer: InsertCustomer): Promise<Customer> {
+    // Check for duplicate mobile number in the same store
+    const existing = await db
+      .select()
+      .from(customers)
+      .where(and(
+        eq(customers.mobile, customer.mobile),
+        eq(customers.storeId, customer.storeId)
+      ));
+    
+    if (existing.length > 0) {
+      throw new Error(`Customer with mobile number ${customer.mobile} already exists in this store`);
+    }
+    
     const [newCustomer] = await db.insert(customers).values(customer).returning();
     return newCustomer;
   }

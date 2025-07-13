@@ -155,8 +155,8 @@ export default function BillingModal({ isOpen, onClose, storeId }: BillingModalP
   });
 
   const { data: customers = [] } = useQuery({
-    queryKey: ["/api/customers"],
-    enabled: isOpen,
+    queryKey: [`/api/customers?storeId=${storeId}`],
+    enabled: isOpen && !!storeId,
   });
 
   // Type the data
@@ -200,7 +200,7 @@ export default function BillingModal({ isOpen, onClose, storeId }: BillingModalP
       setShowReceiptDialog(true);
       resetForm();
       queryClient.invalidateQueries({ queryKey: ["/api/transactions"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/customers"] });
+      queryClient.invalidateQueries({ queryKey: [`/api/customers?storeId=${storeId}`] });
     },
     onError: (error: Error) => {
       if (isUnauthorizedError(error)) {
@@ -241,7 +241,7 @@ export default function BillingModal({ isOpen, onClose, storeId }: BillingModalP
         title: "Customer Created",
         description: `${customer.firstName} ${customer.lastName || ''} added successfully`,
       });
-      queryClient.invalidateQueries({ queryKey: ["/api/customers"] });
+      queryClient.invalidateQueries({ queryKey: [`/api/customers?storeId=${storeId}`] });
     },
     onError: (error: Error) => {
       toast({

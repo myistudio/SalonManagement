@@ -45,7 +45,8 @@ export default function Customers() {
   }, [isAuthenticated, isLoading, toast]);
 
   const { data: customers = [], isLoading: customersLoading } = useQuery({
-    queryKey: ["/api/customers"],
+    queryKey: [`/api/customers?storeId=${selectedStoreId}`],
+    enabled: !!selectedStoreId,
     retry: false,
   });
 
