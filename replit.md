@@ -237,6 +237,7 @@ Changelog:
 - July 13, 2025. Implemented permission-based route protection for all sensitive operations including billing, inventory management, customer data, and reporting
 - July 13, 2025. Updated role terminology from "cashier" to "executive" throughout the system for better professional designation
 - July 13, 2025. Enhanced billing staff assignment to show only executives and managers from respective store for service commission/rating tracking
+- July 13, 2025. Fixed critical authentication issue - updated all user password hashes to use correct bcrypt format, resolving 401 "Invalid login credentials" errors
 ```
 
 ## User Preferences
