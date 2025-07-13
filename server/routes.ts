@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { setupBasicAuth, isAuthenticated, hasStoreAccess } from "./auth-basic";
+import { setupBasicAuth, isAuthenticated, hasStoreAccess, requireRole, requirePermission, Permission } from "./auth-basic";
 import multer from "multer";
 import path from "path";
 import fs from "fs/promises";
@@ -84,24 +84,22 @@ const uploadImage = multer({
   }
 });
 
-// Role-based authentication middleware for basic auth
-const requireRole = (allowedRoles: string[]) => {
-  return async (req: any, res: any, next: any) => {
+// Input validation middleware
+const validateInput = (schema: any) => {
+  return (req: any, res: any, next: any) => {
     try {
-      const user = req.user; // Get user directly from basic auth session
-      if (!user) {
-        return res.status(401).json({ message: "Unauthorized" });
+      const result = schema.safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({ 
+          message: "Invalid input data", 
+          errors: result.error.issues 
+        });
       }
-
-      if (!allowedRoles.includes(user.role)) {
-        return res.status(403).json({ message: "Forbidden: Insufficient permissions" });
-      }
-
-      req.userRole = user.role;
+      req.validatedData = result.data;
       next();
     } catch (error) {
-      console.error("Role check error:", error);
-      res.status(500).json({ message: "Internal server error" });
+      console.error("Validation error:", error);
+      res.status(400).json({ message: "Invalid request data" });
     }
   };
 };
@@ -212,17 +210,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Customer routes
-  app.get('/api/customers', isAuthenticated, hasStoreAccess, async (req: any, res) => {
+  app.get('/api/customers', isAuthenticated, requirePermission(Permission.VIEW_CUSTOMERS), hasStoreAccess, async (req: any, res) => {
     try {
       const storeId = req.query.storeId ? parseInt(req.query.storeId) : undefined;
+      if (!storeId) {
+        return res.status(400).json({ message: "Store ID is required" });
+      }
       const customers = await storage.getCustomers(storeId);
       res.json(customers);
     } catch (error) {
+      console.error("Error fetching customers:", error);
       res.status(500).json({ message: "Failed to fetch customers" });
     }
   });
 
-  app.get('/api/customers/search', isAuthenticated, async (req: any, res) => {
+  app.get('/api/customers/search', isAuthenticated, requirePermission(Permission.VIEW_CUSTOMERS), hasStoreAccess, async (req: any, res) => {
     try {
       const { mobile } = req.query;
       if (!mobile) {
@@ -238,13 +240,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.json({ ...customer, membership });
     } catch (error) {
+      console.error("Error searching customer:", error);
       res.status(500).json({ message: "Failed to search customer" });
     }
   });
 
-  app.post('/api/customers', isAuthenticated, async (req: any, res) => {
+  app.post('/api/customers', isAuthenticated, requirePermission(Permission.CREATE_CUSTOMERS), hasStoreAccess, validateInput(insertCustomerSchema), async (req: any, res) => {
     try {
-      const customerData = insertCustomerSchema.parse(req.body);
+      const customerData = req.validatedData;
       const customer = await storage.createCustomer(customerData);
       res.status(201).json(customer);
     } catch (error) {
@@ -336,7 +339,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Service routes
-  app.get('/api/services', isAuthenticated, hasStoreAccess, async (req: any, res) => {
+  app.get('/api/services', isAuthenticated, requirePermission(Permission.VIEW_SERVICES), hasStoreAccess, async (req: any, res) => {
     try {
       const storeId = parseInt(req.query.storeId as string);
       if (!storeId) {
@@ -345,20 +348,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const services = await storage.getServices(storeId);
       res.json(services);
     } catch (error) {
+      console.error("Error fetching services:", error);
       res.status(500).json({ message: "Failed to fetch services" });
     }
   });
 
-  app.post('/api/services', isAuthenticated, async (req: any, res) => {
+  app.post('/api/services', isAuthenticated, requirePermission(Permission.MANAGE_SERVICES), hasStoreAccess, validateInput(insertServiceSchema), async (req: any, res) => {
     try {
-      const serviceData = insertServiceSchema.parse(req.body);
+      const serviceData = req.validatedData;
       const service = await storage.createService(serviceData);
       res.status(201).json(service);
     } catch (error) {
-      if (error instanceof z.ZodError) {
-        console.error("Service validation errors:", error.errors);
-        return res.status(400).json({ message: "Invalid service data", errors: error.errors });
-      }
       console.error("Error creating service:", error);
       res.status(500).json({ message: "Failed to create service" });
     }
@@ -434,7 +434,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Product routes
-  app.get('/api/products', isAuthenticated, hasStoreAccess, async (req: any, res) => {
+  app.get('/api/products', isAuthenticated, requirePermission(Permission.VIEW_INVENTORY), hasStoreAccess, async (req: any, res) => {
     try {
       const storeId = parseInt(req.query.storeId as string);
       if (!storeId) {
@@ -443,11 +443,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const products = await storage.getProducts(storeId);
       res.json(products);
     } catch (error) {
+      console.error("Error fetching products:", error);
       res.status(500).json({ message: "Failed to fetch products" });
     }
   });
 
-  app.get('/api/products/scan/:barcode', isAuthenticated, async (req: any, res) => {
+  app.get('/api/products/scan/:barcode', isAuthenticated, requirePermission(Permission.VIEW_INVENTORY), async (req: any, res) => {
     try {
       const { barcode } = req.params;
       const product = await storage.getProductByBarcode(barcode);
@@ -456,13 +457,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       res.json(product);
     } catch (error) {
+      console.error("Error scanning product:", error);
       res.status(500).json({ message: "Failed to scan product" });
     }
   });
 
-  app.post('/api/products', isAuthenticated, async (req: any, res) => {
+  app.post('/api/products', isAuthenticated, requirePermission(Permission.MANAGE_INVENTORY), hasStoreAccess, validateInput(insertProductSchema), async (req: any, res) => {
     try {
-      const productData = insertProductSchema.parse(req.body);
+      const productData = req.validatedData;
       // Generate QR code for the product if not provided
       if (!productData.qrCode) {
         productData.qrCode = `QR-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
@@ -522,7 +524,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Transaction routes
-  app.get('/api/transactions', isAuthenticated, hasStoreAccess, async (req: any, res) => {
+  app.get('/api/transactions', isAuthenticated, requirePermission(Permission.MANAGE_TRANSACTIONS), hasStoreAccess, async (req: any, res) => {
     try {
       const storeId = parseInt(req.query.storeId as string);
       const limit = req.query.limit ? parseInt(req.query.limit as string) : undefined;
@@ -537,7 +539,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/transactions', isAuthenticated, async (req: any, res) => {
+  app.post('/api/transactions', isAuthenticated, requirePermission(Permission.CREATE_BILLS), hasStoreAccess, async (req: any, res) => {
     try {
       const { transaction, items } = req.body;
       const userId = req.user.id; // Use basic auth user id
@@ -617,12 +619,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Staff routes
-  app.get('/api/staff', isAuthenticated, async (req: any, res) => {
+  app.get('/api/staff', isAuthenticated, requirePermission(Permission.MANAGE_STORE_STAFF), hasStoreAccess, async (req: any, res) => {
     try {
-      const storeId = parseInt(req.query.storeId as string) || 1;
+      const storeId = parseInt(req.query.storeId as string) || 7;
       const staff = await storage.getStoreStaff(storeId);
       res.json(staff);
     } catch (error) {
+      console.error("Error fetching staff:", error);
       res.status(500).json({ message: "Failed to fetch staff" });
     }
   });
@@ -906,12 +909,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const stats = await storage.getDashboardStats(storeId);
       res.json(stats);
     } catch (error) {
+      console.error("Error fetching dashboard stats:", error);
       res.status(500).json({ message: "Failed to fetch dashboard stats" });
     }
   });
 
   // Reports routes
-  app.get('/api/reports/sales', isAuthenticated, async (req: any, res) => {
+  app.get('/api/reports/sales', isAuthenticated, requirePermission(Permission.VIEW_STORE_REPORTS), hasStoreAccess, async (req: any, res) => {
     try {
       const storeId = parseInt(req.query.storeId as string);
       const startDate = new Date(req.query.startDate as string);
@@ -930,7 +934,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/reports/analytics', isAuthenticated, async (req: any, res) => {
+  app.get('/api/reports/analytics', isAuthenticated, requirePermission(Permission.VIEW_STORE_REPORTS), hasStoreAccess, async (req: any, res) => {
     try {
       const storeId = parseInt(req.query.storeId as string);
       const startDate = new Date(req.query.startDate as string);
@@ -948,7 +952,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/reports/daily-sales', isAuthenticated, async (req: any, res) => {
+  app.get('/api/reports/daily-sales', isAuthenticated, requirePermission(Permission.VIEW_STORE_REPORTS), hasStoreAccess, async (req: any, res) => {
     try {
       const storeId = parseInt(req.query.storeId as string);
       const date = new Date(req.query.date as string);
@@ -965,7 +969,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/reports/staff-performance', isAuthenticated, async (req: any, res) => {
+  app.get('/api/reports/staff-performance', isAuthenticated, requirePermission(Permission.VIEW_STORE_REPORTS), hasStoreAccess, async (req: any, res) => {
     try {
       const storeId = parseInt(req.query.storeId as string);
       const startDate = new Date(req.query.startDate as string);

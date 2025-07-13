@@ -202,6 +202,26 @@ export const isAuthenticated = (req: any, res: any, next: any) => {
   res.status(401).json({ message: "Unauthorized" });
 };
 
+// Role-based access control middleware
+export const requireRole = (allowedRoles: string[]) => {
+  return (req: any, res: any, next: any) => {
+    const user = req.user;
+    if (!user) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    if (!allowedRoles.includes(user.role)) {
+      return res.status(403).json({ 
+        message: "Access denied. Insufficient permissions.",
+        requiredRole: allowedRoles,
+        userRole: user.role
+      });
+    }
+
+    next();
+  };
+};
+
 // Check if user has access to specific store
 export const hasStoreAccess = async (req: any, res: any, next: any) => {
   try {
@@ -215,8 +235,8 @@ export const hasStoreAccess = async (req: any, res: any, next: any) => {
       return next();
     }
 
-    // Get store ID from params or query
-    const storeId = parseInt(req.params.storeId || req.query.storeId);
+    // Get store ID from params, query, or body
+    const storeId = parseInt(req.params.storeId || req.query.storeId || req.body.storeId);
     if (!storeId) {
       return res.status(400).json({ message: "Store ID is required" });
     }
@@ -226,7 +246,11 @@ export const hasStoreAccess = async (req: any, res: any, next: any) => {
     const hasAccess = userStores.some((store: any) => store.id === storeId);
 
     if (!hasAccess) {
-      return res.status(403).json({ message: "Access denied to this store" });
+      return res.status(403).json({ 
+        message: "Access denied to this store",
+        storeId: storeId,
+        userStores: userStores.map((s: any) => s.id)
+      });
     }
 
     next();
@@ -234,4 +258,109 @@ export const hasStoreAccess = async (req: any, res: any, next: any) => {
     console.error("Store access check error:", error);
     res.status(500).json({ message: "Failed to verify store access" });
   }
+};
+
+// Comprehensive permission system
+export const Permission = {
+  // Super Admin permissions
+  MANAGE_ALL_STORES: 'manage_all_stores',
+  MANAGE_SYSTEM_SETTINGS: 'manage_system_settings',
+  MANAGE_ALL_STAFF: 'manage_all_staff',
+  VIEW_ALL_REPORTS: 'view_all_reports',
+  
+  // Store Manager permissions
+  MANAGE_STORE_SETTINGS: 'manage_store_settings',
+  MANAGE_STORE_STAFF: 'manage_store_staff',
+  MANAGE_INVENTORY: 'manage_inventory',
+  MANAGE_SERVICES: 'manage_services',
+  MANAGE_CUSTOMERS: 'manage_customers',
+  MANAGE_MEMBERSHIPS: 'manage_memberships',
+  VIEW_STORE_REPORTS: 'view_store_reports',
+  MANAGE_APPOINTMENTS: 'manage_appointments',
+  
+  // Cashier/Executive permissions
+  CREATE_BILLS: 'create_bills',
+  MANAGE_TRANSACTIONS: 'manage_transactions',
+  VIEW_CUSTOMERS: 'view_customers',
+  CREATE_CUSTOMERS: 'create_customers',
+  VIEW_INVENTORY: 'view_inventory',
+  VIEW_SERVICES: 'view_services',
+  BOOK_APPOINTMENTS: 'book_appointments',
+};
+
+// Permission mapping for each role
+const rolePermissions = {
+  super_admin: [
+    Permission.MANAGE_ALL_STORES,
+    Permission.MANAGE_SYSTEM_SETTINGS,
+    Permission.MANAGE_ALL_STAFF,
+    Permission.VIEW_ALL_REPORTS,
+    Permission.MANAGE_STORE_SETTINGS,
+    Permission.MANAGE_STORE_STAFF,
+    Permission.MANAGE_INVENTORY,
+    Permission.MANAGE_SERVICES,
+    Permission.MANAGE_CUSTOMERS,
+    Permission.MANAGE_MEMBERSHIPS,
+    Permission.VIEW_STORE_REPORTS,
+    Permission.MANAGE_APPOINTMENTS,
+    Permission.CREATE_BILLS,
+    Permission.MANAGE_TRANSACTIONS,
+    Permission.VIEW_CUSTOMERS,
+    Permission.CREATE_CUSTOMERS,
+    Permission.VIEW_INVENTORY,
+    Permission.VIEW_SERVICES,
+    Permission.BOOK_APPOINTMENTS,
+  ],
+  store_manager: [
+    Permission.MANAGE_STORE_SETTINGS,
+    Permission.MANAGE_STORE_STAFF,
+    Permission.MANAGE_INVENTORY,
+    Permission.MANAGE_SERVICES,
+    Permission.MANAGE_CUSTOMERS,
+    Permission.MANAGE_MEMBERSHIPS,
+    Permission.VIEW_STORE_REPORTS,
+    Permission.MANAGE_APPOINTMENTS,
+    Permission.CREATE_BILLS,
+    Permission.MANAGE_TRANSACTIONS,
+    Permission.VIEW_CUSTOMERS,
+    Permission.CREATE_CUSTOMERS,
+    Permission.VIEW_INVENTORY,
+    Permission.VIEW_SERVICES,
+    Permission.BOOK_APPOINTMENTS,
+  ],
+  cashier: [
+    Permission.CREATE_BILLS,
+    Permission.MANAGE_TRANSACTIONS,
+    Permission.VIEW_CUSTOMERS,
+    Permission.CREATE_CUSTOMERS,
+    Permission.VIEW_INVENTORY,
+    Permission.VIEW_SERVICES,
+    Permission.BOOK_APPOINTMENTS,
+  ],
+};
+
+// Check if user has specific permission
+export const hasPermission = (req: any, res: any, permission: string, next: any) => {
+  const user = req.user;
+  if (!user) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+
+  const userPermissions = rolePermissions[user.role as keyof typeof rolePermissions] || [];
+  if (!userPermissions.includes(permission)) {
+    return res.status(403).json({ 
+      message: "Access denied. Insufficient permissions.",
+      requiredPermission: permission,
+      userRole: user.role
+    });
+  }
+
+  next();
+};
+
+// Middleware factory for permission checking
+export const requirePermission = (permission: string) => {
+  return (req: any, res: any, next: any) => {
+    hasPermission(req, res, permission, next);
+  };
 };

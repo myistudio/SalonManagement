@@ -20,6 +20,8 @@ SalonPro is a comprehensive multi-store salon and nail studio billing applicatio
 - **Authentication**: Basic email/mobile + password authentication with Passport.js
 - **Session Management**: Express sessions with PostgreSQL store
 - **API Pattern**: RESTful API with structured error handling
+- **Security**: Comprehensive role-based access control (RBAC) with permission system
+- **Validation**: Input validation middleware with Zod schemas
 
 ### Database Architecture
 - **Database**: PostgreSQL (Neon serverless)
@@ -69,6 +71,48 @@ SalonPro is a comprehensive multi-store salon and nail studio billing applicatio
 - Dashboard with key metrics
 - Transaction history
 - Visual charts using Recharts
+
+### 8. Security & Access Control
+- **Role-Based Access Control (RBAC)**: Three-tier permission system
+- **Permission System**: Granular permissions for different operations
+- **Input Validation**: Comprehensive validation middleware using Zod schemas
+- **Store Access Control**: Users can only access their assigned stores
+- **Session Management**: Secure session handling with PostgreSQL store
+- **Password Security**: Bcrypt hashing for all password storage
+
+## Security Architecture
+
+### Role Hierarchy
+1. **Super Admin**: Full system access
+   - Manage all stores and staff
+   - System-wide settings and configuration
+   - Access to all reports and analytics
+   - User management across all stores
+
+2. **Store Manager**: Store-specific management
+   - Manage store settings and staff
+   - Inventory and service management
+   - Customer management and memberships
+   - Store-specific reports and analytics
+   - Billing and transaction management
+
+3. **Cashier/Executive**: Operational access
+   - Create and manage bills
+   - View and create customers
+   - Access to inventory and services (read-only)
+   - Basic appointment management
+
+### Permission System
+- **Granular Permissions**: Each operation has specific permission requirements
+- **Dynamic Access Control**: Real-time permission checking on every request
+- **Store Isolation**: Users can only access data from their assigned stores
+- **Audit Trail**: All actions are logged with user and timestamp information
+
+### Input Validation
+- **Schema Validation**: All API endpoints use Zod schemas for validation
+- **Error Handling**: Comprehensive error responses with detailed messages
+- **Sanitization**: Input sanitization to prevent injection attacks
+- **Type Safety**: TypeScript ensures type safety throughout the application
 
 ## Data Flow
 
@@ -185,6 +229,11 @@ Changelog:
 - July 13, 2025. Fixed membership plan creation errors by updating insert schema to handle price field type conversion and adding proper error handling for JSON parsing of benefits
 - July 13, 2025. Added missing updated_at column to store_staff table and updated default storeId from 1 to 7 across all pages to match existing store data
 - July 13, 2025. Resolved foreign key constraint error in membership plans by ensuring correct storeId is passed from parent component to membership form
+- July 13, 2025. Implemented comprehensive role-based access control (RBAC) system with three-tier permission hierarchy (super_admin, store_manager, cashier) and granular permissions for all operations
+- July 13, 2025. Added comprehensive input validation middleware using Zod schemas for all API endpoints with detailed error handling and sanitization
+- July 13, 2025. Enhanced security architecture with store-specific access control, password hashing consistency (bcrypt), and session management improvements
+- July 13, 2025. Fixed staff password hashing to use bcrypt consistently across authentication and staff creation systems
+- July 13, 2025. Implemented permission-based route protection for all sensitive operations including billing, inventory management, customer data, and reporting
 ```
 
 ## User Preferences
