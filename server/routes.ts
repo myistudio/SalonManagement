@@ -505,14 +505,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/memberships', isAuthenticated, async (req: any, res) => {
     try {
+      console.log('Creating membership plan with data:', req.body);
       const planData = insertMembershipPlanSchema.parse(req.body);
+      console.log('Parsed plan data:', planData);
       const plan = await storage.createMembershipPlan(planData);
+      console.log('Created plan:', plan);
       res.status(201).json(plan);
     } catch (error) {
+      console.error('Error creating membership plan:', error);
       if (error instanceof z.ZodError) {
+        console.error('Validation errors:', error.errors);
         return res.status(400).json({ message: "Invalid membership plan data", errors: error.errors });
       }
-      res.status(500).json({ message: "Failed to create membership plan" });
+      res.status(500).json({ message: "Failed to create membership plan", error: error instanceof Error ? error.message : String(error) });
     }
   });
 

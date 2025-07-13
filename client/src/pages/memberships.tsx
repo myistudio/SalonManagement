@@ -20,7 +20,7 @@ export default function Memberships() {
   const { toast } = useToast();
   const { isAuthenticated, isLoading } = useAuth();
   const queryClient = useQueryClient();
-  const [selectedStoreId, setSelectedStoreId] = useState<number>(1);
+  const [selectedStoreId, setSelectedStoreId] = useState<number>(7);
   const [searchTerm, setSearchTerm] = useState("");
   const [showMembershipForm, setShowMembershipForm] = useState(false);
   const [showBillingModal, setShowBillingModal] = useState(false);

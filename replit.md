@@ -181,6 +181,10 @@ Changelog:
 - July 13, 2025. Fixed critical validation issues in service and product creation forms - updated insertServiceSchema and insertProductSchema to accept both string and number inputs for price fields, resolving "Invalid service data" and "Invalid product data" errors
 - July 13, 2025. Fixed appointment visibility issue in admin panel - appointments were not showing because the frontend was filtering by today's date only, now shows all appointments by default with optional date filtering
 - July 13, 2025. Added comprehensive navigation menu to header component - includes Dashboard, New Bill, Appointments, Products, Services, Customers, Reports, and Settings navigation with active state highlighting and responsive mobile menu
+- July 13, 2025. Fixed navigation menu duplication issue by consolidating to single left sidebar menu across all pages, removed duplicate navigation from header component
+- July 13, 2025. Fixed membership plan creation errors by updating insert schema to handle price field type conversion and adding proper error handling for JSON parsing of benefits
+- July 13, 2025. Added missing updated_at column to store_staff table and updated default storeId from 1 to 7 across all pages to match existing store data
+- July 13, 2025. Resolved foreign key constraint error in membership plans by ensuring correct storeId is passed from parent component to membership form
 ```
 
 ## User Preferences

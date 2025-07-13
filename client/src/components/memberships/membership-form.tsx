@@ -90,11 +90,12 @@ export default function MembershipForm({ storeId, membership, onSuccess }: Membe
 
     const membershipData = {
       ...formData,
-      discountPercentage: parseFloat(formData.discountPercentage) || 0,
-      pointsMultiplier: parseFloat(formData.pointsMultiplier) || 1,
+      discountPercentage: formData.discountPercentage || "0",
+      pointsMultiplier: formData.pointsMultiplier || "1", 
       validityDays: parseInt(formData.validityDays) || 365,
-      price: parseFloat(formData.price),
+      price: formData.price,
       benefits: JSON.stringify(benefits.filter(benefit => benefit.trim())),
+      isActive: true,
     };
 
     createMembership.mutate(membershipData);

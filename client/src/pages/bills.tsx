@@ -19,7 +19,7 @@ import { format } from "date-fns";
 export default function Bills() {
   const { toast } = useToast();
   const { isAuthenticated, isLoading } = useAuth();
-  const [selectedStoreId, setSelectedStoreId] = useState<number>(1);
+  const [selectedStoreId, setSelectedStoreId] = useState<number>(7);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedBills, setSelectedBills] = useState<number[]>([]);
   const [showBillDetails, setShowBillDetails] = useState(false);
