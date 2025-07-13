@@ -639,10 +639,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Password, first name, role, and store ID are required" });
       }
 
-      // Check if user already exists
-      const existingUser = await storage.getUserByEmailOrMobile(email || mobile);
-      if (existingUser) {
-        return res.status(400).json({ message: "User already exists with this email or mobile" });
+      // Check if user already exists by email
+      if (email) {
+        const existingUserByEmail = await storage.getUserByEmail(email);
+        if (existingUserByEmail) {
+          return res.status(400).json({ message: "User already exists with this email address" });
+        }
+      }
+
+      // Check if user already exists by mobile
+      if (mobile) {
+        const existingUserByMobile = await storage.getUserByMobile(mobile);
+        if (existingUserByMobile) {
+          return res.status(400).json({ message: "User already exists with this mobile number" });
+        }
       }
 
       // Hash password
