@@ -25,22 +25,28 @@ export default function MembershipForm({ storeId, membership, onSuccess }: Membe
     storeId,
     name: membership?.name || "",
     description: membership?.description || "",
-    discountPercentage: membership?.discountPercentage || "",
-    pointsMultiplier: membership?.pointsMultiplier || "1",
-    validityDays: membership?.validityDays || "365",
-    price: membership?.price || "",
+    discountPercentage: membership?.discountPercentage?.toString() || "",
+    pointsMultiplier: membership?.pointsMultiplier?.toString() || "1",
+    validityDays: membership?.validityDays?.toString() || "365",
+    price: membership?.price?.toString() || "",
   });
 
-  const [benefits, setBenefits] = useState<string[]>(
-    membership?.benefits ? JSON.parse(membership.benefits) : [""]
-  );
+  const [benefits, setBenefits] = useState<string[]>(() => {
+    if (membership?.benefits) {
+      try {
+        return JSON.parse(membership.benefits);
+      } catch (e) {
+        return [""];
+      }
+    }
+    return [""];
+  });
 
   const createMembership = useMutation({
     mutationFn: async (membershipData: any) => {
       const url = membership ? `/api/memberships/${membership.id}` : "/api/memberships";
       const method = membership ? "PUT" : "POST";
-      const response = await apiRequest(method, url, membershipData);
-      return response.json();
+      return await apiRequest(method, url, membershipData);
     },
     onSuccess: () => {
       toast({

@@ -505,6 +505,10 @@ export const insertMembershipPlanSchema = createInsertSchema(membershipPlans).om
   id: true,
   createdAt: true,
   updatedAt: true,
+}).extend({
+  price: z.union([z.string(), z.number()]).transform(val => val.toString()),
+  discountPercentage: z.union([z.string(), z.number()]).transform(val => val?.toString()).optional(),
+  pointsMultiplier: z.union([z.string(), z.number()]).transform(val => val?.toString()).optional(),
 });
 
 export const insertTransactionSchema = createInsertSchema(transactions).omit({

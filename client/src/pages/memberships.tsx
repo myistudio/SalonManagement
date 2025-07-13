@@ -200,19 +200,29 @@ export default function Memberships() {
                           </div>
                         </div>
 
-                        {membership.benefits && JSON.parse(membership.benefits).length > 0 && (
-                          <div className="mb-6">
-                            <h4 className="text-sm font-medium text-gray-900 mb-2">Benefits:</h4>
-                            <ul className="text-sm text-gray-600 space-y-1">
-                              {JSON.parse(membership.benefits).slice(0, 3).map((benefit: string, index: number) => (
-                                <li key={index} className="flex items-center">
-                                  <div className="w-1 h-1 bg-primary rounded-full mr-2"></div>
-                                  {benefit}
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
+                        {(() => {
+                          try {
+                            const parsedBenefits = membership.benefits ? JSON.parse(membership.benefits) : [];
+                            if (parsedBenefits.length > 0) {
+                              return (
+                                <div className="mb-6">
+                                  <h4 className="text-sm font-medium text-gray-900 mb-2">Benefits:</h4>
+                                  <ul className="text-sm text-gray-600 space-y-1">
+                                    {parsedBenefits.slice(0, 3).map((benefit: string, index: number) => (
+                                      <li key={index} className="flex items-center">
+                                        <div className="w-1 h-1 bg-primary rounded-full mr-2"></div>
+                                        {benefit}
+                                      </li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              );
+                            }
+                            return null;
+                          } catch (e) {
+                            return null;
+                          }
+                        })()}
 
                         <div className="flex space-x-2">
                           <Button 
