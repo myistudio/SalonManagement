@@ -24,7 +24,7 @@ export default function Header({ selectedStoreId, onStoreChange }: HeaderProps) 
           <div className="flex items-center">
             <div className="flex-shrink-0">
               <Link href="/dashboard">
-                <h1 className="text-2xl font-bold text-primary cursor-pointer hover:text-primary/80">SalonPro</h1>
+                <h1 className="text-2xl font-bold text-primary cursor-pointer hover:text-primary/80 lg:ml-0 ml-0">SalonPro</h1>
               </Link>
             </div>
           </div>
