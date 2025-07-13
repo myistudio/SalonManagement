@@ -136,8 +136,8 @@ export default function Sidebar({ onOpenBilling, isMobileMenuOpen, setIsMobileMe
     if (userRole === "store_manager") {
       return !["Stores"].includes(item.label);
     }
-    // For cashiers, hide Reports, Staff, Settings, WhatsApp, and Stores
-    if (userRole === "cashier") {
+    // For executives, hide Reports, Staff, Settings, WhatsApp, and Stores
+    if (userRole === "executive") {
       return !["Reports", "Staff", "Settings", "WhatsApp", "Stores"].includes(item.label);
     }
     return true;

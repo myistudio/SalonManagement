@@ -96,11 +96,12 @@ SalonPro is a comprehensive multi-store salon and nail studio billing applicatio
    - Store-specific reports and analytics
    - Billing and transaction management
 
-3. **Cashier/Executive**: Operational access
+3. **Executive**: Operational access
    - Create and manage bills
    - View and create customers
    - Access to inventory and services (read-only)
    - Basic appointment management
+   - Service staff assignment for commission tracking
 
 ### Permission System
 - **Granular Permissions**: Each operation has specific permission requirements
@@ -234,6 +235,8 @@ Changelog:
 - July 13, 2025. Enhanced security architecture with store-specific access control, password hashing consistency (bcrypt), and session management improvements
 - July 13, 2025. Fixed staff password hashing to use bcrypt consistently across authentication and staff creation systems
 - July 13, 2025. Implemented permission-based route protection for all sensitive operations including billing, inventory management, customer data, and reporting
+- July 13, 2025. Updated role terminology from "cashier" to "executive" throughout the system for better professional designation
+- July 13, 2025. Enhanced billing staff assignment to show only executives and managers from respective store for service commission/rating tracking
 ```
 
 ## User Preferences

@@ -17,7 +17,8 @@ import {
   whatsappTemplates,
   whatsappMessages,
   customerCampaigns,
-  loginPageSettings
+  loginPageSettings,
+  appointments
 } from '../shared/schema';
 
 async function flushDatabase() {
@@ -38,6 +39,7 @@ async function flushDatabase() {
   await db.delete(services);
   await db.delete(serviceCategories);
   await db.delete(customers);
+  await db.delete(appointments);
   await db.delete(storeStaff);
   await db.delete(stores);
   await db.delete(users);
@@ -84,26 +86,26 @@ async function seedDatabase() {
     isActive: true
   }).returning();
 
-  // Create cashiers
-  const [cashier1] = await db.insert(users).values({
-    id: 'cashier_001',
-    email: 'cashier1@salon.com',
+  // Create executives
+  const [executive1] = await db.insert(users).values({
+    id: 'executive_001',
+    email: 'executive1@salon.com',
     mobile: '9876543213',
     password: '$2b$10$8K1p/a0dClAo/HzTbNKTYOzHjJzjGZFW9JgFH2fVKXpBzJVQSJzC.',
     firstName: 'Mike',
-    lastName: 'Cashier',
-    role: 'cashier',
+    lastName: 'Executive',
+    role: 'executive',
     isActive: true
   }).returning();
 
-  const [cashier2] = await db.insert(users).values({
-    id: 'cashier_002',
-    email: 'cashier2@salon.com',
+  const [executive2] = await db.insert(users).values({
+    id: 'executive_002',
+    email: 'executive2@salon.com',
     mobile: '9876543214',
     password: '$2b$10$8K1p/a0dClAo/HzTbNKTYOzHjJzjGZFW9JgFH2fVKXpBzJVQSJzC.',
     firstName: 'Emma',
     lastName: 'Johnson',
-    role: 'cashier',
+    role: 'executive',
     isActive: true
   }).returning();
 
@@ -139,9 +141,9 @@ async function seedDatabase() {
   // Assign staff to stores
   await db.insert(storeStaff).values([
     { storeId: store1.id, userId: manager1.id, role: 'store_manager' },
-    { storeId: store1.id, userId: cashier1.id, role: 'cashier' },
+    { storeId: store1.id, userId: executive1.id, role: 'executive' },
     { storeId: store2.id, userId: manager2.id, role: 'store_manager' },
-    { storeId: store2.id, userId: cashier2.id, role: 'cashier' }
+    { storeId: store2.id, userId: executive2.id, role: 'executive' }
   ]);
 
   // Create service categories
@@ -373,7 +375,7 @@ async function seedDatabase() {
     {
       storeId: store1.id,
       customerId: customer1.id,
-      staffId: cashier1.id,
+      staffId: executive1.id,
       invoiceNumber: 'INV-2024-001',
       subtotal: '1500.00',
       discountAmount: '300.00', // 20% gold membership discount
@@ -388,7 +390,7 @@ async function seedDatabase() {
     {
       storeId: store1.id,
       customerId: customer2.id,
-      staffId: cashier1.id,
+      staffId: executive1.id,
       invoiceNumber: 'INV-2024-002',
       subtotal: '2000.00',
       discountAmount: '0.00',
@@ -403,7 +405,7 @@ async function seedDatabase() {
     {
       storeId: store1.id,
       customerId: customer3.id,
-      staffId: cashier2.id,
+      staffId: executive2.id,
       invoiceNumber: 'INV-2024-003',
       subtotal: '3000.00',
       discountAmount: '450.00', // 15% silver membership discount
@@ -418,7 +420,7 @@ async function seedDatabase() {
     {
       storeId: store1.id,
       customerId: customer1.id,
-      staffId: cashier1.id,
+      staffId: executive1.id,
       invoiceNumber: 'INV-2024-004',
       subtotal: '1800.00',
       discountAmount: '360.00',
@@ -433,7 +435,7 @@ async function seedDatabase() {
     {
       storeId: store1.id,
       customerId: null, // Walk-in customer
-      staffId: cashier2.id,
+      staffId: executive2.id,
       invoiceNumber: 'INV-2024-005',
       subtotal: '800.00',
       discountAmount: '0.00',
@@ -528,7 +530,7 @@ async function seedDatabase() {
           quantity: 1,
           unitPrice: '800.00',
           totalPrice: '800.00',
-          serviceStaffId: cashier1.id
+          serviceStaffId: executive1.id
         }
       ]);
     } else if (transaction.invoiceNumber === 'INV-2024-005') {
@@ -540,7 +542,7 @@ async function seedDatabase() {
         quantity: 1,
         unitPrice: '800.00',
         totalPrice: '800.00',
-        serviceStaffId: cashier2.id
+        serviceStaffId: executive2.id
       });
     }
   }

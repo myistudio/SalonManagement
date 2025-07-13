@@ -1,23 +1,23 @@
-# Cashier Login Access Guide
+# Executive Login Access Guide
 
-## How Cashiers Can Access the System
+## How Executives Can Access the System
 
 ### Step 1: Account Creation
-Cashiers need to be invited by a Store Manager or Super Admin:
+Executives need to be invited by a Store Manager or Super Admin:
 1. Store Manager logs into the salon system
 2. Goes to Staff Management page
 3. Clicks "Add Staff" button
-4. Enters cashier's email address
-5. Selects "Cashier" role
+4. Enters executive's email address
+5. Selects "Executive" role
 6. System creates account automatically
 
-### Step 2: Cashier Login Process
+### Step 2: Executive Login Process
 1. Visit your salon's application URL
 2. Click the login button (uses Replit Auth)
 3. Log in with the same email address used for invitation
-4. System will recognize you as a cashier and show appropriate interface
+4. System will recognize you as an executive and show appropriate interface
 
-### Cashier Access Permissions
+### Executive Access Permissions
 **✓ Can Access:**
 - Dashboard (sales overview)
 - Customer management (add, edit, search)
@@ -32,7 +32,7 @@ Cashiers need to be invited by a Store Manager or Super Admin:
 - Store settings
 - Advanced configurations
 
-### Features Available to Cashiers
+### Features Available to Executives
 
 #### Billing & Sales
 - Process customer transactions
@@ -64,7 +64,7 @@ Cashiers need to be invited by a Store Manager or Super Admin:
 Your store manager will provide the specific login URL for your salon's system.
 
 ## Troubleshooting
-- **Can't access Reports/Staff pages**: This is normal - cashiers don't have access to these features
+- **Can't access Reports/Staff pages**: This is normal - executives don't have access to these features
 - **Login issues**: Contact your store manager to verify your email was added correctly
 - **Missing features**: Your role determines what you can access - this is by design for security
 

@@ -35,7 +35,7 @@ export const users = pgTable("users", {
   firstName: varchar("first_name").notNull(),
   lastName: varchar("last_name"),
   profileImageUrl: varchar("profile_image_url"),
-  role: varchar("role").notNull().default("cashier"), // super_admin, store_manager, cashier
+  role: varchar("role").notNull().default("executive"), // super_admin, store_manager, executive
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
@@ -65,7 +65,7 @@ export const storeStaff = pgTable("store_staff", {
   id: serial("id").primaryKey(),
   storeId: integer("store_id").references(() => stores.id).notNull(),
   userId: varchar("user_id").references(() => users.id).notNull(),
-  role: varchar("role").notNull(), // store_manager, cashier
+  role: varchar("role").notNull(), // store_manager, executive
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

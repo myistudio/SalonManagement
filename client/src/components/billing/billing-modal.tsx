@@ -163,6 +163,12 @@ export default function BillingModal({ isOpen, onClose, storeId }: BillingModalP
   const typedServices = services as any[];
   const typedProducts = products as any[];
   const typedCustomers = customers as any[];
+  const typedStoreStaff = storeStaff as any[];
+
+  // Filter executives for service assignment
+  const executiveStaff = typedStoreStaff.filter((staff: any) => 
+    staff.role === 'executive' || staff.role === 'store_manager'
+  );
 
   // Filtered customers for search
   const filteredCustomers = typedCustomers.filter((customer: any) =>
@@ -1198,21 +1204,21 @@ export default function BillingModal({ isOpen, onClose, storeId }: BillingModalP
                     </Label>
                     
                     <div className="space-y-3">
-                      {storeStaff && storeStaff.length > 0 ? (
+                      {executiveStaff && executiveStaff.length > 0 ? (
                         <select
                           value={selectedStaffId}
                           onChange={(e) => setSelectedStaffId(e.target.value)}
                           className="w-full h-12 px-3 border-2 border-gray-300 rounded-lg text-sm"
                         >
-                          <option value="">Select Staff Member</option>
-                          {storeStaff.map((member: any) => (
+                          <option value="">Select Executive</option>
+                          {executiveStaff.map((member: any) => (
                             <option key={member.user.id} value={member.user.id}>
-                              {member.user.firstName} {member.user.lastName} ({member.role})
+                              {member.user.firstName} {member.user.lastName} ({member.role === 'executive' ? 'Executive' : 'Store Manager'})
                             </option>
                           ))}
                         </select>
                       ) : (
-                        <p className="text-sm text-gray-500">No staff members available</p>
+                        <p className="text-sm text-gray-500">No executives available</p>
                       )}
                       
                       {selectedStaffId && (

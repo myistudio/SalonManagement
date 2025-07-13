@@ -328,7 +328,7 @@ const rolePermissions = {
     Permission.VIEW_SERVICES,
     Permission.BOOK_APPOINTMENTS,
   ],
-  cashier: [
+  executive: [
     Permission.CREATE_BILLS,
     Permission.MANAGE_TRANSACTIONS,
     Permission.VIEW_CUSTOMERS,
