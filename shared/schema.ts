@@ -97,7 +97,7 @@ export const services = pgTable("services", {
   description: text("description"),
   price: decimal("price", { precision: 10, scale: 2 }).notNull(),
   duration: integer("duration"), // in minutes
-  category: varchar("category"), // facial, pedicure, manicure, hair, etc.
+  categoryId: integer("category_id").references(() => serviceCategories.id),
   imageUrl: text("image_url"),
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow(),
@@ -136,7 +136,7 @@ export const products = pgTable("products", {
   cost: decimal("cost", { precision: 10, scale: 2 }),
   barcode: varchar("barcode").unique(),
   qrCode: text("qr_code"),
-  category: varchar("category"),
+  categoryId: integer("category_id").references(() => productCategories.id),
   brand: varchar("brand"),
   stock: integer("stock").default(0),
   minStock: integer("min_stock").default(5),
