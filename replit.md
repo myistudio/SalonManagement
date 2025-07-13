@@ -179,6 +179,7 @@ Changelog:
 - July 8, 2025. Fixed customer transaction history to show only actual bills with items and flushed/seeded database with realistic salon data for proper testing
 - July 13, 2025. Created comprehensive appointment booking system with public embeddable booking page (/book-appointment) and internal appointment management page (/appointments) for staff - customers can select store, date/time, services, and enter personal details, while staff can view, confirm, and manage all appointments with real-time availability checking
 - July 13, 2025. Fixed critical validation issues in service and product creation forms - updated insertServiceSchema and insertProductSchema to accept both string and number inputs for price fields, resolving "Invalid service data" and "Invalid product data" errors
+- July 13, 2025. Fixed appointment visibility issue in admin panel - appointments were not showing because the frontend was filtering by today's date only, now shows all appointments by default with optional date filtering
 ```
 
 ## User Preferences

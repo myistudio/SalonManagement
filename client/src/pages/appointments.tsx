@@ -43,7 +43,7 @@ export default function Appointments() {
   const queryClient = useQueryClient();
   
   const [selectedStoreId, setSelectedStoreId] = useState<number>(7); // Default to VEEPRESS
-  const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [selectedDate, setSelectedDate] = useState<string>(''); // Show all appointments by default
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
   const [showDetails, setShowDetails] = useState(false);
 
@@ -56,7 +56,10 @@ export default function Appointments() {
   const { data: appointments = [], isLoading } = useQuery({
     queryKey: ['/api/appointments', selectedStoreId, selectedDate],
     queryFn: async () => {
-      const response = await apiRequest('GET', `/api/appointments?storeId=${selectedStoreId}&date=${selectedDate}`);
+      const url = selectedDate 
+        ? `/api/appointments?storeId=${selectedStoreId}&date=${selectedDate}`
+        : `/api/appointments?storeId=${selectedStoreId}`;
+      const response = await apiRequest('GET', url);
       return response.json();
     },
     enabled: !!selectedStoreId,
@@ -145,14 +148,27 @@ export default function Appointments() {
             
             <div className="flex items-center gap-4">
               <div>
-                <Label htmlFor="date-filter">Filter by Date</Label>
-                <Input
-                  id="date-filter"
-                  type="date"
-                  value={selectedDate}
-                  onChange={(e) => setSelectedDate(e.target.value)}
-                  className="w-48"
-                />
+                <Label htmlFor="date-filter">Filter by Date (Optional)</Label>
+                <div className="flex items-center gap-2">
+                  <Input
+                    id="date-filter"
+                    type="date"
+                    value={selectedDate}
+                    onChange={(e) => setSelectedDate(e.target.value)}
+                    className="w-48"
+                    placeholder="Select date to filter"
+                  />
+                  {selectedDate && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setSelectedDate('')}
+                      className="px-2"
+                    >
+                      Clear
+                    </Button>
+                  )}
+                </div>
               </div>
             </div>
           </div>
