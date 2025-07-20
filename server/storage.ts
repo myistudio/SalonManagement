@@ -441,20 +441,67 @@ export class DatabaseStorage implements IStorage {
 
   async getCustomersWithSpending(storeId: number): Promise<any[]> {
     try {
-      // Just return basic customers for now to avoid SQL issues
+      // Get basic customers first
       const customerList = await db
         .select()
         .from(customers)
         .where(eq(customers.storeId, storeId))
         .orderBy(desc(customers.createdAt));
 
-      // Add basic spending data from existing fields
-      return customerList.map(customer => ({
-        ...customer,
-        currentYearSpending: '0', // Will be calculated later
-        lifetimeSpending: customer.totalSpent || '0',
-        membershipPlan: null, // Will be fetched later
-      }));
+      // Calculate spending for each customer
+      const currentYear = new Date().getFullYear();
+      const yearStart = new Date(currentYear, 0, 1); // January 1st of current year
+      
+      const customersWithSpending = await Promise.all(
+        customerList.map(async (customer) => {
+          try {
+            // Get current year spending
+            const currentYearQuery = await db
+              .select({
+                total: sql<string>`COALESCE(SUM(total_amount), '0')`
+              })
+              .from(transactions)
+              .where(
+                and(
+                  eq(transactions.customerId, customer.id),
+                  gte(transactions.createdAt, yearStart)
+                )
+              );
+
+            // Get membership plan name
+            const membershipQuery = await db
+              .select({
+                name: membershipPlans.name
+              })
+              .from(customerMemberships)
+              .leftJoin(membershipPlans, eq(customerMemberships.membershipPlanId, membershipPlans.id))
+              .where(
+                and(
+                  eq(customerMemberships.customerId, customer.id),
+                  eq(customerMemberships.isActive, true)
+                )
+              )
+              .limit(1);
+
+            return {
+              ...customer,
+              currentYearSpending: currentYearQuery[0]?.total || '0',
+              lifetimeSpending: customer.totalSpent || '0',
+              membershipPlan: membershipQuery[0]?.name || null,
+            };
+          } catch (error) {
+            console.error(`Error calculating spending for customer ${customer.id}:`, error);
+            return {
+              ...customer,
+              currentYearSpending: '0',
+              lifetimeSpending: customer.totalSpent || '0',
+              membershipPlan: null,
+            };
+          }
+        })
+      );
+
+      return customersWithSpending;
     } catch (error) {
       console.error('Error fetching customers with spending:', error);
       return [];
@@ -1737,64 +1784,6 @@ export class DatabaseStorage implements IStorage {
       .where(eq(appointmentSettings.storeId, storeId))
       .returning();
     return updatedSettings;
-  }
-
-  // Customer spending and export operations
-  async getCustomersWithSpending(storeId: number): Promise<(Customer & { 
-    currentYearSpending: string; 
-    lifetimeSpending: string; 
-    membershipPlan?: string 
-  })[]> {
-    const currentYearStart = new Date();
-    currentYearStart.setMonth(3, 1); // April 1st
-    currentYearStart.setHours(0, 0, 0, 0);
-    if (currentYearStart > new Date()) {
-      currentYearStart.setFullYear(currentYearStart.getFullYear() - 1);
-    }
-
-    const result = await db
-      .select({
-        id: customers.id,
-        storeId: customers.storeId,
-        firstName: customers.firstName,
-        lastName: customers.lastName,
-        mobile: customers.mobile,
-        email: customers.email,
-        dateOfBirth: customers.dateOfBirth,
-        anniversaryDate: customers.anniversaryDate,
-        gender: customers.gender,
-        address: customers.address,
-        loyaltyPoints: customers.loyaltyPoints,
-        totalVisits: customers.totalVisits,
-        totalSpent: customers.totalSpent,
-        createdAt: customers.createdAt,
-        updatedAt: customers.updatedAt,
-        currentYearSpending: sql<string>`
-          COALESCE(
-            (SELECT SUM(total_amount) 
-             FROM transactions 
-             WHERE customer_id = ${customers.id} 
-             AND created_at >= ${currentYearStart}
-            ), 0
-          )
-        `,
-        lifetimeSpending: customers.totalSpent,
-        membershipPlan: sql<string>`
-          (SELECT mp.name 
-           FROM customer_memberships cm 
-           JOIN membership_plans mp ON cm.membership_plan_id = mp.id 
-           WHERE cm.customer_id = ${customers.id} 
-           AND cm.status = 'active' 
-           ORDER BY cm.created_at DESC 
-           LIMIT 1
-          )
-        `
-      })
-      .from(customers)
-      .where(eq(customers.storeId, storeId))
-      .orderBy(desc(customers.createdAt));
-
-    return result;
   }
 
   async getCustomerSpending(customerId: number): Promise<{
