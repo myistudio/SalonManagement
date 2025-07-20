@@ -6,12 +6,163 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
-import { Settings, Upload, Building, Users, Shield, ArrowLeft } from "lucide-react";
+import { Settings, Upload, Building, Users, Shield, ArrowLeft, CalendarDays, Clock } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "wouter";
+
+interface AppointmentSettingsFormProps {
+  selectedStoreId: number;
+}
+
+function AppointmentSettingsForm({ selectedStoreId }: AppointmentSettingsFormProps) {
+  const { toast } = useToast();
+
+  // Fetch appointment settings for the selected store
+  const { data: appointmentSettings, isLoading } = useQuery({
+    queryKey: ['/api/appointment-settings', selectedStoreId],
+    queryFn: async () => {
+      const response = await apiRequest('GET', `/api/appointment-settings/${selectedStoreId}`);
+      return response.json();
+    },
+    enabled: !!selectedStoreId,
+  });
+
+  // Update appointment settings mutation
+  const updateSettingsMutation = useMutation({
+    mutationFn: async (data: any) => {
+      const method = appointmentSettings ? 'PUT' : 'POST';
+      const url = appointmentSettings 
+        ? `/api/appointment-settings/${selectedStoreId}` 
+        : '/api/appointment-settings';
+      
+      const payload = appointmentSettings ? data : { ...data, storeId: selectedStoreId };
+      
+      const response = await apiRequest(method, url, payload);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/appointment-settings'] });
+      toast({
+        title: "Settings Updated",
+        description: "Appointment settings have been updated successfully.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: "Failed to update appointment settings. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    
+    updateSettingsMutation.mutate({
+      openingTime: formData.get('openingTime'),
+      closingTime: formData.get('closingTime'),
+      slotDuration: parseInt(formData.get('slotDuration') as string),
+      maxConcurrentAppointments: parseInt(formData.get('maxConcurrentAppointments') as string),
+    });
+  };
+
+  if (isLoading) {
+    return <div>Loading appointment settings...</div>;
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="openingTime">Opening Time</Label>
+          <Input
+            id="openingTime"
+            name="openingTime"
+            type="time"
+            defaultValue={appointmentSettings?.openingTime || '09:00'}
+            required
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="closingTime">Closing Time</Label>
+          <Input
+            id="closingTime"
+            name="closingTime"
+            type="time"
+            defaultValue={appointmentSettings?.closingTime || '18:00'}
+            required
+          />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="slotDuration">Time Slot Duration (minutes)</Label>
+          <Select 
+            name="slotDuration" 
+            defaultValue={appointmentSettings?.slotDuration?.toString() || '30'}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select duration" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="15">15 minutes</SelectItem>
+              <SelectItem value="30">30 minutes</SelectItem>
+              <SelectItem value="45">45 minutes</SelectItem>
+              <SelectItem value="60">60 minutes</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="maxConcurrentAppointments">Maximum Concurrent Appointments</Label>
+          <Select 
+            name="maxConcurrentAppointments" 
+            defaultValue={appointmentSettings?.maxConcurrentAppointments?.toString() || '3'}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select limit" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="1">1 appointment</SelectItem>
+              <SelectItem value="2">2 appointments</SelectItem>
+              <SelectItem value="3">3 appointments</SelectItem>
+              <SelectItem value="4">4 appointments</SelectItem>
+              <SelectItem value="5">5 appointments</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      <div className="flex justify-end">
+        <Button 
+          type="submit" 
+          disabled={updateSettingsMutation.isPending}
+          className="flex items-center gap-2"
+        >
+          <Clock size={16} />
+          {updateSettingsMutation.isPending ? "Saving..." : "Save Settings"}
+        </Button>
+      </div>
+
+      {appointmentSettings && (
+        <div className="mt-6 p-4 bg-muted/50 rounded-lg">
+          <h4 className="font-medium mb-2">Current Settings Preview</h4>
+          <div className="text-sm text-muted-foreground space-y-1">
+            <p>Operating Hours: {appointmentSettings.openingTime} - {appointmentSettings.closingTime}</p>
+            <p>Time Slots: Every {appointmentSettings.slotDuration} minutes</p>
+            <p>Maximum Concurrent: {appointmentSettings.maxConcurrentAppointments} appointments per slot</p>
+          </div>
+        </div>
+      )}
+    </form>
+  );
+}
 
 export default function SettingsPage() {
   const { user } = useAuth();
@@ -122,6 +273,10 @@ export default function SettingsPage() {
           <TabsTrigger value="permissions" className="flex items-center gap-2">
             <Shield size={16} />
             Permissions
+          </TabsTrigger>
+          <TabsTrigger value="appointments" className="flex items-center gap-2">
+            <CalendarDays size={16} />
+            Appointments
           </TabsTrigger>
           {user?.role === "super_admin" && (
             <TabsTrigger value="admin" className="flex items-center gap-2">
@@ -374,6 +529,67 @@ export default function SettingsPage() {
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="appointments">
+          <div className="grid gap-6 lg:grid-cols-3">
+            {/* Store Selection */}
+            <Card className="lg:col-span-1">
+              <CardHeader>
+                <CardTitle>Select Store</CardTitle>
+                <CardDescription>Choose a store for appointment settings</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {stores.map((storeItem: any) => (
+                  <div
+                    key={storeItem.id}
+                    className={`p-3 rounded-lg border cursor-pointer transition-colors ${
+                      selectedStore === storeItem.id
+                        ? "border-primary bg-primary/5"
+                        : "border-border hover:bg-muted/50"
+                    }`}
+                    onClick={() => setSelectedStore(storeItem.id)}
+                  >
+                    <div className="flex items-center gap-3">
+                      {storeItem.logoUrl ? (
+                        <img
+                          src={storeItem.logoUrl}
+                          alt={storeItem.name}
+                          className="w-10 h-10 rounded object-cover"
+                        />
+                      ) : (
+                        <div className="w-10 h-10 rounded bg-muted flex items-center justify-center">
+                          <Building size={20} />
+                        </div>
+                      )}
+                      <div>
+                        <h3 className="font-medium">{storeItem.name}</h3>
+                        <p className="text-sm text-muted-foreground">
+                          {storeItem.address || "No address"}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+
+            {/* Appointment Configuration */}
+            <Card className="lg:col-span-2">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <CalendarDays size={20} />
+                  Appointment Settings
+                </CardTitle>
+                <CardDescription>
+                  Configure opening hours, time slots, and appointment limits
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <AppointmentSettingsForm selectedStoreId={selectedStore} />
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
 
         {user?.role === "super_admin" && (

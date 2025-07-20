@@ -1735,29 +1735,65 @@ export class DatabaseStorage implements IStorage {
   async getAvailableTimeSlots(storeId: number, date: Date): Promise<string[]> {
     const dateStr = date.toISOString().split('T')[0];
     
-    // Get existing appointments for the date
+    // Get appointment settings for the store
+    const settings = await this.getAppointmentSettings(storeId);
+    if (!settings) {
+      // Return empty array if no settings configured
+      return [];
+    }
+    
+    // Get existing appointments for the date with appointment count per time slot
     const existingAppointments = await db
-      .select({ appointmentTime: appointments.appointmentTime })
+      .select({ 
+        appointmentTime: appointments.appointmentTime,
+        count: sql<number>`count(*)::int`
+      })
       .from(appointments)
       .where(
         and(
           eq(appointments.storeId, storeId),
           eq(appointments.appointmentDate, dateStr),
-          eq(appointments.status, 'confirmed')
+          ne(appointments.status, 'cancelled')
         )
-      );
+      )
+      .groupBy(appointments.appointmentTime);
     
-    // Define all possible time slots (every 30 minutes from 9 AM to 8 PM)
-    const allSlots = [
-      '09:00', '09:30', '10:00', '10:30', '11:00', '11:30',
-      '12:00', '12:30', '13:00', '13:30', '14:00', '14:30',
-      '15:00', '15:30', '16:00', '16:30', '17:00', '17:30',
-      '18:00', '18:30', '19:00', '19:30', '20:00'
-    ];
+    // Generate time slots based on store settings
+    const generateTimeSlots = (startTime: string, endTime: string, slotDuration: number): string[] => {
+      const slots: string[] = [];
+      const [startHour, startMin] = startTime.split(':').map(Number);
+      const [endHour, endMin] = endTime.split(':').map(Number);
+      
+      let currentMinutes = startHour * 60 + startMin;
+      const endMinutes = endHour * 60 + endMin;
+      
+      while (currentMinutes < endMinutes) {
+        const hours = Math.floor(currentMinutes / 60);
+        const minutes = currentMinutes % 60;
+        const timeString = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+        slots.push(timeString);
+        currentMinutes += slotDuration;
+      }
+      
+      return slots;
+    };
     
-    // Filter out booked slots
-    const bookedSlots = existingAppointments.map(a => a.appointmentTime);
-    return allSlots.filter(slot => !bookedSlots.includes(slot));
+    // Generate all possible slots based on settings
+    const allSlots = generateTimeSlots(
+      settings.openingTime, 
+      settings.closingTime, 
+      settings.slotDuration
+    );
+    
+    // Filter out slots that have reached maximum concurrent appointments
+    const appointmentCounts = new Map(
+      existingAppointments.map(apt => [apt.appointmentTime, apt.count])
+    );
+    
+    return allSlots.filter(slot => {
+      const currentCount = appointmentCounts.get(slot) || 0;
+      return currentCount < settings.maxConcurrentAppointments;
+    });
   }
 
   // Appointment settings operations
