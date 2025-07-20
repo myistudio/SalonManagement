@@ -4,8 +4,7 @@ import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
-import Header from "@/components/layout/header";
-import Sidebar from "@/components/layout/sidebar";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -70,16 +69,10 @@ export default function Services() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Header selectedStoreId={selectedStoreId} onStoreChange={setSelectedStoreId} />
-      
-      <div className="flex">
-        <Sidebar onOpenBilling={() => setShowBillingModal(true)} />
-        
-        <main className="flex-1 lg:ml-64">
-          <div className="p-6">
-            <div className="flex items-center justify-between mb-8">
-              <div>
+    <>
+      <div className="p-6">
+        <div className="flex items-center justify-between mb-8">
+          <div>
                 <h2 className="text-3xl font-bold text-gray-900">Services</h2>
                 <p className="mt-1 text-gray-600">Manage your salon services and pricing</p>
               </div>
@@ -207,15 +200,13 @@ export default function Services() {
                 ))
               )}
             </div>
-          </div>
-        </main>
-      </div>
+        </div>
 
       <BillingModal 
         isOpen={showBillingModal} 
         onClose={() => setShowBillingModal(false)} 
         storeId={selectedStoreId}
       />
-    </div>
+    </>
   );
 }

@@ -2,8 +2,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
-import Header from "@/components/layout/header";
-import Sidebar from "@/components/layout/sidebar";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -198,34 +197,18 @@ export default function Bills() {
 
   if (isLoading) {
     return (
-      <div className="flex h-screen bg-gray-100">
-        <Sidebar onOpenBilling={() => {}} />
-        <div className="flex-1 flex flex-col">
-          <Header 
-            selectedStoreId={selectedStoreId} 
-            onStoreChange={setSelectedStoreId}
-          />
-          <main className="flex-1 p-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <Skeleton className="h-32" />
-              <Skeleton className="h-32" />
-              <Skeleton className="h-32" />
-            </div>
-          </main>
+      <div className="p-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <Skeleton className="h-32" />
+          <Skeleton className="h-32" />
+          <Skeleton className="h-32" />
         </div>
       </div>
     );
   }
 
   return (
-    <div className="flex h-screen bg-gray-100">
-      <Sidebar onOpenBilling={() => {}} />
-      <div className="flex-1 flex flex-col">
-        <Header 
-          selectedStoreId={selectedStoreId} 
-          onStoreChange={setSelectedStoreId}
-        />
-        <main className="flex-1 p-6 overflow-auto">
+    <div className="p-6">
           <div className="space-y-6">
             <div className="flex justify-between items-center">
               <h1 className="text-2xl font-bold text-gray-900">Bills Management</h1>
@@ -347,8 +330,6 @@ export default function Bills() {
               </CardContent>
             </Card>
           </div>
-        </main>
-      </div>
 
       {/* Bill Details Modal */}
       <Dialog open={showBillDetails} onOpenChange={setShowBillDetails}>

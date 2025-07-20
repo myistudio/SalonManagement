@@ -3,8 +3,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
-import Header from "@/components/layout/header";
-import Sidebar from "@/components/layout/sidebar";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -361,8 +360,6 @@ export default function Bills() {
               </CardContent>
             </Card>
           </div>
-        </main>
-      </div>
 
       {/* Bill Details Modal */}
       <Dialog open={showBillDetails} onOpenChange={setShowBillDetails}>

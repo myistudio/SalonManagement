@@ -5,7 +5,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
 import { apiRequest } from "@/lib/queryClient";
-import Header from "@/components/layout/header";
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -267,14 +267,7 @@ export default function WhatsApp() {
   if (!user) return null;
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Header 
-        selectedStoreId={selectedStoreId}
-        onStoreChange={setSelectedStoreId}
-        stores={stores}
-      />
-      
-      <div className="container mx-auto px-4 py-8">
+    <div className="container mx-auto px-4 py-8">
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-3">
             <MessageSquare size={32} className="text-green-600" />

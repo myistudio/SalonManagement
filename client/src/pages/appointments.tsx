@@ -11,8 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { CalendarDays, Clock, User, Phone, Eye, CheckCircle, XCircle, Edit, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import Header from "@/components/layout/header";
-import Sidebar from "@/components/layout/sidebar";
+
 
 
 interface Store {
@@ -134,14 +133,7 @@ export default function Appointments() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Header selectedStoreId={selectedStoreId} onStoreChange={setSelectedStoreId} />
-      
-      <div className="flex">
-        <Sidebar onOpenBilling={() => {}} />
-        
-        <main className="flex-1 lg:ml-64">
-          <div className="p-6">
+    <div className="p-6">
         <div className="max-w-7xl mx-auto">
           <div className="flex items-center justify-between mb-6">
             <div>
@@ -356,9 +348,6 @@ export default function Appointments() {
             </CardContent>
           </Card>
         </div>
-          </div>
-        </main>
-      </div>
 
       {/* Appointment Details Dialog */}
       <Dialog open={showDetails} onOpenChange={setShowDetails}>

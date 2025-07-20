@@ -3,8 +3,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import { useQuery } from "@tanstack/react-query";
-import Header from "@/components/layout/header";
-import Sidebar from "@/components/layout/sidebar";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -321,12 +320,9 @@ export default function Reports() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <Header selectedStoreId={selectedStoreId} onStoreChange={setSelectedStoreId} />
-      <div className="flex">
-        <Sidebar onOpenBilling={() => setShowBillingModal(true)} />
-        <main className="flex-1 p-6 lg:ml-64">
-          <div className="max-w-7xl mx-auto">
+    <>
+      <div className="p-6">
+        <div className="max-w-7xl mx-auto">
             <div className="mb-6">
               <h1 className="text-3xl font-bold text-foreground mb-2">Advanced Reports & Analytics</h1>
               <p className="text-muted-foreground">Comprehensive business analytics with comparisons and insights</p>
@@ -982,8 +978,7 @@ export default function Reports() {
               </CardContent>
             </Card>
           </div>
-        </main>
-      </div>
+        </div>
 
       {showBillingModal && (
         <BillingModal
@@ -992,6 +987,6 @@ export default function Reports() {
           storeId={selectedStoreId}
         />
       )}
-    </div>
+    </>
   );
 }

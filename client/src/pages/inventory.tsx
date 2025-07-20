@@ -4,8 +4,7 @@ import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
-import Header from "@/components/layout/header";
-import Sidebar from "@/components/layout/sidebar";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -124,16 +123,10 @@ export default function Inventory() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Header selectedStoreId={selectedStoreId} onStoreChange={setSelectedStoreId} />
-      
-      <div className="flex">
-        <Sidebar onOpenBilling={() => setShowBillingModal(true)} />
-        
-        <main className="flex-1 lg:ml-64">
-          <div className="p-6">
-            <div className="flex items-center justify-between mb-8">
-              <div>
+    <>
+      <div className="p-6">
+        <div className="flex items-center justify-between mb-8">
+          <div>
                 <h2 className="text-3xl font-bold text-gray-900">Inventory</h2>
                 <p className="mt-1 text-gray-600">Manage your product inventory and stock levels</p>
               </div>
@@ -362,15 +355,13 @@ export default function Inventory() {
                 )}
               </CardContent>
             </Card>
-          </div>
-        </main>
-      </div>
+        </div>
 
       <BillingModal 
         isOpen={showBillingModal} 
         onClose={() => setShowBillingModal(false)} 
         storeId={selectedStoreId}
       />
-    </div>
+    </>
   );
 }

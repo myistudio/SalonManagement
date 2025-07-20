@@ -4,8 +4,7 @@ import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
-import Header from "@/components/layout/header";
-import Sidebar from "@/components/layout/sidebar";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -282,20 +281,11 @@ export default function Staff() {
   if (!user) return null;
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Header 
-        selectedStoreId={selectedStoreId}
-        onStoreChange={setSelectedStoreId}
-        stores={stores}
-      />
-      <div className="flex">
-        <Sidebar onOpenBilling={() => setShowBillingModal(true)} />
-        
-        <div className="flex-1 lg:pl-64 pt-16">
-          <div className="p-6">
-            {/* Header */}
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center gap-3">
+    <>
+      <div className="p-6">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-3">
                 <div className="p-2 bg-primary/10 rounded-lg">
                   <Bus size={24} className="text-primary" />
                 </div>
@@ -732,6 +722,6 @@ export default function Staff() {
           storeId={selectedStoreId}
         />
       )}
-    </div>
+    </>
   );
 }

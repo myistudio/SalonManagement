@@ -41,7 +41,7 @@ export default function Sidebar({ onOpenBilling = () => {}, isMobileMenuOpen = f
       icon: LayoutDashboard, 
       label: "Dashboard", 
       path: "/", 
-      active: location === "/",
+      active: location === "/" || location === "/dashboard",
       group: "core"
     },
     { 

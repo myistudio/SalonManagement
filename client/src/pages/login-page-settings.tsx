@@ -159,8 +159,6 @@ export default function LoginPageSettings() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Header selectedStoreId={1} onStoreChange={() => {}} />
-      
       <div className="container mx-auto px-4 py-8">
         <div className="mb-6">
           <Link href="/settings">
