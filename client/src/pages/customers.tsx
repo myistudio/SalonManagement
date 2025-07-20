@@ -80,7 +80,7 @@ export default function Customers() {
     retry: false,
   });
 
-  const dataToUse = viewMode === 'table' ? customersWithSpending : customers;
+  const dataToUse = viewMode === 'table' ? (customersWithSpending.length > 0 ? customersWithSpending : customers) : customers;
   const filteredCustomers = (dataToUse as any[]).filter((customer: any) =>
     customer.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
     customer.lastName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
