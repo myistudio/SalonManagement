@@ -16,6 +16,7 @@ import { Search, Receipt, Download, Calendar, Filter, Eye, Printer } from "lucid
 import { format } from "date-fns";
 import Sidebar from "@/components/layout/sidebar";
 import Header from "@/components/layout/header";
+import BillingModal from "@/components/billing/billing-modal";
 
 export default function Bills() {
   const { toast } = useToast();
@@ -27,6 +28,7 @@ export default function Bills() {
   const [selectedTransaction, setSelectedTransaction] = useState<any>(null);
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+  const [showBillingModal, setShowBillingModal] = useState(false);
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -212,7 +214,7 @@ export default function Bills() {
   if (isLoading) {
     return (
       <div className="flex h-screen bg-gray-100">
-        <Sidebar onOpenBilling={() => {}} />
+        <Sidebar onOpenBilling={() => setShowBillingModal(true)} />
         <div className="flex-1 flex flex-col">
           <Header 
             selectedStoreId={selectedStoreId} 
@@ -232,7 +234,7 @@ export default function Bills() {
 
   return (
     <div className="flex h-screen bg-gray-100">
-      <Sidebar />
+      <Sidebar onOpenBilling={() => setShowBillingModal(true)} />
       <div className="flex-1 flex flex-col">
         <Header 
           selectedStoreId={selectedStoreId} 
@@ -488,6 +490,13 @@ export default function Bills() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Billing Modal */}
+      <BillingModal 
+        isOpen={showBillingModal}
+        onClose={() => setShowBillingModal(false)}
+        storeId={selectedStoreId}
+      />
     </div>
   );
 }

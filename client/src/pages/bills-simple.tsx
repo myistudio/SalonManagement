@@ -38,6 +38,14 @@ export default function Bills() {
 
   const { data: transactions = [], isLoading: transactionsLoading } = useQuery({
     queryKey: ["/api/transactions", selectedStoreId],
+    queryFn: async () => {
+      const url = `/api/transactions?storeId=${selectedStoreId}&limit=50`;
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error('Failed to fetch transactions');
+      }
+      return response.json();
+    },
     enabled: !!selectedStoreId,
     retry: false,
   });

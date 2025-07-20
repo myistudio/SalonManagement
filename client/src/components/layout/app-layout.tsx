@@ -3,6 +3,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useQuery } from "@tanstack/react-query";
 import Header from "./header";
 import Sidebar from "./sidebar";
+import BillingModal from "@/components/billing/billing-modal";
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -44,6 +45,13 @@ export default function AppLayout({ children }: AppLayoutProps) {
           {children}
         </main>
       </div>
+
+      {/* Billing Modal */}
+      <BillingModal 
+        isOpen={showBillingModal}
+        onClose={() => setShowBillingModal(false)}
+        storeId={selectedStoreId}
+      />
     </div>
   );
 }
