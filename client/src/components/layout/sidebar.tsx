@@ -89,20 +89,13 @@ export default function Sidebar({ onOpenBilling = () => {}, isMobileMenuOpen = f
       group: "management"
     },
     
-    // Analytics & Communication
+    // Analytics
     { 
       icon: BarChart3, 
       label: "Reports", 
       path: "/reports", 
       active: location === "/reports",
       group: "analytics"
-    },
-    { 
-      icon: MessageSquare, 
-      label: "WhatsApp", 
-      path: "/whatsapp", 
-      active: location === "/whatsapp",
-      group: "communication"
     },
     
     // Administration

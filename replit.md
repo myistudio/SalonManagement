@@ -238,6 +238,12 @@ Changelog:
 - July 13, 2025. Updated role terminology from "cashier" to "executive" throughout the system for better professional designation
 - July 13, 2025. Enhanced billing staff assignment to show only executives and managers from respective store for service commission/rating tracking
 - July 13, 2025. Fixed critical authentication issue - updated all user password hashes to use correct bcrypt format, resolving 401 "Invalid login credentials" errors
+- July 20, 2025. Implemented comprehensive multi-channel communication system with SMS (MSG91/SMS Gateway Hub), Email (SMTP/SendGrid/Gmail), and WhatsApp Business API (Ultramsg) integration
+- July 20, 2025. Created unified communication service architecture with customizable message templates supporting placeholders like {customer_name}, {appointment_time}, and {service_name}
+- July 20, 2025. Added comprehensive communication settings page with tabbed interface for channel configuration, template management, message history, and test functionality
+- July 20, 2025. Extended database schema with new tables for SMS settings, email settings, communication templates, message logs, and customer preferences
+- July 20, 2025. Updated navigation structure - removed WhatsApp from main sidebar and integrated Communication Settings as tab within Settings page
+- July 20, 2025. Added role-based permission system for communication features with MANAGE_COMMUNICATIONS and VIEW_COMMUNICATIONS permissions
 ```
 
 ## User Preferences

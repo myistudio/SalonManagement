@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
-import { Settings, Upload, Building, Users, Shield, ArrowLeft, CalendarDays, Clock } from "lucide-react";
+import { Settings, Upload, Building, Users, Shield, ArrowLeft, CalendarDays, Clock, MessageSquare } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "wouter";
@@ -277,6 +277,10 @@ export default function SettingsPage() {
           <TabsTrigger value="appointments" className="flex items-center gap-2">
             <CalendarDays size={16} />
             Appointments
+          </TabsTrigger>
+          <TabsTrigger value="communication" className="flex items-center gap-2">
+            <MessageSquare size={16} />
+            Communication
           </TabsTrigger>
           {user?.role === "super_admin" && (
             <TabsTrigger value="admin" className="flex items-center gap-2">
@@ -590,6 +594,54 @@ export default function SettingsPage() {
               </CardContent>
             </Card>
           </div>
+        </TabsContent>
+
+        <TabsContent value="communication">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <MessageSquare size={20} />
+                Communication Settings
+              </CardTitle>
+              <CardDescription>
+                Configure SMS, Email, and WhatsApp notifications for your salon
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <p className="text-sm text-muted-foreground">
+                  Set up automated notifications for appointments, reminders, and promotions
+                  across multiple communication channels.
+                </p>
+                <Link href="/settings/communication">
+                  <Button className="w-full justify-start">
+                    <MessageSquare className="mr-2 h-4 w-4" />
+                    Open Communication Settings
+                  </Button>
+                </Link>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+                  <div className="p-4 border rounded-lg">
+                    <h4 className="font-medium mb-2">SMS Notifications</h4>
+                    <p className="text-sm text-muted-foreground">
+                      Send appointment reminders and confirmations via SMS using MSG91 or SMS Gateway Hub
+                    </p>
+                  </div>
+                  <div className="p-4 border rounded-lg">
+                    <h4 className="font-medium mb-2">Email Marketing</h4>
+                    <p className="text-sm text-muted-foreground">
+                      Configure SMTP, SendGrid, or Gmail for professional email communications
+                    </p>
+                  </div>
+                  <div className="p-4 border rounded-lg">
+                    <h4 className="font-medium mb-2">WhatsApp Business</h4>
+                    <p className="text-sm text-muted-foreground">
+                      Integrate with Ultramsg API for automated WhatsApp messaging and templates
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         {user?.role === "super_admin" && (
