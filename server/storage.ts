@@ -441,52 +441,63 @@ export class DatabaseStorage implements IStorage {
 
   async getCustomersWithSpending(storeId: number): Promise<any[]> {
     try {
-      const currentYear = new Date().getFullYear();
-      const yearStart = new Date(currentYear, 0, 1);
-      
-      // Get customers with spending calculations
-      const customersWithSpending = await db
-        .select({
-          id: customers.id,
-          firstName: customers.firstName,
-          lastName: customers.lastName,
-          email: customers.email,
-          mobile: customers.mobile,
-          dateOfBirth: customers.dateOfBirth,
-          gender: customers.gender,
-          loyaltyPoints: customers.loyaltyPoints,
-          totalVisits: customers.totalVisits,
-          totalSpent: customers.totalSpent,
-          createdAt: customers.createdAt,
-          currentYearSpending: sql<string>`
-            COALESCE(
-              CAST((SELECT SUM(t.total_amount) 
-               FROM transactions t 
-               WHERE t.customer_id = customers.id 
-               AND t.created_at >= ${yearStart}) AS TEXT), 
-              '0'
-            )
-          `,
-          lifetimeSpending: sql<string>`
-            COALESCE(
-              CAST((SELECT SUM(t.total_amount) 
-               FROM transactions t 
-               WHERE t.customer_id = customers.id) AS TEXT), 
-              '0'
-            )
-          `,
-          membershipPlan: sql<string>`
-            COALESCE((SELECT mp.name 
-             FROM customer_memberships cm 
-             JOIN membership_plans mp ON cm.membership_plan_id = mp.id 
-             WHERE cm.customer_id = customers.id 
-             AND cm.is_active = true 
-             LIMIT 1), 'None')
-          `,
-        })
+      // Get basic customers first
+      const customerList = await db
+        .select()
         .from(customers)
         .where(eq(customers.storeId, storeId))
         .orderBy(desc(customers.createdAt));
+
+      // For each customer, calculate spending data
+      const customersWithSpending = await Promise.all(
+        customerList.map(async (customer) => {
+          // Get current year spending
+          const currentYear = new Date().getFullYear();
+          const yearStart = new Date(currentYear, 0, 1);
+          
+          const currentYearResult = await db
+            .select({
+              total: sql<string>`COALESCE(SUM(total_amount), '0')`
+            })
+            .from(transactions)
+            .where(
+              and(
+                eq(transactions.customerId, customer.id),
+                gte(transactions.createdAt, yearStart)
+              )
+            );
+
+          // Get lifetime spending
+          const lifetimeResult = await db
+            .select({
+              total: sql<string>`COALESCE(SUM(total_amount), '0')`
+            })
+            .from(transactions)
+            .where(eq(transactions.customerId, customer.id));
+
+          // Get membership plan
+          const membershipResult = await db
+            .select({
+              name: membershipPlans.name
+            })
+            .from(customerMemberships)
+            .innerJoin(membershipPlans, eq(customerMemberships.membershipPlanId, membershipPlans.id))
+            .where(
+              and(
+                eq(customerMemberships.customerId, customer.id),
+                eq(customerMemberships.isActive, true)
+              )
+            )
+            .limit(1);
+
+          return {
+            ...customer,
+            currentYearSpending: currentYearResult[0]?.total || '0',
+            lifetimeSpending: lifetimeResult[0]?.total || customer.totalSpent || '0',
+            membershipPlan: membershipResult[0]?.name || null,
+          };
+        })
+      );
 
       return customersWithSpending;
     } catch (error) {
