@@ -7,12 +7,13 @@ import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 
 interface HeaderProps {
-  selectedStoreId: number;
-  onStoreChange: (storeId: number) => void;
-  onToggleMobileMenu?: () => void;
+  selectedStoreId?: number;
+  onStoreChange?: (storeId: number) => void;
+  isMobileMenuOpen?: boolean;
+  setIsMobileMenuOpen?: (open: boolean) => void;
 }
 
-export default function Header({ selectedStoreId, onStoreChange, onToggleMobileMenu }: HeaderProps) {
+export default function Header({ selectedStoreId, onStoreChange, isMobileMenuOpen, setIsMobileMenuOpen }: HeaderProps) {
   const { user } = useAuth();
   
   const { data: stores = [] } = useQuery({
@@ -29,7 +30,7 @@ export default function Header({ selectedStoreId, onStoreChange, onToggleMobileM
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={onToggleMobileMenu}
+                onClick={() => setIsMobileMenuOpen?.(!isMobileMenuOpen)}
                 className="p-2"
               >
                 <Menu size={20} />

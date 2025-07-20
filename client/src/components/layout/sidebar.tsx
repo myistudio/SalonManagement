@@ -22,12 +22,12 @@ import {
 import { Button } from "@/components/ui/button";
 
 interface SidebarProps {
-  onOpenBilling: () => void;
-  isMobileMenuOpen: boolean;
-  setIsMobileMenuOpen: (open: boolean) => void;
+  onOpenBilling?: () => void;
+  isMobileMenuOpen?: boolean;
+  setIsMobileMenuOpen?: (open: boolean) => void;
 }
 
-export default function Sidebar({ onOpenBilling, isMobileMenuOpen, setIsMobileMenuOpen }: SidebarProps) {
+export default function Sidebar({ onOpenBilling = () => {}, isMobileMenuOpen = false, setIsMobileMenuOpen = () => {} }: SidebarProps) {
   const [location] = useLocation();
   const { user } = useAuth();
   

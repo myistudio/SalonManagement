@@ -4,6 +4,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useAuth } from "@/hooks/useAuth";
+import AppLayout from "@/components/layout/app-layout";
 import AuthPage from "@/pages/auth-page";
 import Dashboard from "@/pages/dashboard";
 import Customers from "@/pages/customers";
@@ -36,24 +37,26 @@ function Router() {
       {!isAuthenticated ? (
         <Route component={AuthPage} />
       ) : (
-        <>
-          <Route path="/" component={Dashboard} />
-          <Route path="/dashboard" component={Dashboard} />
-          <Route path="/customers" component={Customers} />
-          <Route path="/inventory" component={Inventory} />
-          <Route path="/services" component={Services} />
-          <Route path="/memberships" component={Memberships} />
-          <Route path="/reports" component={Reports} />
-          <Route path="/bills" component={Bills} />
-          <Route path="/staff" component={Staff} />
-          <Route path="/stores" component={Stores} />
-          <Route path="/whatsapp" component={WhatsApp} />
-          <Route path="/appointments" component={Appointments} />
-          <Route path="/settings" component={Settings} />
-          <Route path="/settings/login-page" component={LoginPageSettings} />
-        </>
+        <AppLayout>
+          <Switch>
+            <Route path="/" component={Dashboard} />
+            <Route path="/dashboard" component={Dashboard} />
+            <Route path="/customers" component={Customers} />
+            <Route path="/inventory" component={Inventory} />
+            <Route path="/services" component={Services} />
+            <Route path="/memberships" component={Memberships} />
+            <Route path="/reports" component={Reports} />
+            <Route path="/bills" component={Bills} />
+            <Route path="/staff" component={Staff} />
+            <Route path="/stores" component={Stores} />
+            <Route path="/whatsapp" component={WhatsApp} />
+            <Route path="/appointments" component={Appointments} />
+            <Route path="/settings" component={Settings} />
+            <Route path="/settings/login-page" component={LoginPageSettings} />
+            <Route component={NotFound} />
+          </Switch>
+        </AppLayout>
       )}
-      <Route component={NotFound} />
     </Switch>
   );
 }
