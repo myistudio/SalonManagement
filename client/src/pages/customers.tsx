@@ -58,7 +58,10 @@ export default function Customers() {
   // Fetch customers with spending data
   const { data: customersWithSpending = [], isLoading: spendingLoading } = useQuery({
     queryKey: [`/api/customers/spending/${selectedStoreId}`],
-    queryFn: () => apiRequest(`/api/customers/export/${selectedStoreId}`),
+    queryFn: async () => {
+      const response = await apiRequest('GET', `/api/customers/export/${selectedStoreId}`);
+      return response.json();
+    },
     enabled: !!selectedStoreId && viewMode === 'table',
     retry: false,
   });

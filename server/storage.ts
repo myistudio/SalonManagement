@@ -460,28 +460,28 @@ export class DatabaseStorage implements IStorage {
           createdAt: customers.createdAt,
           currentYearSpending: sql<string>`
             COALESCE(
-              (SELECT SUM(t.total_amount) 
+              CAST((SELECT SUM(t.total_amount) 
                FROM transactions t 
-               WHERE t.customer_id = ${customers.id} 
-               AND t.created_at >= ${yearStart}), 
+               WHERE t.customer_id = customers.id 
+               AND t.created_at >= ${yearStart}) AS TEXT), 
               '0'
             )
           `,
           lifetimeSpending: sql<string>`
             COALESCE(
-              (SELECT SUM(t.total_amount) 
+              CAST((SELECT SUM(t.total_amount) 
                FROM transactions t 
-               WHERE t.customer_id = ${customers.id}), 
+               WHERE t.customer_id = customers.id) AS TEXT), 
               '0'
             )
           `,
           membershipPlan: sql<string>`
-            (SELECT mp.name 
+            COALESCE((SELECT mp.name 
              FROM customer_memberships cm 
              JOIN membership_plans mp ON cm.membership_plan_id = mp.id 
-             WHERE cm.customer_id = ${customers.id} 
+             WHERE cm.customer_id = customers.id 
              AND cm.is_active = true 
-             LIMIT 1)
+             LIMIT 1), 'None')
           `,
         })
         .from(customers)
