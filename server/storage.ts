@@ -19,6 +19,12 @@ import {
   loginPageSettings,
   appointments,
   appointmentSettings,
+  appointmentStaff,
+  smsSettings,
+  emailSettings,
+  communicationTemplates,
+  communicationMessages,
+  customerCommunicationPreferences,
   type User,
   type UpsertUser,
   type Store,
@@ -56,6 +62,18 @@ import {
   type InsertAppointment,
   type AppointmentSettings,
   type InsertAppointmentSettings,
+  type SmsSettings,
+  type InsertSmsSettings,
+  type EmailSettings,
+  type InsertEmailSettings,
+  type CommunicationTemplate,
+  type InsertCommunicationTemplate,
+  type CommunicationMessage,
+  type InsertCommunicationMessage,
+  type CustomerCommunicationPreferences,
+  type InsertCustomerCommunicationPreferences,
+  type AppointmentStaff,
+  type InsertAppointmentStaff,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, sql, ilike, gte, lte, isNotNull } from "drizzle-orm";
@@ -192,6 +210,7 @@ export interface IStorage {
   updateWhatsappTemplate(id: number, template: Partial<WhatsappTemplate>): Promise<WhatsappTemplate>;
   deleteWhatsappTemplate(id: number): Promise<void>;
   createWhatsappMessage(message: InsertWhatsappMessage): Promise<WhatsappMessage>;
+  updateWhatsappMessageStatus(messageId: number, status: string, providerId?: string, error?: string): Promise<void>;
   getWhatsappMessages(storeId: number, customerId?: number): Promise<WhatsappMessage[]>;
   createCustomerCampaign(campaign: InsertCustomerCampaign): Promise<CustomerCampaign>;
   getCustomerCampaigns(storeId: number): Promise<CustomerCampaign[]>;
@@ -212,6 +231,40 @@ export interface IStorage {
   getAppointmentSettings(storeId: number): Promise<AppointmentSettings | undefined>;
   createAppointmentSettings(settings: InsertAppointmentSettings): Promise<AppointmentSettings>;
   updateAppointmentSettings(storeId: number, settings: Partial<AppointmentSettings>): Promise<AppointmentSettings>;
+
+  // Appointment staff operations
+  getAppointmentStaff(appointmentId: number): Promise<any[]>;
+  assignStaffToAppointment(appointmentId: number, staffId: string): Promise<any>;
+  removeStaffFromAppointment(appointmentId: number, staffId: string): Promise<void>;
+
+  // SMS Settings operations
+  getSmsSettings(storeId: number): Promise<any | undefined>;
+  createSmsSettings(settings: any): Promise<any>;
+  updateSmsSettings(storeId: number, settings: any): Promise<any>;
+
+  // Email Settings operations
+  getEmailSettings(storeId: number): Promise<any | undefined>;
+  createEmailSettings(settings: any): Promise<any>;
+  updateEmailSettings(storeId: number, settings: any): Promise<any>;
+
+  // Communication Templates operations
+  getCommunicationTemplates(storeId: number): Promise<any[]>;
+  getCommunicationTemplate(storeId: number, type: string, category: string): Promise<any | undefined>;
+  createCommunicationTemplate(template: any): Promise<any>;
+  updateCommunicationTemplate(id: number, template: any): Promise<any>;
+  deleteCommunicationTemplate(id: number): Promise<void>;
+
+  // Communication Messages operations
+  getCommunicationMessages(storeId: number): Promise<any[]>;
+  createCommunicationMessage(message: any): Promise<any>;
+
+  // Customer Communication Preferences operations
+  getCustomerCommunicationPreferences(customerId: number): Promise<any | undefined>;
+  createCustomerCommunicationPreferences(preferences: any): Promise<any>;
+  updateCustomerCommunicationPreferences(customerId: number, preferences: any): Promise<any>;
+
+  // WhatsApp template helper
+  getWhatsappTemplate(storeId: number, type: string): Promise<WhatsappTemplate | undefined>;
 
   // Customer spending and export operations
   getCustomersWithSpending(storeId: number): Promise<(Customer & { 
@@ -1946,6 +1999,201 @@ export class DatabaseStorage implements IStorage {
       .returning();
 
     return newMembership;
+  }
+
+  // Appointment Staff operations
+  async getAppointmentStaff(appointmentId: number): Promise<AppointmentStaff[]> {
+    return await db
+      .select()
+      .from(appointmentStaff)
+      .where(eq(appointmentStaff.appointmentId, appointmentId));
+  }
+
+  async assignStaffToAppointment(appointmentId: number, staffId: string): Promise<AppointmentStaff> {
+    const [assignment] = await db
+      .insert(appointmentStaff)
+      .values({ appointmentId, staffId })
+      .returning();
+    return assignment;
+  }
+
+  async removeStaffFromAppointment(appointmentId: number, staffId: string): Promise<void> {
+    await db
+      .delete(appointmentStaff)
+      .where(
+        and(
+          eq(appointmentStaff.appointmentId, appointmentId),
+          eq(appointmentStaff.staffId, staffId)
+        )
+      );
+  }
+
+  // SMS Settings operations
+  async getSmsSettings(storeId: number): Promise<SmsSettings | undefined> {
+    const [settings] = await db
+      .select()
+      .from(smsSettings)
+      .where(eq(smsSettings.storeId, storeId));
+    return settings;
+  }
+
+  async createSmsSettings(settings: InsertSmsSettings): Promise<SmsSettings> {
+    const [newSettings] = await db
+      .insert(smsSettings)
+      .values(settings)
+      .returning();
+    return newSettings;
+  }
+
+  async updateSmsSettings(storeId: number, settings: Partial<SmsSettings>): Promise<SmsSettings> {
+    const [updatedSettings] = await db
+      .update(smsSettings)
+      .set({ ...settings, updatedAt: new Date() })
+      .where(eq(smsSettings.storeId, storeId))
+      .returning();
+    return updatedSettings;
+  }
+
+  // Email Settings operations
+  async getEmailSettings(storeId: number): Promise<EmailSettings | undefined> {
+    const [settings] = await db
+      .select()
+      .from(emailSettings)
+      .where(eq(emailSettings.storeId, storeId));
+    return settings;
+  }
+
+  async createEmailSettings(settings: InsertEmailSettings): Promise<EmailSettings> {
+    const [newSettings] = await db
+      .insert(emailSettings)
+      .values(settings)
+      .returning();
+    return newSettings;
+  }
+
+  async updateEmailSettings(storeId: number, settings: Partial<EmailSettings>): Promise<EmailSettings> {
+    const [updatedSettings] = await db
+      .update(emailSettings)
+      .set({ ...settings, updatedAt: new Date() })
+      .where(eq(emailSettings.storeId, storeId))
+      .returning();
+    return updatedSettings;
+  }
+
+  // Communication Templates operations
+  async getCommunicationTemplates(storeId: number): Promise<CommunicationTemplate[]> {
+    return await db
+      .select()
+      .from(communicationTemplates)
+      .where(eq(communicationTemplates.storeId, storeId))
+      .orderBy(desc(communicationTemplates.createdAt));
+  }
+
+  async getCommunicationTemplate(storeId: number, type: string, category: string): Promise<CommunicationTemplate | undefined> {
+    const [template] = await db
+      .select()
+      .from(communicationTemplates)
+      .where(
+        and(
+          eq(communicationTemplates.storeId, storeId),
+          eq(communicationTemplates.type, type),
+          eq(communicationTemplates.category, category),
+          eq(communicationTemplates.isActive, true)
+        )
+      );
+    return template;
+  }
+
+  async createCommunicationTemplate(template: InsertCommunicationTemplate): Promise<CommunicationTemplate> {
+    const [newTemplate] = await db
+      .insert(communicationTemplates)
+      .values(template)
+      .returning();
+    return newTemplate;
+  }
+
+  async updateCommunicationTemplate(id: number, template: Partial<CommunicationTemplate>): Promise<CommunicationTemplate> {
+    const [updatedTemplate] = await db
+      .update(communicationTemplates)
+      .set({ ...template, updatedAt: new Date() })
+      .where(eq(communicationTemplates.id, id))
+      .returning();
+    return updatedTemplate;
+  }
+
+  async deleteCommunicationTemplate(id: number): Promise<void> {
+    await db.delete(communicationTemplates).where(eq(communicationTemplates.id, id));
+  }
+
+  // Communication Messages operations
+  async getCommunicationMessages(storeId: number): Promise<CommunicationMessage[]> {
+    return await db
+      .select()
+      .from(communicationMessages)
+      .where(eq(communicationMessages.storeId, storeId))
+      .orderBy(desc(communicationMessages.createdAt));
+  }
+
+  async createCommunicationMessage(message: InsertCommunicationMessage): Promise<CommunicationMessage> {
+    const [newMessage] = await db
+      .insert(communicationMessages)
+      .values(message)
+      .returning();
+    return newMessage;
+  }
+
+  // Customer Communication Preferences operations
+  async getCustomerCommunicationPreferences(customerId: number): Promise<CustomerCommunicationPreferences | undefined> {
+    const [preferences] = await db
+      .select()
+      .from(customerCommunicationPreferences)
+      .where(eq(customerCommunicationPreferences.customerId, customerId));
+    return preferences;
+  }
+
+  async createCustomerCommunicationPreferences(preferences: InsertCustomerCommunicationPreferences): Promise<CustomerCommunicationPreferences> {
+    const [newPreferences] = await db
+      .insert(customerCommunicationPreferences)
+      .values(preferences)
+      .returning();
+    return newPreferences;
+  }
+
+  async updateCustomerCommunicationPreferences(customerId: number, preferences: Partial<CustomerCommunicationPreferences>): Promise<CustomerCommunicationPreferences> {
+    const [updatedPreferences] = await db
+      .update(customerCommunicationPreferences)
+      .set({ ...preferences, updatedAt: new Date() })
+      .where(eq(customerCommunicationPreferences.customerId, customerId))
+      .returning();
+    return updatedPreferences;
+  }
+
+  // WhatsApp template helper
+  async getWhatsappTemplate(storeId: number, type: string): Promise<WhatsappTemplate | undefined> {
+    const [template] = await db
+      .select()
+      .from(whatsappTemplates)
+      .where(
+        and(
+          eq(whatsappTemplates.storeId, storeId),
+          eq(whatsappTemplates.type, type),
+          eq(whatsappTemplates.isActive, true)
+        )
+      );
+    return template;
+  }
+
+  // Enhanced WhatsApp message status update
+  async updateWhatsappMessageStatus(messageId: number, status: string, providerId?: string, error?: string): Promise<void> {
+    await db
+      .update(whatsappMessages)
+      .set({
+        status,
+        whatsappMessageId: providerId,
+        errorMessage: error,
+        sentAt: status === 'sent' ? new Date() : undefined
+      })
+      .where(eq(whatsappMessages.id, messageId));
   }
 }
 

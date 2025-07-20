@@ -20,6 +20,7 @@ import WhatsApp from "@/pages/whatsapp";
 import LoginPageSettings from "@/pages/login-page-settings";
 import Appointments from "@/pages/appointments";
 import AppointmentBooking from "@/pages/appointment-booking";
+import CommunicationSettings from "@/pages/communication-settings";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -53,6 +54,7 @@ function Router() {
             <Route path="/appointments" component={Appointments} />
             <Route path="/settings" component={Settings} />
             <Route path="/settings/login-page" component={LoginPageSettings} />
+            <Route path="/settings/communication" component={CommunicationSettings} />
             <Route component={NotFound} />
           </Switch>
         </AppLayout>

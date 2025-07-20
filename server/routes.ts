@@ -1606,6 +1606,213 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // SMS Settings routes
+  app.get("/api/sms-settings/:storeId", isAuthenticated, requirePermission(Permission.MANAGE_STORE_SETTINGS), async (req: any, res) => {
+    try {
+      const storeId = parseInt(req.params.storeId);
+      const settings = await storage.getSmsSettings(storeId);
+      res.json(settings);
+    } catch (error) {
+      console.error("Error fetching SMS settings:", error);
+      res.status(500).json({ message: "Failed to fetch SMS settings" });
+    }
+  });
+
+  app.post("/api/sms-settings", isAuthenticated, requirePermission(Permission.MANAGE_STORE_SETTINGS), async (req: any, res) => {
+    try {
+      const settings = await storage.createSmsSettings(req.body);
+      res.status(201).json(settings);
+    } catch (error) {
+      console.error("Error creating SMS settings:", error);
+      res.status(500).json({ message: "Failed to create SMS settings" });
+    }
+  });
+
+  app.put("/api/sms-settings/:storeId", isAuthenticated, requirePermission(Permission.MANAGE_STORE_SETTINGS), async (req: any, res) => {
+    try {
+      const storeId = parseInt(req.params.storeId);
+      const settings = await storage.updateSmsSettings(storeId, req.body);
+      res.json(settings);
+    } catch (error) {
+      console.error("Error updating SMS settings:", error);
+      res.status(500).json({ message: "Failed to update SMS settings" });
+    }
+  });
+
+  // Email Settings routes
+  app.get("/api/email-settings/:storeId", isAuthenticated, requirePermission(Permission.MANAGE_STORE_SETTINGS), async (req: any, res) => {
+    try {
+      const storeId = parseInt(req.params.storeId);
+      const settings = await storage.getEmailSettings(storeId);
+      res.json(settings);
+    } catch (error) {
+      console.error("Error fetching email settings:", error);
+      res.status(500).json({ message: "Failed to fetch email settings" });
+    }
+  });
+
+  app.post("/api/email-settings", isAuthenticated, requirePermission(Permission.MANAGE_STORE_SETTINGS), async (req: any, res) => {
+    try {
+      const settings = await storage.createEmailSettings(req.body);
+      res.status(201).json(settings);
+    } catch (error) {
+      console.error("Error creating email settings:", error);
+      res.status(500).json({ message: "Failed to create email settings" });
+    }
+  });
+
+  app.put("/api/email-settings/:storeId", isAuthenticated, requirePermission(Permission.MANAGE_STORE_SETTINGS), async (req: any, res) => {
+    try {
+      const storeId = parseInt(req.params.storeId);
+      const settings = await storage.updateEmailSettings(storeId, req.body);
+      res.json(settings);
+    } catch (error) {
+      console.error("Error updating email settings:", error);
+      res.status(500).json({ message: "Failed to update email settings" });
+    }
+  });
+
+  // Communication Templates routes
+  app.get("/api/communication-templates/:storeId", isAuthenticated, requirePermission(Permission.MANAGE_STORE_SETTINGS), async (req: any, res) => {
+    try {
+      const storeId = parseInt(req.params.storeId);
+      const templates = await storage.getCommunicationTemplates(storeId);
+      res.json(templates);
+    } catch (error) {
+      console.error("Error fetching communication templates:", error);
+      res.status(500).json({ message: "Failed to fetch communication templates" });
+    }
+  });
+
+  app.post("/api/communication-templates", isAuthenticated, requirePermission(Permission.MANAGE_STORE_SETTINGS), async (req: any, res) => {
+    try {
+      const template = await storage.createCommunicationTemplate(req.body);
+      res.status(201).json(template);
+    } catch (error) {
+      console.error("Error creating communication template:", error);
+      res.status(500).json({ message: "Failed to create communication template" });
+    }
+  });
+
+  app.put("/api/communication-templates/:id", isAuthenticated, requirePermission(Permission.MANAGE_STORE_SETTINGS), async (req: any, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const template = await storage.updateCommunicationTemplate(id, req.body);
+      res.json(template);
+    } catch (error) {
+      console.error("Error updating communication template:", error);
+      res.status(500).json({ message: "Failed to update communication template" });
+    }
+  });
+
+  app.delete("/api/communication-templates/:id", isAuthenticated, requirePermission(Permission.MANAGE_STORE_SETTINGS), async (req: any, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      await storage.deleteCommunicationTemplate(id);
+      res.json({ message: "Communication template deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting communication template:", error);
+      res.status(500).json({ message: "Failed to delete communication template" });
+    }
+  });
+
+  // Communication Messages routes
+  app.get("/api/communication-messages/:storeId", isAuthenticated, requirePermission(Permission.VIEW_COMMUNICATIONS), async (req: any, res) => {
+    try {
+      const storeId = parseInt(req.params.storeId);
+      const messages = await storage.getCommunicationMessages(storeId);
+      res.json(messages);
+    } catch (error) {
+      console.error("Error fetching communication messages:", error);
+      res.status(500).json({ message: "Failed to fetch communication messages" });
+    }
+  });
+
+  // Customer Communication Preferences routes
+  app.get("/api/customer-communication-preferences/:customerId", isAuthenticated, async (req: any, res) => {
+    try {
+      const customerId = parseInt(req.params.customerId);
+      const preferences = await storage.getCustomerCommunicationPreferences(customerId);
+      res.json(preferences);
+    } catch (error) {
+      console.error("Error fetching customer communication preferences:", error);
+      res.status(500).json({ message: "Failed to fetch customer communication preferences" });
+    }
+  });
+
+  app.post("/api/customer-communication-preferences", isAuthenticated, async (req: any, res) => {
+    try {
+      const preferences = await storage.createCustomerCommunicationPreferences(req.body);
+      res.status(201).json(preferences);
+    } catch (error) {
+      console.error("Error creating customer communication preferences:", error);
+      res.status(500).json({ message: "Failed to create customer communication preferences" });
+    }
+  });
+
+  app.put("/api/customer-communication-preferences/:customerId", isAuthenticated, async (req: any, res) => {
+    try {
+      const customerId = parseInt(req.params.customerId);
+      const preferences = await storage.updateCustomerCommunicationPreferences(customerId, req.body);
+      res.json(preferences);
+    } catch (error) {
+      console.error("Error updating customer communication preferences:", error);
+      res.status(500).json({ message: "Failed to update customer communication preferences" });
+    }
+  });
+
+  // Appointment Staff Management routes
+  app.get("/api/appointments/:id/staff", isAuthenticated, async (req: any, res) => {
+    try {
+      const appointmentId = parseInt(req.params.id);
+      const staff = await storage.getAppointmentStaff(appointmentId);
+      res.json(staff);
+    } catch (error) {
+      console.error("Error fetching appointment staff:", error);
+      res.status(500).json({ message: "Failed to fetch appointment staff" });
+    }
+  });
+
+  app.post("/api/appointments/:id/staff", isAuthenticated, requirePermission(Permission.MANAGE_APPOINTMENTS), async (req: any, res) => {
+    try {
+      const appointmentId = parseInt(req.params.id);
+      const { staffId } = req.body;
+      const assignment = await storage.assignStaffToAppointment(appointmentId, staffId);
+      res.status(201).json(assignment);
+    } catch (error) {
+      console.error("Error assigning staff to appointment:", error);
+      res.status(500).json({ message: "Failed to assign staff to appointment" });
+    }
+  });
+
+  app.delete("/api/appointments/:id/staff/:staffId", isAuthenticated, requirePermission(Permission.MANAGE_APPOINTMENTS), async (req: any, res) => {
+    try {
+      const appointmentId = parseInt(req.params.id);
+      const staffId = req.params.staffId;
+      await storage.removeStaffFromAppointment(appointmentId, staffId);
+      res.json({ message: "Staff removed from appointment successfully" });
+    } catch (error) {
+      console.error("Error removing staff from appointment:", error);
+      res.status(500).json({ message: "Failed to remove staff from appointment" });
+    }
+  });
+
+  // Send appointment notifications
+  app.post("/api/appointments/:id/send-notification", isAuthenticated, requirePermission(Permission.MANAGE_APPOINTMENTS), async (req: any, res) => {
+    try {
+      const appointmentId = parseInt(req.params.id);
+      const { type, storeId } = req.body; // type: 'confirmation' | 'reminder'
+      
+      const { sendAppointmentNotification } = await import('./communication-service');
+      await sendAppointmentNotification(appointmentId, type, storeId);
+      
+      res.json({ message: `${type} notification sent successfully` });
+    } catch (error) {
+      console.error("Error sending appointment notification:", error);
+      res.status(500).json({ message: "Failed to send appointment notification" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

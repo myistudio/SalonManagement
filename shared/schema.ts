@@ -316,6 +316,12 @@ export const storesRelations = relations(stores, ({ many }) => ({
   whatsappTemplates: many(whatsappTemplates),
   whatsappMessages: many(whatsappMessages),
   customerCampaigns: many(customerCampaigns),
+  smsSettings: many(smsSettings),
+  emailSettings: many(emailSettings),
+  communicationTemplates: many(communicationTemplates),
+  communicationMessages: many(communicationMessages),
+  appointments: many(appointments),
+  appointmentSettings: many(appointmentSettings),
 }));
 
 export const storeStaffRelations = relations(storeStaff, ({ one }) => ({
@@ -610,6 +616,193 @@ export const insertAppointmentSchema = createInsertSchema(appointments).omit({
   updatedAt: true,
 });
 
+// SMS Settings table
+export const smsSettings = pgTable("sms_settings", {
+  id: serial("id").primaryKey(),
+  storeId: integer("store_id").references(() => stores.id, { onDelete: "cascade" }).notNull(),
+  providerName: text("provider_name").notNull(), // 'msg91', 'smsgatewayhub', 'twilio', etc.
+  apiKey: text("api_key"),
+  senderId: text("sender_id"),
+  templateId: text("template_id"),
+  baseUrl: text("base_url"),
+  isEnabled: boolean("is_enabled").default(false),
+  enableAppointmentConfirmations: boolean("enable_appointment_confirmations").default(true),
+  enableReminders: boolean("enable_reminders").default(true),
+  enablePromotions: boolean("enable_promotions").default(true),
+  reminderHoursBefore: integer("reminder_hours_before").default(24),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Email Settings table
+export const emailSettings = pgTable("email_settings", {
+  id: serial("id").primaryKey(),
+  storeId: integer("store_id").references(() => stores.id, { onDelete: "cascade" }).notNull(),
+  providerName: text("provider_name").notNull(), // 'smtp', 'sendgrid', 'gmail', etc.
+  smtpHost: text("smtp_host"),
+  smtpPort: integer("smtp_port").default(587),
+  smtpSecure: boolean("smtp_secure").default(false),
+  smtpUser: text("smtp_user"),
+  smtpPassword: text("smtp_password"),
+  fromEmail: text("from_email").notNull(),
+  fromName: text("from_name"),
+  isEnabled: boolean("is_enabled").default(false),
+  enableAppointmentConfirmations: boolean("enable_appointment_confirmations").default(true),
+  enableReminders: boolean("enable_reminders").default(true),
+  enablePromotions: boolean("enable_promotions").default(true),
+  enableRegistrationEmails: boolean("enable_registration_emails").default(true),
+  reminderHoursBefore: integer("reminder_hours_before").default(24),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Communication Templates table (for SMS and Email)
+export const communicationTemplates = pgTable("communication_templates", {
+  id: serial("id").primaryKey(),
+  storeId: integer("store_id").references(() => stores.id, { onDelete: "cascade" }).notNull(),
+  name: text("name").notNull(),
+  type: text("type").notNull(), // 'sms', 'email'
+  category: text("category").notNull(), // 'appointment_confirmation', 'reminder', 'promotion', 'registration'
+  subject: text("subject"), // For emails only
+  content: text("content").notNull(),
+  variables: text("variables").array(), // Available variables like {customer_name}, {appointment_time}, etc.
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Communication Messages Log table
+export const communicationMessages = pgTable("communication_messages", {
+  id: serial("id").primaryKey(),
+  storeId: integer("store_id").references(() => stores.id, { onDelete: "cascade" }).notNull(),
+  customerId: integer("customer_id").references(() => customers.id),
+  appointmentId: integer("appointment_id").references(() => appointments.id),
+  type: text("type").notNull(), // 'sms', 'email', 'whatsapp'
+  category: text("category").notNull(), // 'appointment_confirmation', 'reminder', 'promotion', 'registration'
+  recipient: text("recipient").notNull(), // phone number or email
+  subject: text("subject"), // For emails only
+  content: text("content").notNull(),
+  status: text("status").default("pending"), // 'pending', 'sent', 'delivered', 'failed'
+  providerId: text("provider_id"), // External provider message ID
+  errorMessage: text("error_message"),
+  scheduledFor: timestamp("scheduled_for"),
+  sentAt: timestamp("sent_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Customer Communication Preferences
+export const customerCommunicationPreferences = pgTable("customer_communication_preferences", {
+  id: serial("id").primaryKey(),
+  customerId: integer("customer_id").references(() => customers.id, { onDelete: "cascade" }).notNull(),
+  smsEnabled: boolean("sms_enabled").default(true),
+  emailEnabled: boolean("email_enabled").default(true),
+  whatsappEnabled: boolean("whatsapp_enabled").default(true),
+  appointmentReminders: boolean("appointment_reminders").default(true),
+  promotionalMessages: boolean("promotional_messages").default(true),
+  birthdayMessages: boolean("birthday_messages").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Enhanced appointment table with staff assignment
+export const appointmentStaff = pgTable("appointment_staff", {
+  id: serial("id").primaryKey(),
+  appointmentId: integer("appointment_id").references(() => appointments.id, { onDelete: "cascade" }).notNull(),
+  staffId: varchar("staff_id").references(() => users.id).notNull(),
+  isAssigned: boolean("is_assigned").default(true),
+  assignedAt: timestamp("assigned_at").defaultNow(),
+});
+
+// Communication Settings Relations
+export const smsSettingsRelations = relations(smsSettings, ({ one }) => ({
+  store: one(stores, {
+    fields: [smsSettings.storeId],
+    references: [stores.id],
+  }),
+}));
+
+export const emailSettingsRelations = relations(emailSettings, ({ one }) => ({
+  store: one(stores, {
+    fields: [emailSettings.storeId],
+    references: [stores.id],
+  }),
+}));
+
+export const communicationTemplatesRelations = relations(communicationTemplates, ({ one }) => ({
+  store: one(stores, {
+    fields: [communicationTemplates.storeId],
+    references: [stores.id],
+  }),
+}));
+
+export const communicationMessagesRelations = relations(communicationMessages, ({ one }) => ({
+  store: one(stores, {
+    fields: [communicationMessages.storeId],
+    references: [stores.id],
+  }),
+  customer: one(customers, {
+    fields: [communicationMessages.customerId],
+    references: [customers.id],
+  }),
+  appointment: one(appointments, {
+    fields: [communicationMessages.appointmentId],
+    references: [appointments.id],
+  }),
+}));
+
+export const customerCommunicationPreferencesRelations = relations(customerCommunicationPreferences, ({ one }) => ({
+  customer: one(customers, {
+    fields: [customerCommunicationPreferences.customerId],
+    references: [customers.id],
+  }),
+}));
+
+export const appointmentStaffRelations = relations(appointmentStaff, ({ one }) => ({
+  appointment: one(appointments, {
+    fields: [appointmentStaff.appointmentId],
+    references: [appointments.id],
+  }),
+  staff: one(users, {
+    fields: [appointmentStaff.staffId],
+    references: [users.id],
+  }),
+}));
+
+// Insert schemas for new tables
+export const insertSmsSettingsSchema = createInsertSchema(smsSettings).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertEmailSettingsSchema = createInsertSchema(emailSettings).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertCommunicationTemplateSchema = createInsertSchema(communicationTemplates).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertCommunicationMessageSchema = createInsertSchema(communicationMessages).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertCustomerCommunicationPreferencesSchema = createInsertSchema(customerCommunicationPreferences).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertAppointmentStaffSchema = createInsertSchema(appointmentStaff).omit({
+  id: true,
+  assignedAt: true,
+});
+
 // Types
 export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
@@ -648,3 +841,15 @@ export type AppointmentSettings = typeof appointmentSettings.$inferSelect;
 export type InsertAppointmentSettings = z.infer<typeof insertAppointmentSettingsSchema>;
 export type Appointment = typeof appointments.$inferSelect;
 export type InsertAppointment = z.infer<typeof insertAppointmentSchema>;
+export type SmsSettings = typeof smsSettings.$inferSelect;
+export type InsertSmsSettings = z.infer<typeof insertSmsSettingsSchema>;
+export type EmailSettings = typeof emailSettings.$inferSelect;
+export type InsertEmailSettings = z.infer<typeof insertEmailSettingsSchema>;
+export type CommunicationTemplate = typeof communicationTemplates.$inferSelect;
+export type InsertCommunicationTemplate = z.infer<typeof insertCommunicationTemplateSchema>;
+export type CommunicationMessage = typeof communicationMessages.$inferSelect;
+export type InsertCommunicationMessage = z.infer<typeof insertCommunicationMessageSchema>;
+export type CustomerCommunicationPreferences = typeof customerCommunicationPreferences.$inferSelect;
+export type InsertCustomerCommunicationPreferences = z.infer<typeof insertCustomerCommunicationPreferencesSchema>;
+export type AppointmentStaff = typeof appointmentStaff.$inferSelect;
+export type InsertAppointmentStaff = z.infer<typeof insertAppointmentStaffSchema>;

@@ -277,6 +277,8 @@ export const Permission = {
   MANAGE_MEMBERSHIPS: 'manage_memberships',
   VIEW_STORE_REPORTS: 'view_store_reports',
   MANAGE_APPOINTMENTS: 'manage_appointments',
+  MANAGE_COMMUNICATIONS: 'manage_communications',
+  VIEW_COMMUNICATIONS: 'view_communications',
   
   // Cashier/Executive permissions
   CREATE_BILLS: 'create_bills',
@@ -303,6 +305,8 @@ const rolePermissions = {
     Permission.MANAGE_MEMBERSHIPS,
     Permission.VIEW_STORE_REPORTS,
     Permission.MANAGE_APPOINTMENTS,
+    Permission.MANAGE_COMMUNICATIONS,
+    Permission.VIEW_COMMUNICATIONS,
     Permission.CREATE_BILLS,
     Permission.MANAGE_TRANSACTIONS,
     Permission.VIEW_CUSTOMERS,
@@ -320,6 +324,8 @@ const rolePermissions = {
     Permission.MANAGE_MEMBERSHIPS,
     Permission.VIEW_STORE_REPORTS,
     Permission.MANAGE_APPOINTMENTS,
+    Permission.MANAGE_COMMUNICATIONS,
+    Permission.VIEW_COMMUNICATIONS,
     Permission.CREATE_BILLS,
     Permission.MANAGE_TRANSACTIONS,
     Permission.VIEW_CUSTOMERS,
