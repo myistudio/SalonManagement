@@ -14,6 +14,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Search, Receipt, Download, Calendar, Filter, Eye, Printer } from "lucide-react";
 import { format } from "date-fns";
+import Sidebar from "@/components/layout/sidebar";
+import Header from "@/components/layout/header";
 
 export default function Bills() {
   const { toast } = useToast();
@@ -41,7 +43,15 @@ export default function Bills() {
   }, [isAuthenticated, isLoading, toast]);
 
   const { data: transactions = [], isLoading: transactionsLoading } = useQuery({
-    queryKey: ["/api/transactions", selectedStoreId],
+    queryKey: ["/api/transactions", selectedStoreId, startDate, endDate],
+    queryFn: async () => {
+      let url = `/api/transactions?storeId=${selectedStoreId}&limit=50`;
+      if (startDate) url += `&startDate=${startDate}`;
+      if (endDate) url += `&endDate=${endDate}`;
+      
+      const response = await apiRequest('GET', url);
+      return response.json();
+    },
     enabled: !!selectedStoreId,
     retry: false,
   });
@@ -269,10 +279,32 @@ export default function Bills() {
                   </div>
                   <div className="flex items-center space-x-2">
                     <Calendar className="h-4 w-4 text-gray-400" />
-                    <DatePickerWithRange
-                      date={dateRange}
-                      onDateChange={setDateRange}
+                    <Input
+                      type="date"
+                      placeholder="Start Date"
+                      value={startDate}
+                      onChange={(e) => setStartDate(e.target.value)}
+                      className="w-40"
                     />
+                    <span className="text-gray-400">to</span>
+                    <Input
+                      type="date"
+                      placeholder="End Date"
+                      value={endDate}
+                      onChange={(e) => setEndDate(e.target.value)}
+                      className="w-40"
+                    />
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setStartDate("");
+                        setEndDate("");
+                      }}
+                      className="flex items-center"
+                    >
+                      <Filter className="mr-2 h-4 w-4" />
+                      Clear
+                    </Button>
                   </div>
                 </div>
               </CardContent>

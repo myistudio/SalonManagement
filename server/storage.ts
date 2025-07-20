@@ -759,13 +759,24 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Transaction operations
-  async getTransactions(storeId: number, limit = 50): Promise<(Transaction & { customer?: Customer; staff: User; items: TransactionItem[] })[]> {
+  async getTransactions(storeId: number, limit = 50, startDate?: string, endDate?: string): Promise<(Transaction & { customer?: Customer; staff: User; items: TransactionItem[] })[]> {
     try {
+      // Build where conditions
+      let whereConditions = [eq(transactions.storeId, storeId)];
+      
+      if (startDate) {
+        whereConditions.push(gte(transactions.createdAt, new Date(startDate + 'T00:00:00Z')));
+      }
+      
+      if (endDate) {
+        whereConditions.push(lte(transactions.createdAt, new Date(endDate + 'T23:59:59Z')));
+      }
+
       // First get transactions only
       const transactionList = await db
         .select()
         .from(transactions)
-        .where(eq(transactions.storeId, storeId))
+        .where(and(...whereConditions))
         .orderBy(desc(transactions.createdAt))
         .limit(limit);
 

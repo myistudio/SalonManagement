@@ -601,11 +601,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/transactions', isAuthenticated, requirePermission(Permission.MANAGE_TRANSACTIONS), hasStoreAccess, async (req: any, res) => {
     try {
       const storeId = parseInt(req.query.storeId as string);
-      const limit = req.query.limit ? parseInt(req.query.limit as string) : undefined;
+      const limit = req.query.limit ? parseInt(req.query.limit as string) : 50; // Default to 50
+      const startDate = req.query.startDate as string;
+      const endDate = req.query.endDate as string;
+      
       if (!storeId) {
         return res.status(400).json({ message: "Store ID is required" });
       }
-      const transactions = await storage.getTransactions(storeId, limit);
+      
+      const transactions = await storage.getTransactions(storeId, limit, startDate, endDate);
       res.json(transactions);
     } catch (error) {
       console.error('Error fetching transactions:', error);
