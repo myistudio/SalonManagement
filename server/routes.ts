@@ -290,6 +290,73 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Enhanced customer routes for tabular view with spending data
+  app.get('/api/customers/export/:storeId', isAuthenticated, requirePermission(Permission.VIEW_CUSTOMERS), hasStoreAccess, async (req: any, res) => {
+    try {
+      const storeId = parseInt(req.params.storeId);
+      
+      // Check if request wants Excel file or JSON data
+      const format = req.query.format;
+      
+      if (format === 'excel') {
+        // Import XLSX for Excel export
+        const XLSX = await import('xlsx');
+        
+        const customersData = await storage.getCustomersWithSpending(storeId);
+        
+        // Create workbook and worksheet
+        const workbook = XLSX.utils.book_new();
+        const worksheet = XLSX.utils.json_to_sheet(customersData.map(customer => ({
+          'Customer Name': `${customer.firstName} ${customer.lastName || ''}`.trim(),
+          'Mobile': customer.mobile,
+          'Email': customer.email || '',
+          'Gender': customer.gender || '',
+          'Date of Birth': customer.dateOfBirth || '',
+          'Total Visits': customer.totalVisits,
+          'Current Year Spending': parseFloat(customer.currentYearSpending || '0').toFixed(2),
+          'Lifetime Spending': parseFloat(customer.lifetimeSpending || customer.totalSpent || '0').toFixed(2),
+          'Loyalty Points': customer.loyaltyPoints,
+          'Membership Plan': customer.membershipPlan || 'None',
+          'Customer Since': new Date(customer.createdAt).toLocaleDateString(),
+        })));
+        
+        XLSX.utils.book_append_sheet(workbook, worksheet, 'Customers');
+        
+        // Generate Excel file buffer
+        const excelBuffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+        
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        res.setHeader('Content-Disposition', `attachment; filename=customers_${new Date().toISOString().split('T')[0]}.xlsx`);
+        res.send(excelBuffer);
+      } else {
+        // Return JSON data for frontend table
+        const customersData = await storage.getCustomersWithSpending(storeId);
+        res.json(customersData);
+      }
+    } catch (error) {
+      console.error("Error exporting customers:", error);
+      res.status(500).json({ message: "Failed to export customers" });
+    }
+  });
+
+  // Assign membership to customer
+  app.post('/api/customers/:id/membership', isAuthenticated, requirePermission(Permission.VIEW_CUSTOMERS), hasStoreAccess, async (req: any, res) => {
+    try {
+      const customerId = parseInt(req.params.id);
+      const { membershipPlanId } = req.body;
+      
+      if (!membershipPlanId) {
+        return res.status(400).json({ message: "Membership plan ID is required" });
+      }
+      
+      await storage.assignMembershipToCustomer(customerId, membershipPlanId);
+      res.json({ message: "Membership assigned successfully" });
+    } catch (error) {
+      console.error("Error assigning membership:", error);
+      res.status(500).json({ message: "Failed to assign membership" });
+    }
+  });
+
   // Service category routes
   app.get("/api/service-categories", isAuthenticated, async (req: any, res) => {
     try {
@@ -1456,6 +1523,82 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error deleting appointment:", error);
       res.status(500).json({ message: "Failed to delete appointment" });
+    }
+  });
+
+  // Appointment settings routes
+  app.get("/api/appointment-settings/:storeId", isAuthenticated, async (req: any, res) => {
+    try {
+      const storeId = parseInt(req.params.storeId);
+      const settings = await storage.getAppointmentSettings(storeId);
+      res.json(settings);
+    } catch (error) {
+      console.error("Error fetching appointment settings:", error);
+      res.status(500).json({ message: "Failed to fetch appointment settings" });
+    }
+  });
+
+  app.post("/api/appointment-settings", isAuthenticated, requirePermission(Permission.MANAGE_STORE_SETTINGS), async (req: any, res) => {
+    try {
+      const settings = await storage.createAppointmentSettings(req.body);
+      res.status(201).json(settings);
+    } catch (error) {
+      console.error("Error creating appointment settings:", error);
+      res.status(500).json({ message: "Failed to create appointment settings" });
+    }
+  });
+
+  app.put("/api/appointment-settings/:storeId", isAuthenticated, requirePermission(Permission.MANAGE_STORE_SETTINGS), async (req: any, res) => {
+    try {
+      const storeId = parseInt(req.params.storeId);
+      const settings = await storage.updateAppointmentSettings(storeId, req.body);
+      res.json(settings);
+    } catch (error) {
+      console.error("Error updating appointment settings:", error);
+      res.status(500).json({ message: "Failed to update appointment settings" });
+    }
+  });
+
+  // Customer export route
+  app.get("/api/customers/export/:storeId", isAuthenticated, requirePermission(Permission.VIEW_CUSTOMERS), async (req: any, res) => {
+    try {
+      const storeId = parseInt(req.params.storeId);
+      const customers = await storage.getCustomersWithSpending(storeId);
+      
+      // Set headers for Excel download
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      res.setHeader('Content-Disposition', 'attachment; filename=customers.xlsx');
+      
+      const excelBuffer = await storage.exportCustomersToExcel(customers);
+      res.send(excelBuffer);
+    } catch (error) {
+      console.error("Error exporting customers:", error);
+      res.status(500).json({ message: "Failed to export customers" });
+    }
+  });
+
+  // Customer spending route 
+  app.get("/api/customers/:id/spending", isAuthenticated, async (req: any, res) => {
+    try {
+      const customerId = parseInt(req.params.id);
+      const spending = await storage.getCustomerSpending(customerId);
+      res.json(spending);
+    } catch (error) {
+      console.error("Error fetching customer spending:", error);
+      res.status(500).json({ message: "Failed to fetch customer spending" });
+    }
+  });
+
+  // Assign membership to customer
+  app.post("/api/customers/:id/membership", isAuthenticated, requirePermission(Permission.MANAGE_MEMBERSHIPS), async (req: any, res) => {
+    try {
+      const customerId = parseInt(req.params.id);
+      const { membershipPlanId } = req.body;
+      const membership = await storage.assignMembershipToCustomer(customerId, membershipPlanId);
+      res.status(201).json(membership);
+    } catch (error) {
+      console.error("Error assigning membership:", error);
+      res.status(500).json({ message: "Failed to assign membership" });
     }
   });
 

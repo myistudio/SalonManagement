@@ -13,7 +13,8 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Search, Plus, User, Phone, Calendar, Award, Receipt, Eye } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Search, Plus, User, Phone, Calendar, Award, Receipt, Eye, Download, Users, Gift } from "lucide-react";
 import CustomerForm from "@/components/customers/customer-form";
 import BillingModal from "@/components/billing/billing-modal";
 
@@ -29,6 +30,10 @@ export default function Customers() {
   const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
   const [showBillDetails, setShowBillDetails] = useState(false);
   const [selectedTransaction, setSelectedTransaction] = useState<any>(null);
+  const [showMembershipAssignment, setShowMembershipAssignment] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(10);
+  const [viewMode, setViewMode] = useState<'table' | 'grid'>('table');
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -50,6 +55,21 @@ export default function Customers() {
     retry: false,
   });
 
+  // Fetch customers with spending data
+  const { data: customersWithSpending = [], isLoading: spendingLoading } = useQuery({
+    queryKey: [`/api/customers/spending/${selectedStoreId}`],
+    queryFn: () => apiRequest(`/api/customers/export/${selectedStoreId}`),
+    enabled: !!selectedStoreId && viewMode === 'table',
+    retry: false,
+  });
+
+  // Fetch membership plans for assignment
+  const { data: membershipPlans = [] } = useQuery({
+    queryKey: [`/api/membership-plans?storeId=${selectedStoreId}`],
+    enabled: !!selectedStoreId,
+    retry: false,
+  });
+
   // Customer transaction history
   const { data: customerTransactions = [], isLoading: transactionsLoading } = useQuery({
     queryKey: ["/api/customers", selectedCustomer?.id, "transactions"],
@@ -57,11 +77,75 @@ export default function Customers() {
     retry: false,
   });
 
-  const filteredCustomers = (customers as any[]).filter((customer: any) =>
+  const dataToUse = viewMode === 'table' ? customersWithSpending : customers;
+  const filteredCustomers = (dataToUse as any[]).filter((customer: any) =>
     customer.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
     customer.lastName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     customer.mobile.includes(searchTerm)
   );
+
+  // Pagination logic
+  const totalPages = Math.ceil(filteredCustomers.length / itemsPerPage);
+  const paginatedCustomers = filteredCustomers.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
+  // Export to Excel function
+  const exportToExcel = async () => {
+    try {
+      const response = await fetch(`/api/customers/export/${selectedStoreId}?format=excel`, {
+        credentials: 'include',
+      });
+      
+      if (!response.ok) {
+        throw new Error('Export failed');
+      }
+      
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `customers_${new Date().toISOString().split('T')[0]}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      toast({
+        title: "Export Successful",
+        description: "Customer data has been exported to Excel",
+      });
+    } catch (error) {
+      toast({
+        title: "Export Failed",
+        description: "Failed to export customer data",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Assign membership mutation
+  const assignMembership = useMutation({
+    mutationFn: async ({ customerId, membershipPlanId }: { customerId: number; membershipPlanId: number }) => {
+      const response = await apiRequest('POST', `/api/customers/${customerId}/membership`, { membershipPlanId });
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Membership Assigned",
+        description: "Membership plan has been assigned successfully",
+      });
+      setShowMembershipAssignment(false);
+      queryClient.invalidateQueries({ queryKey: [`/api/customers/spending/${selectedStoreId}`] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Assignment Failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
 
   if (isLoading) {
     return (
@@ -85,23 +169,42 @@ export default function Customers() {
                 <h2 className="text-3xl font-bold text-gray-900">Customers</h2>
                 <p className="mt-1 text-gray-600">Manage your customer database and build relationships</p>
               </div>
-              <Dialog open={showCustomerForm} onOpenChange={setShowCustomerForm}>
-                <DialogTrigger asChild>
-                  <Button className="flex items-center space-x-2">
-                    <Plus size={16} />
-                    <span>Add Customer</span>
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Add New Customer</DialogTitle>
-                  </DialogHeader>
-                  <CustomerForm 
-                    selectedStoreId={selectedStoreId}
-                    onSuccess={() => setShowCustomerForm(false)} 
-                  />
-                </DialogContent>
-              </Dialog>
+              <div className="flex items-center space-x-3">
+                <Button
+                  variant="outline"
+                  onClick={exportToExcel}
+                  className="flex items-center space-x-2"
+                >
+                  <Download size={16} />
+                  <span>Export Excel</span>
+                </Button>
+                <Select value={viewMode} onValueChange={(value: 'table' | 'grid') => setViewMode(value)}>
+                  <SelectTrigger className="w-32">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="table">Table View</SelectItem>
+                    <SelectItem value="grid">Grid View</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Dialog open={showCustomerForm} onOpenChange={setShowCustomerForm}>
+                  <DialogTrigger asChild>
+                    <Button className="flex items-center space-x-2">
+                      <Plus size={16} />
+                      <span>Add Customer</span>
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Add New Customer</DialogTitle>
+                    </DialogHeader>
+                    <CustomerForm 
+                      selectedStoreId={selectedStoreId}
+                      onSuccess={() => setShowCustomerForm(false)} 
+                    />
+                  </DialogContent>
+                </Dialog>
+              </div>
             </div>
 
             {/* Search */}
@@ -117,105 +220,254 @@ export default function Customers() {
               </div>
             </div>
 
-            {/* Customers Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {customersLoading ? (
-                Array.from({ length: 6 }).map((_, i) => (
-                  <Card key={i}>
-                    <CardContent className="p-6">
-                      <Skeleton className="h-16 w-16 rounded-full mb-4" />
-                      <Skeleton className="h-4 w-3/4 mb-2" />
-                      <Skeleton className="h-3 w-1/2 mb-4" />
-                      <div className="flex space-x-2">
-                        <Skeleton className="h-6 w-16" />
-                        <Skeleton className="h-6 w-20" />
+            {/* Customer Content */}
+            {viewMode === 'table' ? (
+              <>
+                {/* Table View */}
+                <Card>
+                  <CardContent className="p-0">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Customer</TableHead>
+                          <TableHead>Mobile</TableHead>
+                          <TableHead>Visits</TableHead>
+                          <TableHead>Current Year</TableHead>
+                          <TableHead>Lifetime</TableHead>
+                          <TableHead>Points</TableHead>
+                          <TableHead>Membership</TableHead>
+                          <TableHead>Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {(customersLoading || spendingLoading) ? (
+                          Array.from({ length: itemsPerPage }).map((_, i) => (
+                            <TableRow key={i}>
+                              <TableCell><Skeleton className="h-4 w-32" /></TableCell>
+                              <TableCell><Skeleton className="h-4 w-24" /></TableCell>
+                              <TableCell><Skeleton className="h-4 w-12" /></TableCell>
+                              <TableCell><Skeleton className="h-4 w-20" /></TableCell>
+                              <TableCell><Skeleton className="h-4 w-20" /></TableCell>
+                              <TableCell><Skeleton className="h-4 w-12" /></TableCell>
+                              <TableCell><Skeleton className="h-4 w-16" /></TableCell>
+                              <TableCell><Skeleton className="h-8 w-24" /></TableCell>
+                            </TableRow>
+                          ))
+                        ) : paginatedCustomers.length === 0 ? (
+                          <TableRow>
+                            <TableCell colSpan={8} className="text-center py-12">
+                              <User className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+                              <h3 className="text-lg font-medium text-gray-900 mb-2">No customers found</h3>
+                              <p className="text-gray-600 mb-4">
+                                {searchTerm ? "Try adjusting your search terms" : "Get started by adding your first customer"}
+                              </p>
+                              <Button onClick={() => setShowCustomerForm(true)}>
+                                <Plus size={16} className="mr-2" />
+                                Add Customer
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ) : (
+                          paginatedCustomers.map((customer: any) => (
+                            <TableRow key={customer.id}>
+                              <TableCell>
+                                <div className="flex items-center space-x-3">
+                                  <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
+                                    <User className="h-4 w-4 text-primary" />
+                                  </div>
+                                  <div>
+                                    <div className="font-medium">{customer.firstName} {customer.lastName || ''}</div>
+                                    <div className="text-sm text-gray-500">{customer.email || '-'}</div>
+                                  </div>
+                                </div>
+                              </TableCell>
+                              <TableCell>{customer.mobile}</TableCell>
+                              <TableCell>{customer.totalVisits}</TableCell>
+                              <TableCell>Rs. {parseFloat(customer.currentYearSpending || '0').toLocaleString()}</TableCell>
+                              <TableCell>Rs. {parseFloat(customer.lifetimeSpending || customer.totalSpent || '0').toLocaleString()}</TableCell>
+                              <TableCell>
+                                <Badge variant="secondary">{customer.loyaltyPoints}</Badge>
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant={customer.membershipPlan ? "default" : "outline"}>
+                                  {customer.membershipPlan || 'None'}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex items-center space-x-2">
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => {
+                                      setSelectedCustomer(customer);
+                                      setShowCustomerProfile(true);
+                                    }}
+                                  >
+                                    <Eye size={14} />
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => {
+                                      setSelectedCustomer(customer);
+                                      setShowMembershipAssignment(true);
+                                    }}
+                                  >
+                                    <Gift size={14} />
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    onClick={() => {
+                                      setSelectedCustomer(customer);
+                                      setShowBillingModal(true);
+                                    }}
+                                  >
+                                    <Receipt size={14} />
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ))
+                        )}
+                      </TableBody>
+                    </Table>
+                  </CardContent>
+                </Card>
+
+                {/* Pagination */}
+                {totalPages > 1 && (
+                  <div className="flex items-center justify-between mt-6">
+                    <div className="text-sm text-gray-500">
+                      Showing {(currentPage - 1) * itemsPerPage + 1} to {Math.min(currentPage * itemsPerPage, filteredCustomers.length)} of {filteredCustomers.length} customers
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCurrentPage(currentPage - 1)}
+                        disabled={currentPage === 1}
+                      >
+                        Previous
+                      </Button>
+                      <div className="flex items-center space-x-1">
+                        {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                          <Button
+                            key={page}
+                            variant={currentPage === page ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => setCurrentPage(page)}
+                            className="w-8 h-8 p-0"
+                          >
+                            {page}
+                          </Button>
+                        ))}
                       </div>
-                    </CardContent>
-                  </Card>
-                ))
-              ) : filteredCustomers.length === 0 ? (
-                <div className="col-span-full text-center py-12">
-                  <User className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">No customers found</h3>
-                  <p className="text-gray-600 mb-4">
-                    {searchTerm ? "Try adjusting your search terms" : "Get started by adding your first customer"}
-                  </p>
-                  <Button onClick={() => setShowCustomerForm(true)}>
-                    <Plus size={16} className="mr-2" />
-                    Add Customer
-                  </Button>
-                </div>
-              ) : (
-                filteredCustomers.map((customer: any) => (
-                  <Card key={customer.id} className="hover:shadow-lg transition-shadow cursor-pointer">
-                    <CardContent className="p-6">
-                      <div className="flex items-center space-x-4 mb-4">
-                        <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center">
-                          <User className="h-8 w-8 text-primary" />
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCurrentPage(currentPage + 1)}
+                        disabled={currentPage === totalPages}
+                      >
+                        Next
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </>
+            ) : (
+              /* Grid View */
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {customersLoading ? (
+                  Array.from({ length: 6 }).map((_, i) => (
+                    <Card key={i}>
+                      <CardContent className="p-6">
+                        <Skeleton className="h-16 w-16 rounded-full mb-4" />
+                        <Skeleton className="h-4 w-3/4 mb-2" />
+                        <Skeleton className="h-3 w-1/2 mb-4" />
+                        <div className="flex space-x-2">
+                          <Skeleton className="h-6 w-16" />
+                          <Skeleton className="h-6 w-20" />
                         </div>
-                        <div className="flex-1">
-                          <h3 className="font-semibold text-gray-900">
-                            {customer.firstName} {customer.lastName || ''}
-                          </h3>
-                          <div className="flex items-center text-sm text-gray-600 mt-1">
-                            <Phone size={14} className="mr-1" />
-                            {customer.mobile}
+                      </CardContent>
+                    </Card>
+                  ))
+                ) : filteredCustomers.length === 0 ? (
+                  <div className="col-span-full text-center py-12">
+                    <User className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">No customers found</h3>
+                    <p className="text-gray-600 mb-4">
+                      {searchTerm ? "Try adjusting your search terms" : "Get started by adding your first customer"}
+                    </p>
+                    <Button onClick={() => setShowCustomerForm(true)}>
+                      <Plus size={16} className="mr-2" />
+                      Add Customer
+                    </Button>
+                  </div>
+                ) : (
+                  filteredCustomers.map((customer: any) => (
+                    <Card key={customer.id} className="hover:shadow-lg transition-shadow cursor-pointer">
+                      <CardContent className="p-6">
+                        <div className="flex items-center space-x-4 mb-4">
+                          <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center">
+                            <User className="h-8 w-8 text-primary" />
+                          </div>
+                          <div className="flex-1">
+                            <h3 className="font-semibold text-gray-900">
+                              {customer.firstName} {customer.lastName || ''}
+                            </h3>
+                            <div className="flex items-center text-sm text-gray-600 mt-1">
+                              <Phone size={14} className="mr-1" />
+                              {customer.mobile}
+                            </div>
                           </div>
                         </div>
-                      </div>
 
-                      <div className="space-y-2 mb-4">
-                        <div className="flex items-center justify-between text-sm">
-                          <span className="text-gray-600">Visits:</span>
-                          <span className="font-medium">{customer.totalVisits}</span>
+                        <div className="space-y-2 mb-4">
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="text-gray-600">Visits:</span>
+                            <span className="font-medium">{customer.totalVisits}</span>
+                          </div>
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="text-gray-600">Total Spent:</span>
+                            <span className="font-medium">Rs. {parseFloat(customer.totalSpent || '0').toLocaleString()}</span>
+                          </div>
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="text-gray-600">Points:</span>
+                            <Badge variant="secondary">{customer.loyaltyPoints}</Badge>
+                          </div>
                         </div>
-                        <div className="flex items-center justify-between text-sm">
-                          <span className="text-gray-600">Total Spent:</span>
-                          <span className="font-medium">Rs. {parseFloat(customer.totalSpent || '0').toLocaleString()}</span>
-                        </div>
-                        <div className="flex items-center justify-between text-sm">
-                          <span className="text-gray-600">Loyalty Points:</span>
-                          <span className="font-medium text-primary">{customer.loyaltyPoints}</span>
-                        </div>
-                      </div>
 
-                      {customer.membership && (
-                        <div className="mb-4">
-                          <Badge variant="secondary" className="flex items-center">
-                            <Award size={12} className="mr-1" />
-                            {customer.membership.membershipPlan.name} Member
-                          </Badge>
+                        <div className="flex space-x-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              setSelectedCustomer(customer);
+                              setShowCustomerProfile(true);
+                            }}
+                            className="flex-1"
+                          >
+                            <Eye size={14} className="mr-1" />
+                            View
+                          </Button>
+                          <Button
+                            size="sm"
+                            onClick={() => {
+                              setSelectedCustomer(customer);
+                              setShowBillingModal(true);
+                            }}
+                            className="flex-1"
+                          >
+                            <Receipt size={14} className="mr-1" />
+                            Bill
+                          </Button>
                         </div>
-                      )}
-
-                      <div className="flex space-x-2">
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          className="flex-1"
-                          onClick={() => {
-                            setSelectedCustomer(customer);
-                            setShowCustomerProfile(true);
-                          }}
-                        >
-                          View Profile
-                        </Button>
-                        <Button 
-                          size="sm" 
-                          className="flex-1"
-                          onClick={() => {
-                            setSelectedCustomer(customer);
-                            setShowBillingModal(true);
-                          }}
-                        >
-                          New Bill
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))
-              )}
-            </div>
+                      </CardContent>
+                    </Card>
+                  ))
+                )}
+              </div>
+            )}
           </div>
         </main>
       </div>
@@ -499,6 +751,57 @@ export default function Customers() {
                   onClick={() => setShowBillDetails(false)}
                 >
                   Close
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Membership Assignment Modal */}
+      <Dialog open={showMembershipAssignment} onOpenChange={setShowMembershipAssignment}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Assign Membership</DialogTitle>
+          </DialogHeader>
+          {selectedCustomer && (
+            <div className="space-y-4">
+              <div className="text-sm text-gray-600">
+                Assign a membership plan to <span className="font-medium">{selectedCustomer.firstName} {selectedCustomer.lastName}</span>
+              </div>
+              
+              {membershipPlans.length === 0 ? (
+                <div className="text-center py-6">
+                  <p className="text-gray-500">No membership plans available for this store.</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {membershipPlans.map((plan: any) => (
+                    <Card key={plan.id} className="cursor-pointer hover:bg-gray-50" onClick={() => {
+                      assignMembership.mutate({ customerId: selectedCustomer.id, membershipPlanId: plan.id });
+                    }}>
+                      <CardContent className="p-4">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <h4 className="font-medium">{plan.name}</h4>
+                            <p className="text-sm text-gray-600">{plan.description}</p>
+                            <p className="text-xs text-gray-500 mt-1">
+                              Valid for {plan.validityDays} days • Rs. {parseFloat(plan.price).toLocaleString()}
+                            </p>
+                          </div>
+                          <Button size="sm" disabled={assignMembership.isPending}>
+                            {assignMembership.isPending ? "Assigning..." : "Assign"}
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+
+              <div className="flex justify-end space-x-2 pt-4">
+                <Button variant="outline" onClick={() => setShowMembershipAssignment(false)}>
+                  Cancel
                 </Button>
               </div>
             </div>

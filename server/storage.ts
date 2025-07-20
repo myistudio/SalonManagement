@@ -18,6 +18,7 @@ import {
   customerCampaigns,
   loginPageSettings,
   appointments,
+  appointmentSettings,
   type User,
   type UpsertUser,
   type Store,
@@ -53,6 +54,8 @@ import {
   type InsertLoginPageSettings,
   type Appointment,
   type InsertAppointment,
+  type AppointmentSettings,
+  type InsertAppointmentSettings,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, sql, ilike, gte, lte, isNotNull } from "drizzle-orm";
@@ -84,6 +87,8 @@ export interface IStorage {
   updateCustomer(id: number, customer: Partial<InsertCustomer>): Promise<Customer>;
   updateCustomerLoyalty(id: number, points: number, visits: number, spent: string): Promise<void>;
   getCustomerTransactions(customerId: number): Promise<(Transaction & { customer?: Customer; staff: User; items: TransactionItem[] })[]>;
+  getCustomersWithSpending(storeId: number): Promise<any[]>;
+  assignMembershipToCustomer(customerId: number, membershipPlanId: number): Promise<void>;
 
   // Service category operations
   getServiceCategories(storeId: number): Promise<ServiceCategory[]>;
@@ -174,40 +179,52 @@ export interface IStorage {
   // Advanced analytics
   getAdvancedAnalytics(storeId: number, startDate: Date, endDate: Date): Promise<{
     dailyAnalytics: { date: string; revenue: string; transactions: number; discount: string }[];
-    weeklyComparison: { current: { revenue: string; transactions: number; discount: string }; previous: { revenue: string; transactions: number; discount: string }; change: { revenue: number; transactions: number; discount: number } };
-    monthlyComparison: { current: { revenue: string; transactions: number; discount: string }; previous: { revenue: string; transactions: number; discount: string }; change: { revenue: number; transactions: number; discount: number } };
-    productWiseReport: { name: string; quantity: number; revenue: string; discount: string }[];
-    serviceWiseReport: { name: string; quantity: number; revenue: string; discount: string }[];
+    weekOnWeekComparison: { currentWeek: string; previousWeek: string; change: string };
+    monthOnMonthComparison: { currentMonth: string; previousMonth: string; change: string };
   }>;
 
   // WhatsApp operations
   getWhatsappSettings(storeId: number): Promise<WhatsappSettings | undefined>;
-  updateWhatsappSettings(storeId: number, settings: Partial<InsertWhatsappSettings>): Promise<WhatsappSettings>;
+  createWhatsappSettings(settings: InsertWhatsappSettings): Promise<WhatsappSettings>;
+  updateWhatsappSettings(storeId: number, settings: Partial<WhatsappSettings>): Promise<WhatsappSettings>;
   getWhatsappTemplates(storeId: number): Promise<WhatsappTemplate[]>;
-  getWhatsappTemplate(id: number): Promise<WhatsappTemplate | undefined>;
   createWhatsappTemplate(template: InsertWhatsappTemplate): Promise<WhatsappTemplate>;
-  updateWhatsappTemplate(id: number, template: Partial<InsertWhatsappTemplate>): Promise<WhatsappTemplate>;
+  updateWhatsappTemplate(id: number, template: Partial<WhatsappTemplate>): Promise<WhatsappTemplate>;
   deleteWhatsappTemplate(id: number): Promise<void>;
-  getWhatsappMessages(storeId: number, limit?: number): Promise<WhatsappMessage[]>;
   createWhatsappMessage(message: InsertWhatsappMessage): Promise<WhatsappMessage>;
-  updateWhatsappMessageStatus(id: number, status: string, whatsappMessageId?: string, errorMessage?: string): Promise<void>;
-  getBirthdayCustomers(storeId: number, date: Date): Promise<Customer[]>;
-  getAnniversaryCustomers(storeId: number, date: Date): Promise<Customer[]>;
-  getCustomerCampaigns(storeId: number): Promise<CustomerCampaign[]>;
+  getWhatsappMessages(storeId: number, customerId?: number): Promise<WhatsappMessage[]>;
   createCustomerCampaign(campaign: InsertCustomerCampaign): Promise<CustomerCampaign>;
-  updateCustomerCampaign(id: number, campaign: Partial<InsertCustomerCampaign>): Promise<CustomerCampaign>;
+  getCustomerCampaigns(storeId: number): Promise<CustomerCampaign[]>;
 
-  // Login page customization operations
+  // Login page settings
   getLoginPageSettings(): Promise<LoginPageSettings | undefined>;
-  updateLoginPageSettings(settings: Partial<InsertLoginPageSettings>): Promise<LoginPageSettings>;
+  updateLoginPageSettings(settings: Partial<LoginPageSettings>): Promise<LoginPageSettings>;
 
   // Appointment operations
   getAppointments(storeId: number, date?: Date): Promise<Appointment[]>;
   getAppointment(id: number): Promise<Appointment | undefined>;
   createAppointment(appointment: InsertAppointment): Promise<Appointment>;
-  updateAppointment(id: number, appointment: Partial<InsertAppointment>): Promise<Appointment>;
+  updateAppointment(id: number, appointment: Partial<Appointment>): Promise<Appointment>;
   deleteAppointment(id: number): Promise<void>;
   getAvailableTimeSlots(storeId: number, date: Date): Promise<string[]>;
+
+  // Appointment settings operations
+  getAppointmentSettings(storeId: number): Promise<AppointmentSettings | undefined>;
+  createAppointmentSettings(settings: InsertAppointmentSettings): Promise<AppointmentSettings>;
+  updateAppointmentSettings(storeId: number, settings: Partial<AppointmentSettings>): Promise<AppointmentSettings>;
+
+  // Customer spending and export operations
+  getCustomersWithSpending(storeId: number): Promise<(Customer & { 
+    currentYearSpending: string; 
+    lifetimeSpending: string; 
+    membershipPlan?: string 
+  })[]>;
+  getCustomerSpending(customerId: number): Promise<{
+    currentYearSpending: string;
+    lifetimeSpending: string;
+  }>;
+  exportCustomersToExcel(customers: any[]): Promise<Buffer>;
+  assignMembershipToCustomer(customerId: number, membershipPlanId: number): Promise<CustomerMembership>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -420,6 +437,94 @@ export class DatabaseStorage implements IStorage {
     }
 
     return result;
+  }
+
+  async getCustomersWithSpending(storeId: number): Promise<any[]> {
+    try {
+      const currentYear = new Date().getFullYear();
+      const yearStart = new Date(currentYear, 0, 1);
+      
+      // Get customers with spending calculations
+      const customersWithSpending = await db
+        .select({
+          id: customers.id,
+          firstName: customers.firstName,
+          lastName: customers.lastName,
+          email: customers.email,
+          mobile: customers.mobile,
+          dateOfBirth: customers.dateOfBirth,
+          gender: customers.gender,
+          loyaltyPoints: customers.loyaltyPoints,
+          totalVisits: customers.totalVisits,
+          totalSpent: customers.totalSpent,
+          createdAt: customers.createdAt,
+          currentYearSpending: sql<string>`
+            COALESCE(
+              (SELECT SUM(t.total_amount) 
+               FROM transactions t 
+               WHERE t.customer_id = ${customers.id} 
+               AND t.created_at >= ${yearStart}), 
+              '0'
+            )
+          `,
+          lifetimeSpending: sql<string>`
+            COALESCE(
+              (SELECT SUM(t.total_amount) 
+               FROM transactions t 
+               WHERE t.customer_id = ${customers.id}), 
+              '0'
+            )
+          `,
+          membershipPlan: sql<string>`
+            (SELECT mp.name 
+             FROM customer_memberships cm 
+             JOIN membership_plans mp ON cm.membership_plan_id = mp.id 
+             WHERE cm.customer_id = ${customers.id} 
+             AND cm.is_active = true 
+             LIMIT 1)
+          `,
+        })
+        .from(customers)
+        .where(eq(customers.storeId, storeId))
+        .orderBy(desc(customers.createdAt));
+
+      return customersWithSpending;
+    } catch (error) {
+      console.error('Error fetching customers with spending:', error);
+      return [];
+    }
+  }
+
+  async assignMembershipToCustomer(customerId: number, membershipPlanId: number): Promise<void> {
+    try {
+      // First, deactivate any existing memberships for this customer
+      await db
+        .update(customerMemberships)
+        .set({ isActive: false, updatedAt: new Date() })
+        .where(eq(customerMemberships.customerId, customerId));
+
+      // Get membership plan details for expiry date calculation
+      const membershipPlan = await this.getMembershipPlan(membershipPlanId);
+      if (!membershipPlan) {
+        throw new Error('Membership plan not found');
+      }
+
+      // Calculate expiry date
+      const expiryDate = new Date();
+      expiryDate.setDate(expiryDate.getDate() + membershipPlan.validityDays);
+
+      // Create new membership
+      await db.insert(customerMemberships).values({
+        customerId,
+        membershipPlanId,
+        startDate: new Date(),
+        endDate: expiryDate,
+        isActive: true,
+      });
+    } catch (error) {
+      console.error('Error assigning membership to customer:', error);
+      throw error;
+    }
   }
 
   // Product category operations
@@ -1640,6 +1745,205 @@ export class DatabaseStorage implements IStorage {
     // Filter out booked slots
     const bookedSlots = existingAppointments.map(a => a.appointmentTime);
     return allSlots.filter(slot => !bookedSlots.includes(slot));
+  }
+
+  // Appointment settings operations
+  async getAppointmentSettings(storeId: number): Promise<AppointmentSettings | undefined> {
+    const [settings] = await db
+      .select()
+      .from(appointmentSettings)
+      .where(eq(appointmentSettings.storeId, storeId));
+    return settings;
+  }
+
+  async createAppointmentSettings(settings: InsertAppointmentSettings): Promise<AppointmentSettings> {
+    const [newSettings] = await db
+      .insert(appointmentSettings)
+      .values(settings)
+      .returning();
+    return newSettings;
+  }
+
+  async updateAppointmentSettings(storeId: number, settings: Partial<AppointmentSettings>): Promise<AppointmentSettings> {
+    const [updatedSettings] = await db
+      .update(appointmentSettings)
+      .set({ ...settings, updatedAt: new Date() })
+      .where(eq(appointmentSettings.storeId, storeId))
+      .returning();
+    return updatedSettings;
+  }
+
+  // Customer spending and export operations
+  async getCustomersWithSpending(storeId: number): Promise<(Customer & { 
+    currentYearSpending: string; 
+    lifetimeSpending: string; 
+    membershipPlan?: string 
+  })[]> {
+    const currentYearStart = new Date();
+    currentYearStart.setMonth(3, 1); // April 1st
+    currentYearStart.setHours(0, 0, 0, 0);
+    if (currentYearStart > new Date()) {
+      currentYearStart.setFullYear(currentYearStart.getFullYear() - 1);
+    }
+
+    const result = await db
+      .select({
+        id: customers.id,
+        storeId: customers.storeId,
+        firstName: customers.firstName,
+        lastName: customers.lastName,
+        mobile: customers.mobile,
+        email: customers.email,
+        dateOfBirth: customers.dateOfBirth,
+        anniversaryDate: customers.anniversaryDate,
+        gender: customers.gender,
+        address: customers.address,
+        loyaltyPoints: customers.loyaltyPoints,
+        totalVisits: customers.totalVisits,
+        totalSpent: customers.totalSpent,
+        createdAt: customers.createdAt,
+        updatedAt: customers.updatedAt,
+        currentYearSpending: sql<string>`
+          COALESCE(
+            (SELECT SUM(total_amount) 
+             FROM transactions 
+             WHERE customer_id = ${customers.id} 
+             AND created_at >= ${currentYearStart}
+            ), 0
+          )
+        `,
+        lifetimeSpending: customers.totalSpent,
+        membershipPlan: sql<string>`
+          (SELECT mp.name 
+           FROM customer_memberships cm 
+           JOIN membership_plans mp ON cm.membership_plan_id = mp.id 
+           WHERE cm.customer_id = ${customers.id} 
+           AND cm.status = 'active' 
+           ORDER BY cm.created_at DESC 
+           LIMIT 1
+          )
+        `
+      })
+      .from(customers)
+      .where(eq(customers.storeId, storeId))
+      .orderBy(desc(customers.createdAt));
+
+    return result;
+  }
+
+  async getCustomerSpending(customerId: number): Promise<{
+    currentYearSpending: string;
+    lifetimeSpending: string;
+  }> {
+    const customer = await this.getCustomer(customerId);
+    if (!customer) {
+      return { currentYearSpending: "0", lifetimeSpending: "0" };
+    }
+
+    const currentYearStart = new Date();
+    currentYearStart.setMonth(3, 1); // April 1st
+    currentYearStart.setHours(0, 0, 0, 0);
+    if (currentYearStart > new Date()) {
+      currentYearStart.setFullYear(currentYearStart.getFullYear() - 1);
+    }
+
+    const [result] = await db
+      .select({
+        currentYearSpending: sql<string>`
+          COALESCE(
+            (SELECT SUM(total_amount) 
+             FROM transactions 
+             WHERE customer_id = ${customerId} 
+             AND created_at >= ${currentYearStart}
+            ), 0
+          )
+        `
+      })
+      .from(transactions)
+      .limit(1);
+
+    return {
+      currentYearSpending: result?.currentYearSpending || "0",
+      lifetimeSpending: customer.totalSpent
+    };
+  }
+
+  async exportCustomersToExcel(customers: any[]): Promise<Buffer> {
+    const XLSX = await import('xlsx');
+    
+    const worksheetData = customers.map(customer => ({
+      'First Name': customer.firstName,
+      'Last Name': customer.lastName || '',
+      'Mobile': customer.mobile,
+      'Email': customer.email || '',
+      'Date of Birth': customer.dateOfBirth ? new Date(customer.dateOfBirth).toLocaleDateString() : '',
+      'Gender': customer.gender || '',
+      'Address': customer.address || '',
+      'Loyalty Points': customer.loyaltyPoints,
+      'Total Visits': customer.totalVisits,
+      'Current Year Spending': `Rs. ${customer.currentYearSpending}`,
+      'Lifetime Spending': `Rs. ${customer.lifetimeSpending}`,
+      'Membership Plan': customer.membershipPlan || 'None',
+      'Created Date': new Date(customer.createdAt).toLocaleDateString()
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(worksheetData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Customers');
+
+    const buffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+    return buffer;
+  }
+
+  async assignMembershipToCustomer(customerId: number, membershipPlanId: number): Promise<CustomerMembership> {
+    // First check if customer already has an active membership
+    const existingMembership = await db
+      .select()
+      .from(customerMemberships)
+      .where(
+        and(
+          eq(customerMemberships.customerId, customerId),
+          eq(customerMemberships.status, 'active')
+        )
+      );
+
+    // Deactivate existing membership if any
+    if (existingMembership.length > 0) {
+      await db
+        .update(customerMemberships)
+        .set({ status: 'expired' })
+        .where(
+          and(
+            eq(customerMemberships.customerId, customerId),
+            eq(customerMemberships.status, 'active')
+          )
+        );
+    }
+
+    // Get membership plan details
+    const membershipPlan = await this.getMembershipPlan(membershipPlanId);
+    if (!membershipPlan) {
+      throw new Error('Membership plan not found');
+    }
+
+    // Calculate expiry date
+    const expiryDate = new Date();
+    expiryDate.setDate(expiryDate.getDate() + membershipPlan.validityDays);
+
+    // Create new membership
+    const [newMembership] = await db
+      .insert(customerMemberships)
+      .values({
+        customerId,
+        membershipPlanId,
+        status: 'active',
+        expiryDate,
+        pointsEarned: 0,
+        discountUsed: "0.00"
+      })
+      .returning();
+
+    return newMembership;
   }
 }
 

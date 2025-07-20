@@ -549,6 +549,19 @@ export const insertLoginPageSettingsSchema = createInsertSchema(loginPageSetting
 });
 
 // Appointments table
+// Appointment settings for each store
+export const appointmentSettings = pgTable("appointment_settings", {
+  id: serial("id").primaryKey(),
+  storeId: integer("store_id").references(() => stores.id).notNull().unique(),
+  openingTime: varchar("opening_time", { length: 5 }).notNull().default("09:00"), // HH:MM format
+  closingTime: varchar("closing_time", { length: 5 }).notNull().default("18:00"), // HH:MM format
+  slotDuration: integer("slot_duration").notNull().default(30), // minutes
+  maxConcurrentAppointments: integer("max_concurrent_appointments").notNull().default(3),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 export const appointments = pgTable("appointments", {
   id: serial("id").primaryKey(),
   storeId: integer("store_id").references(() => stores.id).notNull(),
@@ -569,6 +582,14 @@ export const appointments = pgTable("appointments", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Appointment settings relations
+export const appointmentSettingsRelations = relations(appointmentSettings, ({ one }) => ({
+  store: one(stores, {
+    fields: [appointmentSettings.storeId],
+    references: [stores.id],
+  }),
+}));
+
 // Appointment relations
 export const appointmentRelations = relations(appointments, ({ one }) => ({
   store: one(stores, {
@@ -576,6 +597,12 @@ export const appointmentRelations = relations(appointments, ({ one }) => ({
     references: [stores.id],
   }),
 }));
+
+export const insertAppointmentSettingsSchema = createInsertSchema(appointmentSettings).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
 
 export const insertAppointmentSchema = createInsertSchema(appointments).omit({
   id: true,
@@ -617,5 +644,7 @@ export type CustomerCampaign = typeof customerCampaigns.$inferSelect;
 export type InsertCustomerCampaign = z.infer<typeof insertCustomerCampaignSchema>;
 export type LoginPageSettings = typeof loginPageSettings.$inferSelect;
 export type InsertLoginPageSettings = z.infer<typeof insertLoginPageSettingsSchema>;
+export type AppointmentSettings = typeof appointmentSettings.$inferSelect;
+export type InsertAppointmentSettings = z.infer<typeof insertAppointmentSettingsSchema>;
 export type Appointment = typeof appointments.$inferSelect;
 export type InsertAppointment = z.infer<typeof insertAppointmentSchema>;
