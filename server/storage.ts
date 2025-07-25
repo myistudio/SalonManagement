@@ -98,7 +98,7 @@ export interface IStorage {
   assignUserToStore(userId: string, storeId: number, role: string): Promise<StoreStaff>;
 
   // Customer operations
-  getCustomers(storeId?: number): Promise<Customer[]>;
+  getCustomers(storeId?: number): Promise<(Customer & { membership?: CustomerMembership & { membershipPlan: MembershipPlan } })[]>;
   getCustomer(id: number): Promise<Customer | undefined>;
   getCustomerByMobile(mobile: string): Promise<Customer | undefined>;
   createCustomer(customer: InsertCustomer): Promise<Customer>;
@@ -396,16 +396,39 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Customer operations
-  async getCustomers(storeId?: number): Promise<Customer[]> {
-    const query = db.select().from(customers);
+  async getCustomers(storeId?: number): Promise<(Customer & { membership?: CustomerMembership & { membershipPlan: MembershipPlan } })[]> {
+    const baseQuery = db
+      .select({
+        customer: customers,
+        membership: customerMemberships,
+        membershipPlan: membershipPlans
+      })
+      .from(customers)
+      .leftJoin(
+        customerMemberships, 
+        and(
+          eq(customers.id, customerMemberships.customerId),
+          eq(customerMemberships.isActive, true)
+        )
+      )
+      .leftJoin(membershipPlans, eq(customerMemberships.membershipPlanId, membershipPlans.id));
     
+    let results;
     if (storeId) {
-      return await query
+      results = await baseQuery
         .where(eq(customers.storeId, storeId))
         .orderBy(desc(customers.createdAt));
+    } else {
+      results = await baseQuery.orderBy(desc(customers.createdAt));
     }
     
-    return await query.orderBy(desc(customers.createdAt));
+    return results.map(result => ({
+      ...result.customer,
+      membership: result.membership ? {
+        ...result.membership,
+        membershipPlan: result.membershipPlan
+      } : undefined
+    }));
   }
 
   async getCustomer(id: number): Promise<Customer | undefined> {

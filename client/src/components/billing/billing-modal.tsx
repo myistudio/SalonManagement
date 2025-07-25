@@ -613,13 +613,25 @@ export default function BillingModal({ isOpen, onClose, storeId }: BillingModalP
                     <div
                       key={customer.id}
                       className="p-2 hover:bg-blue-50 cursor-pointer border-b last:border-b-0"
-                      onClick={() => {
-                        setSelectedCustomer(customer);
-                        setCustomerSearch(`${customer.firstName} ${customer.lastName || ''} - ${customer.mobile}`);
+                      onClick={async () => {
+                        // Fetch customer with membership data by mobile
+                        try {
+                          const response = await apiRequest("GET", `/api/customers/search?mobile=${customer.mobile}`);
+                          const customerWithMembership = await response.json();
+                          setSelectedCustomer(customerWithMembership);
+                          setCustomerSearch(`${customer.firstName} ${customer.lastName || ''} - ${customer.mobile}`);
+                        } catch (error) {
+                          // Fallback to basic customer data if membership fetch fails
+                          setSelectedCustomer(customer);
+                          setCustomerSearch(`${customer.firstName} ${customer.lastName || ''} - ${customer.mobile}`);
+                        }
                       }}
                     >
                       <div className="font-medium text-sm">{customer.firstName} {customer.lastName}</div>
                       <div className="text-xs text-gray-600">{customer.mobile} • {customer.loyaltyPoints} pts</div>
+                      {customer.membership && (
+                        <div className="text-xs text-purple-600 font-medium">{customer.membership.membershipPlan.name} Member</div>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -658,6 +670,11 @@ export default function BillingModal({ isOpen, onClose, storeId }: BillingModalP
                   <span className="text-xs text-gray-600 ml-2">
                     Points: {selectedCustomer.loyaltyPoints}
                   </span>
+                  {selectedCustomer.membership && (
+                    <span className="text-xs text-purple-600 ml-2 font-medium">
+                      {selectedCustomer.membership.membershipPlan.name} ({selectedCustomer.membership.membershipPlan.discountPercentage}% off)
+                    </span>
+                  )}
                 </div>
                 <Button
                   variant="ghost"
