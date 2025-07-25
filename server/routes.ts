@@ -559,29 +559,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const productId = parseInt(req.params.id);
       
-      // Handle type conversion for numeric fields
+      // Create clean request body without cost field transformation issues
       const requestBody = { ...req.body };
-      if (requestBody.price && typeof requestBody.price === 'string') {
-        requestBody.price = parseFloat(requestBody.price);
-      }
-      if (requestBody.cost && typeof requestBody.cost === 'string') {
-        requestBody.cost = parseFloat(requestBody.cost);
-      }
-      if (requestBody.stock && typeof requestBody.stock === 'string') {
-        requestBody.stock = parseInt(requestBody.stock);
-      }
-      if (requestBody.minStock && typeof requestBody.minStock === 'string') {
-        requestBody.minStock = parseInt(requestBody.minStock);
+      
+      // Handle cost field properly - if empty string or null, set to null
+      if (requestBody.cost === "" || requestBody.cost === null || requestBody.cost === undefined) {
+        requestBody.cost = null;
       }
       
-      const productData = insertProductSchema.partial().parse(requestBody);
+      // Skip Zod validation for updates and manually prepare data
+      const productData: any = {};
+      
+      if (requestBody.name !== undefined) productData.name = requestBody.name;
+      if (requestBody.description !== undefined) productData.description = requestBody.description;
+      if (requestBody.price !== undefined) productData.price = requestBody.price.toString();
+      if (requestBody.cost !== undefined) productData.cost = requestBody.cost ? requestBody.cost.toString() : null;
+      if (requestBody.barcode !== undefined) productData.barcode = requestBody.barcode;
+      if (requestBody.category !== undefined) productData.category = requestBody.category;
+      if (requestBody.brand !== undefined) productData.brand = requestBody.brand;
+      if (requestBody.stock !== undefined) productData.stock = parseInt(requestBody.stock) || 0;
+      if (requestBody.minStock !== undefined) productData.minStock = parseInt(requestBody.minStock) || 5;
+      if (requestBody.imageUrl !== undefined) productData.imageUrl = requestBody.imageUrl;
+      if (requestBody.storeId !== undefined) productData.storeId = parseInt(requestBody.storeId);
+      
+      console.log('Final product data for update:', productData);
       const product = await storage.updateProduct(productId, productData);
       res.json(product);
     } catch (error) {
-      if (error instanceof z.ZodError) {
-        console.error("Product validation errors:", error.errors);
-        return res.status(400).json({ message: "Invalid product data", errors: error.errors });
-      }
       console.error("Error updating product:", error);
       res.status(500).json({ message: "Failed to update product" });
     }
@@ -1006,6 +1010,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error updating password:", error);
       res.status(500).json({ message: "Failed to update password" });
+    }
+  });
+
+  app.patch('/api/staff/:userId/profile', isAuthenticated, requireRole(['super_admin', 'store_manager']), async (req: any, res) => {
+    try {
+      const userId = req.params.userId;
+      const { firstName, lastName, email, mobile } = req.body;
+      
+      // Update user profile
+      const [updatedUser] = await db
+        .update(users)
+        .set({ 
+          firstName, 
+          lastName, 
+          email, 
+          mobile, 
+          updatedAt: new Date() 
+        })
+        .where(eq(users.id, userId))
+        .returning();
+
+      res.json(updatedUser);
+    } catch (error) {
+      console.error("Error updating staff profile:", error);
+      res.status(500).json({ message: "Failed to update staff profile" });
     }
   });
 

@@ -31,6 +31,13 @@ export default function Staff() {
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [showPasswordDialog, setShowPasswordDialog] = useState(false);
   const [passwordChangeUser, setPasswordChangeUser] = useState<any>(null);
+  const [showEditProfileDialog, setShowEditProfileDialog] = useState(false);
+  const [editProfileData, setEditProfileData] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    mobile: ""
+  });
   const [newStaffEmail, setNewStaffEmail] = useState("");
   const [newStaffMobile, setNewStaffMobile] = useState("");
   const [newStaffPassword, setNewStaffPassword] = useState("");
@@ -275,8 +282,50 @@ export default function Staff() {
     }
   };
 
+  const updateProfileMutation = useMutation({
+    mutationFn: async ({ userId, profileData }: { userId: string; profileData: any }) => {
+      return await apiRequest("PATCH", `/api/staff/${userId}/profile`, profileData);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/staff", selectedStoreId] });
+      setShowEditProfileDialog(false);
+      setEditingStaff(null);
+      toast({
+        title: "Profile Updated",
+        description: "Staff profile has been updated successfully.",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Profile Update Failed",
+        description: "Failed to update staff profile. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleRemoveStaff = (userId: string) => {
     removeStaffMutation.mutate(userId);
+  };
+
+  const handleEditProfile = (member: any) => {
+    setEditingStaff(member);
+    setEditProfileData({
+      firstName: member.user.firstName || "",
+      lastName: member.user.lastName || "",
+      email: member.user.email || "",
+      mobile: member.user.mobile || ""
+    });
+    setShowEditProfileDialog(true);
+  };
+
+  const handleUpdateProfile = () => {
+    if (editingStaff) {
+      updateProfileMutation.mutate({
+        userId: editingStaff.user.id,
+        profileData: editProfileData
+      });
+    }
   };
 
   if (!user) return null;
@@ -501,7 +550,15 @@ export default function Staff() {
                           onClick={() => handleEditRole(member)}
                         >
                           <Edit size={14} className="mr-1" />
-                          Edit
+                          Edit Role
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleEditProfile(member)}
+                        >
+                          <User size={14} className="mr-1" />
+                          Edit Profile
                         </Button>
                         <Button
                           variant="outline"
@@ -659,6 +716,67 @@ export default function Staff() {
               disabled={!newPassword || newPassword !== confirmPassword || changePasswordMutation.isPending}
             >
               {changePasswordMutation.isPending ? 'Updating...' : 'Update Password'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Profile Dialog */}
+      <Dialog open={showEditProfileDialog} onOpenChange={setShowEditProfileDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Staff Profile</DialogTitle>
+            <DialogDescription>
+              Update profile information for {editingStaff?.user.firstName} {editingStaff?.user.lastName}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="editFirstName">First Name</Label>
+                <Input
+                  id="editFirstName"
+                  value={editProfileData.firstName}
+                  onChange={(e) => setEditProfileData(prev => ({ ...prev, firstName: e.target.value }))}
+                  placeholder="Enter first name"
+                />
+              </div>
+              <div>
+                <Label htmlFor="editLastName">Last Name</Label>
+                <Input
+                  id="editLastName"
+                  value={editProfileData.lastName}
+                  onChange={(e) => setEditProfileData(prev => ({ ...prev, lastName: e.target.value }))}
+                  placeholder="Enter last name"
+                />
+              </div>
+            </div>
+            <div>
+              <Label htmlFor="editEmail">Email</Label>
+              <Input
+                id="editEmail"
+                type="email"
+                value={editProfileData.email}
+                onChange={(e) => setEditProfileData(prev => ({ ...prev, email: e.target.value }))}
+                placeholder="Enter email address"
+              />
+            </div>
+            <div>
+              <Label htmlFor="editMobile">Mobile Number</Label>
+              <Input
+                id="editMobile"
+                value={editProfileData.mobile}
+                onChange={(e) => setEditProfileData(prev => ({ ...prev, mobile: e.target.value }))}
+                placeholder="Enter mobile number"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowEditProfileDialog(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleUpdateProfile} disabled={updateProfileMutation.isPending}>
+              {updateProfileMutation.isPending ? 'Updating...' : 'Update Profile'}
             </Button>
           </DialogFooter>
         </DialogContent>

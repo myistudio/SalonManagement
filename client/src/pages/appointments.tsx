@@ -47,10 +47,32 @@ export default function Appointments() {
   const [selectedDate, setSelectedDate] = useState<string>(''); // Show all appointments by default
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
   const [showDetails, setShowDetails] = useState(false);
+  const [showBookingDialog, setShowBookingDialog] = useState(false);
+  const [bookingData, setBookingData] = useState({
+    customerName: "",
+    customerMobile: "",
+    customerEmail: "",
+    dateOfBirth: "",
+    gender: "",
+    appointmentDate: "",
+    appointmentTime: "",
+    serviceIds: [] as string[],
+    notes: ""
+  });
 
   // Fetch stores
   const { data: stores = [] } = useQuery({
     queryKey: ['/api/stores'],
+  });
+
+  // Fetch services for the selected store
+  const { data: services = [] } = useQuery({
+    queryKey: ['/api/services', selectedStoreId],
+    queryFn: async () => {
+      const response = await apiRequest('GET', `/api/services?storeId=${selectedStoreId}`);
+      return response.json();
+    },
+    enabled: !!selectedStoreId,
   });
 
   // Fetch appointments
@@ -106,6 +128,81 @@ export default function Appointments() {
     },
   });
 
+  // Create internal appointment
+  const createAppointmentMutation = useMutation({
+    mutationFn: async (appointmentData: any) => {
+      return await apiRequest('POST', '/api/appointments', appointmentData);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/appointments'] });
+      setShowBookingDialog(false);
+      setBookingData({
+        customerName: "",
+        customerMobile: "",
+        customerEmail: "",
+        dateOfBirth: "",
+        gender: "",
+        appointmentDate: "",
+        appointmentTime: "",
+        serviceIds: [],
+        notes: ""
+      });
+      toast({
+        title: "Appointment Booked",
+        description: "Appointment has been successfully created.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Booking Failed",
+        description: "Failed to create appointment. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleCreateAppointment = () => {
+    if (!bookingData.customerName || !bookingData.customerMobile || !bookingData.appointmentDate || !bookingData.appointmentTime || bookingData.serviceIds.length === 0) {
+      toast({
+        title: "Missing Information",
+        description: "Please fill in all required fields.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const selectedServices = services.filter((service: any) => 
+      bookingData.serviceIds.includes(service.id.toString())
+    );
+    
+    const totalAmount = selectedServices.reduce((sum: number, service: any) => 
+      sum + parseFloat(service.price), 0
+    );
+    
+    const totalDuration = selectedServices.reduce((sum: number, service: any) => 
+      sum + (service.duration || 60), 0
+    );
+
+    const appointmentData = {
+      storeId: selectedStoreId,
+      customerName: bookingData.customerName,
+      customerMobile: bookingData.customerMobile,
+      customerEmail: bookingData.customerEmail,
+      dateOfBirth: bookingData.dateOfBirth,
+      gender: bookingData.gender,
+      appointmentDate: bookingData.appointmentDate,
+      appointmentTime: bookingData.appointmentTime,
+      serviceIds: bookingData.serviceIds,
+      serviceName: selectedServices.map((s: any) => s.name).join(', '),
+      totalAmount: totalAmount.toString(),
+      duration: totalDuration,
+      status: 'confirmed',
+      notes: bookingData.notes
+    };
+
+    createAppointmentMutation.mutate(appointmentData);
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'pending': return 'bg-yellow-100 text-yellow-800';
@@ -142,6 +239,9 @@ export default function Appointments() {
             </div>
             
             <div className="flex items-center gap-4">
+              <Button onClick={() => setShowBookingDialog(true)}>
+                Book Appointment
+              </Button>
               <div>
                 <Label htmlFor="date-filter">Filter by Date (Optional)</Label>
                 <div className="flex items-center gap-2">
@@ -482,6 +582,134 @@ export default function Appointments() {
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Book Appointment Dialog */}
+      <Dialog open={showBookingDialog} onOpenChange={setShowBookingDialog}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Book New Appointment</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="customerName">Customer Name *</Label>
+                <Input
+                  id="customerName"
+                  value={bookingData.customerName}
+                  onChange={(e) => setBookingData(prev => ({ ...prev, customerName: e.target.value }))}
+                  placeholder="Enter customer name"
+                />
+              </div>
+              <div>
+                <Label htmlFor="customerMobile">Mobile Number *</Label>
+                <Input
+                  id="customerMobile"
+                  value={bookingData.customerMobile}
+                  onChange={(e) => setBookingData(prev => ({ ...prev, customerMobile: e.target.value }))}
+                  placeholder="Enter mobile number"
+                />
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="customerEmail">Email</Label>
+                <Input
+                  id="customerEmail"
+                  type="email"
+                  value={bookingData.customerEmail}
+                  onChange={(e) => setBookingData(prev => ({ ...prev, customerEmail: e.target.value }))}
+                  placeholder="Enter email address"
+                />
+              </div>
+              <div>
+                <Label htmlFor="gender">Gender</Label>
+                <Select value={bookingData.gender} onValueChange={(value) => setBookingData(prev => ({ ...prev, gender: value }))}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select gender" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="male">Male</SelectItem>
+                    <SelectItem value="female">Female</SelectItem>
+                    <SelectItem value="other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="appointmentDate">Date *</Label>
+                <Input
+                  id="appointmentDate"
+                  type="date"
+                  value={bookingData.appointmentDate}
+                  onChange={(e) => setBookingData(prev => ({ ...prev, appointmentDate: e.target.value }))}
+                />
+              </div>
+              <div>
+                <Label htmlFor="appointmentTime">Time *</Label>
+                <Input
+                  id="appointmentTime"
+                  type="time"
+                  value={bookingData.appointmentTime}
+                  onChange={(e) => setBookingData(prev => ({ ...prev, appointmentTime: e.target.value }))}
+                />
+              </div>
+            </div>
+
+            <div>
+              <Label>Select Services *</Label>
+              <div className="grid grid-cols-2 gap-2 mt-2 max-h-40 overflow-y-auto">
+                {services.map((service: any) => (
+                  <div key={service.id} className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id={`service-${service.id}`}
+                      checked={bookingData.serviceIds.includes(service.id.toString())}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setBookingData(prev => ({
+                            ...prev,
+                            serviceIds: [...prev.serviceIds, service.id.toString()]
+                          }));
+                        } else {
+                          setBookingData(prev => ({
+                            ...prev,
+                            serviceIds: prev.serviceIds.filter(id => id !== service.id.toString())
+                          }));
+                        }
+                      }}
+                    />
+                    <label htmlFor={`service-${service.id}`} className="text-sm">
+                      {service.name} - Rs.{service.price}
+                    </label>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <Label htmlFor="notes">Notes</Label>
+              <Input
+                id="notes"
+                value={bookingData.notes}
+                onChange={(e) => setBookingData(prev => ({ ...prev, notes: e.target.value }))}
+                placeholder="Any special notes or requirements"
+              />
+            </div>
+          </div>
+          
+          <div className="flex justify-end gap-2 mt-6">
+            <Button variant="outline" onClick={() => setShowBookingDialog(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleCreateAppointment} disabled={createAppointmentMutation.isPending}>
+              {createAppointmentMutation.isPending ? 'Booking...' : 'Book Appointment'}
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

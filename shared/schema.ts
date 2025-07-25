@@ -504,7 +504,7 @@ export const insertProductSchema = createInsertSchema(products).omit({
   updatedAt: true,
 }).extend({
   price: z.union([z.string(), z.number()]).transform(val => val.toString()),
-  cost: z.union([z.string(), z.number(), z.null(), z.undefined()]).transform(val => val ? val.toString() : null).optional(),
+  cost: z.union([z.string(), z.number()]).transform(val => val.toString()).optional().nullable(),
 });
 
 export const insertMembershipPlanSchema = createInsertSchema(membershipPlans).omit({
