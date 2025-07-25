@@ -231,6 +231,10 @@ export default function SettingsPage() {
       formData.append("logo", logoFile);
     }
 
+    // Handle tax configuration checkbox
+    const enableTaxCheckbox = formData.get('enableTax');
+    formData.set('enableTax', enableTaxCheckbox ? 'true' : 'false');
+
     updateStoreMutation.mutate(formData);
   };
 
@@ -392,6 +396,45 @@ export default function SettingsPage() {
                           name="gstNumber"
                           defaultValue={store.gstNumber || ""}
                         />
+                      </div>
+                    </div>
+
+                    {/* Tax Configuration Section */}
+                    <div className="border-t pt-6 space-y-4">
+                      <h3 className="text-lg font-semibold">Tax Configuration</h3>
+                      <div className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          id="enableTax"
+                          name="enableTax"
+                          defaultChecked={store?.enableTax !== false}
+                          className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
+                        />
+                        <Label htmlFor="enableTax">Enable Tax/GST in Billing</Label>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="taxName">Tax Name</Label>
+                          <Input
+                            id="taxName"
+                            name="taxName"
+                            defaultValue={store?.taxName || "GST"}
+                            placeholder="Tax name (e.g., GST, VAT, Tax)"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="taxRate">Tax Rate (%)</Label>
+                          <Input
+                            id="taxRate"
+                            name="taxRate"
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            max="100"
+                            defaultValue={store?.taxRate || "18.00"}
+                            placeholder="Tax percentage"
+                          />
+                        </div>
                       </div>
                     </div>
 

@@ -419,7 +419,9 @@ export default function BillingModal({ isOpen, onClose, storeId }: BillingModalP
   };
 
   const getGST = () => {
-    return (getSubtotal() - getDiscount()) * 0.18;
+    if (!store?.enableTax) return 0;
+    const taxRate = parseFloat(store.taxRate || '18.00') / 100;
+    return (getSubtotal() - getDiscount()) * taxRate;
   };
 
   const getTotal = () => {
@@ -1019,10 +1021,12 @@ export default function BillingModal({ isOpen, onClose, storeId }: BillingModalP
                     </div>
                   )}
                   
-                  <div className="flex justify-between items-center text-base">
-                    <span className="font-semibold text-gray-700">GST (18%):</span>
-                    <span className="font-bold text-gray-900">Rs. {getGST().toLocaleString()}</span>
-                  </div>
+                  {store?.enableTax && (
+                    <div className="flex justify-between items-center text-base">
+                      <span className="font-semibold text-gray-700">{store.taxName || 'GST'} ({store.taxRate || '18.00'}%):</span>
+                      <span className="font-bold text-gray-900">Rs. {getGST().toLocaleString()}</span>
+                    </div>
+                  )}
                   
                   <Separator className="my-3" />
                   

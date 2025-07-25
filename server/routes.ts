@@ -184,6 +184,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const storeId = parseInt(req.params.id);
       const updateData: any = { ...req.body };
 
+      // Handle checkbox conversion for enableTax
+      if (updateData.enableTax !== undefined) {
+        updateData.enableTax = updateData.enableTax === 'on' || updateData.enableTax === true;
+      }
+
       // Handle logo upload
       if (req.file) {
         const logoUrl = `/uploads/logos/${req.file.filename}`;
