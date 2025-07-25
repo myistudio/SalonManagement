@@ -558,7 +558,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put('/api/products/:id', isAuthenticated, requirePermission(Permission.MANAGE_INVENTORY), hasStoreAccess, async (req: any, res) => {
     try {
       const productId = parseInt(req.params.id);
-      const productData = insertProductSchema.partial().parse(req.body);
+      
+      // Handle type conversion for numeric fields
+      const requestBody = { ...req.body };
+      if (requestBody.price && typeof requestBody.price === 'string') {
+        requestBody.price = parseFloat(requestBody.price);
+      }
+      if (requestBody.cost && typeof requestBody.cost === 'string') {
+        requestBody.cost = parseFloat(requestBody.cost);
+      }
+      if (requestBody.stock && typeof requestBody.stock === 'string') {
+        requestBody.stock = parseInt(requestBody.stock);
+      }
+      if (requestBody.minStock && typeof requestBody.minStock === 'string') {
+        requestBody.minStock = parseInt(requestBody.minStock);
+      }
+      
+      const productData = insertProductSchema.partial().parse(requestBody);
       const product = await storage.updateProduct(productId, productData);
       res.json(product);
     } catch (error) {
