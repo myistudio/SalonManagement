@@ -27,7 +27,7 @@ interface BillingModalProps {
 
 interface BillItem {
   id: number;
-  type: 'service' | 'product';
+  type: 'service' | 'product' | 'membership';
   name: string;
   price: number;
   originalPrice?: number;
@@ -49,6 +49,7 @@ interface Customer {
     membershipPlan: {
       name: string;
       discountPercentage: number;
+      pointsMultiplier: number;
     };
   };
 }
@@ -156,6 +157,11 @@ export default function BillingModal({ isOpen, onClose, storeId }: BillingModalP
 
   const { data: customers = [] } = useQuery({
     queryKey: [`/api/customers?storeId=${storeId}`],
+    enabled: isOpen && !!storeId,
+  });
+
+  const { data: membershipPlans = [] } = useQuery({
+    queryKey: [`/api/membership-plans?storeId=${storeId}`],
     enabled: isOpen && !!storeId,
   });
 
@@ -429,7 +435,9 @@ export default function BillingModal({ isOpen, onClose, storeId }: BillingModalP
   };
 
   const getPointsEarned = () => {
-    return Math.floor(getTotal() * 0.01); // 1% of total as points
+    const basePoints = Math.floor(getTotal() * 0.01); // 1% of total as points
+    const multiplier = selectedCustomer?.membership?.membershipPlan?.pointsMultiplier || 1;
+    return Math.floor(basePoints * multiplier);
   };
 
   const resetForm = () => {
@@ -483,6 +491,7 @@ export default function BillingModal({ isOpen, onClose, storeId }: BillingModalP
         unitPrice: Number(item.price || 0).toFixed(2),
         totalPrice: (Number(item.price || 0) * Number(item.quantity || 0)).toFixed(2),
         serviceStaffId: item.type === 'service' ? item.serviceStaffId || null : null,
+        membershipPlanId: item.type === 'membership' ? item.id : null,
       })),
     };
 
@@ -666,8 +675,8 @@ export default function BillingModal({ isOpen, onClose, storeId }: BillingModalP
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 lg:gap-4">
           {/* Left Column - Services & Products Side by Side */}
           <div className="lg:col-span-8 space-y-4">
-            {/* Services and Products in Two Columns */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Services, Products, and Memberships in Three Columns */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {/* Services Section */}
               <div className="bg-white border-2 border-green-200 rounded-xl p-5 shadow-sm">
                 <h3 className="text-xl font-bold text-gray-900 mb-4">Services</h3>
@@ -737,6 +746,59 @@ export default function BillingModal({ isOpen, onClose, storeId }: BillingModalP
                           Stock: {product.stockQuantity}
                         </span>
                       )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Memberships Section */}
+              <div className="bg-white border-2 border-purple-200 rounded-xl p-5 shadow-sm">
+                <h3 className="text-xl font-bold text-gray-900 mb-4">Membership Plans</h3>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 max-h-96 overflow-y-auto pr-2">
+                  {(membershipPlans as any[]).map((plan: any) => (
+                    <div 
+                      key={plan.id}
+                      className="w-full min-h-[120px] border-2 border-gray-200 rounded-xl p-3 hover:border-purple-400 hover:bg-purple-50 hover:shadow-md transition-all duration-200 cursor-pointer flex flex-col items-center justify-center text-center touch-manipulation active:scale-95"
+                      onClick={() => {
+                        const membershipItem: BillItem = {
+                          id: plan.id,
+                          type: 'membership' as any,
+                          name: `Membership: ${plan.name}`,
+                          price: parseFloat(plan.price),
+                          originalPrice: parseFloat(plan.price),
+                          quantity: 1,
+                        };
+                        
+                        // Check if membership already exists in bill
+                        const existingIndex = billItems.findIndex(item => 
+                          item.id === plan.id && item.type === 'membership'
+                        );
+                        
+                        if (existingIndex >= 0) {
+                          // Increment quantity
+                          setBillItems(billItems.map((item, index) => 
+                            index === existingIndex 
+                              ? { ...item, quantity: item.quantity + 1 }
+                              : item
+                          ));
+                        } else {
+                          // Add new membership
+                          setBillItems([...billItems, membershipItem]);
+                        }
+                      }}
+                    >
+                      <div className="w-12 h-12 bg-purple-200 rounded-lg mb-2 flex items-center justify-center">
+                        <span className="text-purple-600 font-bold text-xs">MB</span>
+                      </div>
+                      <span className="text-sm font-semibold text-gray-900 line-clamp-2 leading-tight mb-1">
+                        {plan.name}
+                      </span>
+                      <span className="text-sm text-purple-600 font-bold">
+                        Rs. {parseFloat(plan.price).toLocaleString()}
+                      </span>
+                      <span className="text-xs text-gray-500 mt-1">
+                        {plan.discountPercentage}% off | {plan.pointsMultiplier}x points
+                      </span>
                     </div>
                   ))}
                 </div>

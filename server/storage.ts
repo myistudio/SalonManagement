@@ -174,6 +174,7 @@ export interface IStorage {
     topServices: { name: string; count: number; revenue: string }[];
     topProducts: { name: string; count: number; revenue: string }[];
   }>;
+  getMembershipReport(storeId: number, startDate?: string, endDate?: string): Promise<any>;
 
   // Daily reports
   getDailySalesReport(storeId: number, date: Date): Promise<{
@@ -2198,6 +2199,122 @@ export class DatabaseStorage implements IStorage {
       .groupBy(users.id, users.email, storeStaff.role);
 
     return staffPerformanceData;
+  }
+
+  async getMembershipReport(storeId: number, startDate?: string, endDate?: string): Promise<any> {
+    try {
+      const start = startDate ? new Date(startDate) : new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+      const end = endDate ? new Date(endDate) : new Date();
+      
+      // Membership sales in the period (from transaction items)
+      const membershipSales = await db
+        .select({
+          planName: transactionItems.itemName,
+          quantity: sql<number>`SUM(${transactionItems.quantity})`,
+          revenue: sql<string>`SUM(${transactionItems.totalPrice})`,
+          averagePrice: sql<string>`AVG(${transactionItems.unitPrice})`
+        })
+        .from(transactionItems)
+        .innerJoin(transactions, eq(transactionItems.transactionId, transactions.id))
+        .where(
+          and(
+            eq(transactions.storeId, storeId),
+            eq(transactionItems.itemType, 'membership'),
+            gte(transactions.createdAt, start),
+            lte(transactions.createdAt, end)
+          )
+        )
+        .groupBy(transactionItems.itemName)
+        .orderBy(desc(sql`SUM(${transactionItems.totalPrice})`));
+
+      // Active memberships count by plan
+      const activeMemberships = await db
+        .select({
+          planName: membershipPlans.name,
+          planId: membershipPlans.id,
+          activeCount: sql<number>`COUNT(${customerMemberships.id})`,
+          totalRevenue: sql<string>`SUM(${membershipPlans.price})`
+        })
+        .from(customerMemberships)
+        .innerJoin(membershipPlans, eq(customerMemberships.membershipPlanId, membershipPlans.id))
+        .innerJoin(customers, eq(customerMemberships.customerId, customers.id))
+        .where(
+          and(
+            eq(customers.storeId, storeId),
+            eq(customerMemberships.isActive, true)
+          )
+        )
+        .groupBy(membershipPlans.id, membershipPlans.name)
+        .orderBy(desc(sql`COUNT(${customerMemberships.id})`));
+
+      // Monthly membership assignments
+      const monthlyAssignments = await db
+        .select({
+          month: sql<string>`DATE_TRUNC('month', ${customerMemberships.startDate})`,
+          count: sql<number>`COUNT(*)`,
+          revenue: sql<string>`SUM(${membershipPlans.price})`
+        })
+        .from(customerMemberships)
+        .innerJoin(membershipPlans, eq(customerMemberships.membershipPlanId, membershipPlans.id))
+        .innerJoin(customers, eq(customerMemberships.customerId, customers.id))
+        .where(
+          and(
+            eq(customers.storeId, storeId),
+            gte(sql`${customerMemberships.startDate}`, start.toISOString().split('T')[0]),
+            lte(sql`${customerMemberships.startDate}`, end.toISOString().split('T')[0])
+          )
+        )
+        .groupBy(sql`DATE_TRUNC('month', ${customerMemberships.startDate})`)
+        .orderBy(sql`DATE_TRUNC('month', ${customerMemberships.startDate})`);
+
+      // Summary stats
+      const [summaryStats] = await db
+        .select({
+          totalActiveMemberships: sql<number>`COUNT(DISTINCT ${customerMemberships.id})`,
+          totalPlans: sql<number>`COUNT(DISTINCT ${membershipPlans.id})`,
+          totalMembershipRevenue: sql<string>`COALESCE(SUM(${membershipPlans.price}), 0)`
+        })
+        .from(membershipPlans)
+        .leftJoin(customerMemberships, and(
+          eq(customerMemberships.membershipPlanId, membershipPlans.id),
+          eq(customerMemberships.isActive, true)
+        ))
+        .leftJoin(customers, eq(customerMemberships.customerId, customers.id))
+        .where(eq(membershipPlans.storeId, storeId));
+
+      return {
+        summary: {
+          totalActiveMemberships: summaryStats?.totalActiveMemberships || 0,
+          totalPlans: summaryStats?.totalPlans || 0,
+          totalMembershipRevenue: summaryStats?.totalMembershipRevenue || '0'
+        },
+        membershipSales: membershipSales.map(sale => ({
+          planName: sale.planName,
+          quantitySold: sale.quantity,
+          revenue: sale.revenue,
+          averagePrice: sale.averagePrice
+        })),
+        activeMemberships: activeMemberships.map(membership => ({
+          planName: membership.planName,
+          planId: membership.planId,
+          activeCount: membership.activeCount,
+          totalValue: membership.totalRevenue
+        })),
+        monthlyTrends: monthlyAssignments.map(month => ({
+          month: month.month,
+          assignmentsCount: month.count,
+          revenue: month.revenue
+        }))
+      };
+    } catch (error) {
+      console.error('Error generating membership report:', error);
+      return {
+        summary: { totalActiveMemberships: 0, totalPlans: 0, totalMembershipRevenue: '0' },
+        membershipSales: [],
+        activeMemberships: [],
+        monthlyTrends: []
+      };
+    }
   }
 }
 

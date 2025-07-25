@@ -729,6 +729,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         quantity: item.quantity || 1,
         unitPrice: item.unitPrice,
         totalPrice: item.totalPrice,
+        serviceStaffId: item.serviceStaffId || null,
+        membershipPlanId: item.membershipPlanId || null,
       }));
       
       // Create transaction
@@ -736,7 +738,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Update customer loyalty points and stats if customer exists
       if (transaction.customerId) {
-        const pointsEarned = Math.floor(parseFloat(transaction.totalAmount) * 0.01); // 1 point per 100 rupees
+        // Get customer's membership to calculate points multiplier
+        const customer = await storage.getCustomer(transaction.customerId);
+        const membership = await storage.getCustomerMembership(transaction.customerId);
+        const multiplier = membership?.membershipPlan?.pointsMultiplier || 1;
+        
+        const basePoints = Math.floor(parseFloat(transaction.totalAmount) * 0.01); // 1 point per 100 rupees
+        const pointsEarned = Math.floor(basePoints * multiplier);
+        
         await storage.updateCustomerLoyalty(
           transaction.customerId,
           pointsEarned - (transaction.pointsRedeemed || 0),
@@ -745,11 +754,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         );
       }
       
-      // Update product stock for product items
+      // Update product stock for product items and handle membership assignments
       for (const item of itemsData) {
         if (item.itemType === 'product') {
           if (item.itemId) {
             await storage.updateProductStock(item.itemId, item.quantity);
+          }
+        } else if (item.itemType === 'membership' && transaction.customerId) {
+          // Assign membership to customer when purchased
+          if (item.itemId) {
+            await storage.assignMembershipToCustomer(transaction.customerId, item.itemId);
           }
         }
       }
@@ -1183,6 +1197,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Staff performance report error:", error);
       res.status(500).json({ message: "Failed to generate staff performance report" });
+    }
+  });
+
+  // Membership reports
+  app.get('/api/reports/memberships', isAuthenticated, requirePermission(Permission.VIEW_STORE_REPORTS), hasStoreAccess, async (req: any, res) => {
+    try {
+      const storeId = parseInt(req.query.storeId as string);
+      const startDate = req.query.startDate as string;
+      const endDate = req.query.endDate as string;
+      
+      if (!storeId) {
+        return res.status(400).json({ message: "Store ID is required" });
+      }
+      
+      const membershipData = await storage.getMembershipReport(storeId, startDate, endDate);
+      res.json(membershipData);
+    } catch (error) {
+      console.error('Error generating membership report:', error);
+      res.status(500).json({ message: "Failed to generate membership report" });
     }
   });
 
