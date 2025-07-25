@@ -555,6 +555,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.put('/api/products/:id', isAuthenticated, requirePermission(Permission.MANAGE_INVENTORY), hasStoreAccess, async (req: any, res) => {
+    try {
+      const productId = parseInt(req.params.id);
+      const productData = insertProductSchema.partial().parse(req.body);
+      const product = await storage.updateProduct(productId, productData);
+      res.json(product);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        console.error("Product validation errors:", error.errors);
+        return res.status(400).json({ message: "Invalid product data", errors: error.errors });
+      }
+      console.error("Error updating product:", error);
+      res.status(500).json({ message: "Failed to update product" });
+    }
+  });
+
   app.get('/api/products/low-stock/:storeId', isAuthenticated, async (req: any, res) => {
     try {
       const storeId = parseInt(req.params.storeId);
