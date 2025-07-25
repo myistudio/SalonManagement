@@ -638,6 +638,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.put('/api/memberships/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const planData = insertMembershipPlanSchema.partial().parse(req.body);
+      const plan = await storage.updateMembershipPlan(id, planData);
+      res.json(plan);
+    } catch (error) {
+      console.error('Error updating membership plan:', error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid membership plan data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Failed to update membership plan" });
+    }
+  });
+
+  app.delete('/api/memberships/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      await storage.deleteMembershipPlan(id);
+      res.json({ message: "Membership plan deleted successfully" });
+    } catch (error) {
+      console.error('Error deleting membership plan:', error);
+      res.status(500).json({ message: "Failed to delete membership plan" });
+    }
+  });
+
+  // Get membership plans for customer assignment
+  app.get('/api/membership-plans', isAuthenticated, async (req: any, res) => {
+    try {
+      const storeId = parseInt(req.query.storeId as string);
+      if (!storeId) {
+        return res.status(400).json({ message: "Store ID is required" });
+      }
+      const plans = await storage.getMembershipPlans(storeId);
+      res.json(plans);
+    } catch (error) {
+      console.error('Error fetching membership plans:', error);
+      res.status(500).json({ message: "Failed to fetch membership plans" });
+    }
+  });
+
   // Transaction routes
   app.get('/api/transactions', isAuthenticated, requirePermission(Permission.MANAGE_TRANSACTIONS), hasStoreAccess, async (req: any, res) => {
     try {

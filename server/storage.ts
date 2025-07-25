@@ -144,6 +144,7 @@ export interface IStorage {
   getMembershipPlan(id: number): Promise<MembershipPlan | undefined>;
   createMembershipPlan(plan: InsertMembershipPlan): Promise<MembershipPlan>;
   updateMembershipPlan(id: number, plan: Partial<InsertMembershipPlan>): Promise<MembershipPlan>;
+  deleteMembershipPlan(id: number): Promise<void>;
   getCustomerMembership(customerId: number): Promise<(CustomerMembership & { membershipPlan: MembershipPlan }) | undefined>;
   createCustomerMembership(membership: Omit<CustomerMembership, "id" | "createdAt">): Promise<CustomerMembership>;
 
@@ -567,7 +568,7 @@ export class DatabaseStorage implements IStorage {
       // First, deactivate any existing memberships for this customer
       await db
         .update(customerMemberships)
-        .set({ isActive: false, updatedAt: new Date() })
+        .set({ isActive: false })
         .where(eq(customerMemberships.customerId, customerId));
 
       // Get membership plan details for expiry date calculation
@@ -577,15 +578,17 @@ export class DatabaseStorage implements IStorage {
       }
 
       // Calculate expiry date
+      const startDate = new Date().toISOString().split('T')[0];
       const expiryDate = new Date();
-      expiryDate.setDate(expiryDate.getDate() + membershipPlan.validityDays);
+      expiryDate.setDate(expiryDate.getDate() + (membershipPlan.validityDays || 365));
+      const endDate = expiryDate.toISOString().split('T')[0];
 
       // Create new membership
       await db.insert(customerMemberships).values({
         customerId,
         membershipPlanId,
-        startDate: new Date(),
-        endDate: expiryDate,
+        startDate,
+        endDate,
         isActive: true,
       });
     } catch (error) {
@@ -788,6 +791,10 @@ export class DatabaseStorage implements IStorage {
       .where(eq(membershipPlans.id, id))
       .returning();
     return updatedPlan;
+  }
+
+  async deleteMembershipPlan(id: number): Promise<void> {
+    await db.delete(membershipPlans).where(eq(membershipPlans.id, id));
   }
 
   async getCustomerMembership(customerId: number): Promise<(CustomerMembership & { membershipPlan: MembershipPlan }) | undefined> {
@@ -1964,56 +1971,7 @@ export class DatabaseStorage implements IStorage {
     return buffer;
   }
 
-  async assignMembershipToCustomer(customerId: number, membershipPlanId: number): Promise<CustomerMembership> {
-    // First check if customer already has an active membership
-    const existingMembership = await db
-      .select()
-      .from(customerMemberships)
-      .where(
-        and(
-          eq(customerMemberships.customerId, customerId),
-          eq(customerMemberships.status, 'active')
-        )
-      );
 
-    // Deactivate existing membership if any
-    if (existingMembership.length > 0) {
-      await db
-        .update(customerMemberships)
-        .set({ status: 'expired' })
-        .where(
-          and(
-            eq(customerMemberships.customerId, customerId),
-            eq(customerMemberships.status, 'active')
-          )
-        );
-    }
-
-    // Get membership plan details
-    const membershipPlan = await this.getMembershipPlan(membershipPlanId);
-    if (!membershipPlan) {
-      throw new Error('Membership plan not found');
-    }
-
-    // Calculate expiry date
-    const expiryDate = new Date();
-    expiryDate.setDate(expiryDate.getDate() + membershipPlan.validityDays);
-
-    // Create new membership
-    const [newMembership] = await db
-      .insert(customerMemberships)
-      .values({
-        customerId,
-        membershipPlanId,
-        status: 'active',
-        expiryDate,
-        pointsEarned: 0,
-        discountUsed: "0.00"
-      })
-      .returning();
-
-    return newMembership;
-  }
 
   // Appointment Staff operations
   async getAppointmentStaff(appointmentId: number): Promise<AppointmentStaff[]> {

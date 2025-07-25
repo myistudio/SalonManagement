@@ -45,6 +45,38 @@ export default function Memberships() {
     retry: false,
   });
 
+  const deleteMembership = useMutation({
+    mutationFn: async (id: number) => {
+      const response = await apiRequest("DELETE", `/api/memberships/${id}`);
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "Membership plan deleted successfully",
+      });
+      queryClient.invalidateQueries({ queryKey: [`/api/memberships?storeId=${selectedStoreId}`] });
+    },
+    onError: (error: any) => {
+      if (isUnauthorizedError(error)) {
+        toast({
+          title: "Unauthorized",
+          description: "You are logged out. Logging in again...",
+          variant: "destructive",
+        });
+        setTimeout(() => {
+          window.location.href = "/api/login";
+        }, 500);
+        return;
+      }
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete membership plan",
+        variant: "destructive",
+      });
+    },
+  });
+
   const filteredMemberships = memberships.filter((membership: any) =>
     membership.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     membership.description?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -229,8 +261,13 @@ export default function Memberships() {
                           >
                             Edit Plan
                           </Button>
-                          <Button size="sm" className="flex-1">
-                            View Members
+                          <Button 
+                            variant="destructive" 
+                            size="sm" 
+                            className="flex-1"
+                            onClick={() => deleteMembership.mutate(membership.id)}
+                          >
+                            Delete
                           </Button>
                         </div>
                       </CardContent>
