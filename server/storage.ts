@@ -107,6 +107,7 @@ export interface IStorage {
   getCustomerTransactions(customerId: number): Promise<(Transaction & { customer?: Customer; staff: User; items: TransactionItem[] })[]>;
   getCustomersWithSpending(storeId: number): Promise<any[]>;
   assignMembershipToCustomer(customerId: number, membershipPlanId: number): Promise<void>;
+  getStaffPerformance(storeId: number, startDate?: string, endDate?: string): Promise<any[]>;
 
   // Service category operations
   getServiceCategories(storeId: number): Promise<ServiceCategory[]>;
@@ -2197,6 +2198,38 @@ export class DatabaseStorage implements IStorage {
         sentAt: status === 'sent' ? new Date() : undefined
       })
       .where(eq(whatsappMessages.id, messageId));
+  }
+
+  // Staff Performance Analytics
+  async getStaffPerformance(storeId: number, startDate?: string, endDate?: string): Promise<any[]> {
+    let dateFilters = [];
+    if (startDate) {
+      dateFilters.push(gte(transactions.createdAt, new Date(startDate)));
+    }
+    if (endDate) {
+      dateFilters.push(lte(transactions.createdAt, new Date(endDate)));
+    }
+
+    const staffPerformanceData = await db
+      .select({
+        staffId: users.id,
+        staffName: users.email,
+        staffEmail: users.email,
+        role: storeStaff.role,
+        totalRevenue: sql<number>`COALESCE(SUM(CAST(${transactions.totalAmount} AS DECIMAL)), 0)`,
+        servicesCompleted: sql<number>`COUNT(DISTINCT ${transactions.id})`
+      })
+      .from(storeStaff)
+      .innerJoin(users, eq(storeStaff.userId, users.id))
+      .leftJoin(transactions, and(
+        eq(transactions.staffId, users.id),
+        eq(transactions.storeId, storeId),
+        ...dateFilters
+      ))
+      .where(eq(storeStaff.storeId, storeId))
+      .groupBy(users.id, users.email, storeStaff.role);
+
+    return staffPerformanceData;
   }
 }
 

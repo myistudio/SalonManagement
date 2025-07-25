@@ -67,7 +67,11 @@ export default function Customers() {
 
   // Fetch membership plans for assignment
   const { data: membershipPlans = [] } = useQuery({
-    queryKey: [`/api/membership-plans?storeId=${selectedStoreId}`],
+    queryKey: [`/api/membership-plans`, selectedStoreId],
+    queryFn: async () => {
+      const response = await apiRequest('GET', `/api/membership-plans?storeId=${selectedStoreId}`);
+      return response.json();
+    },
     enabled: !!selectedStoreId,
     retry: false,
   });
@@ -768,7 +772,7 @@ export default function Customers() {
               
               {membershipPlans.length === 0 ? (
                 <div className="text-center py-6">
-                  <p className="text-gray-500">No membership plans available for this store.</p>
+                  <p className="text-gray-500">Loading membership plans...</p>
                 </div>
               ) : (
                 <div className="space-y-3">

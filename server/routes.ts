@@ -1894,6 +1894,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Staff Performance Analytics
+  app.get("/api/staff/performance", isAuthenticated, requirePermission(Permission.VIEW_REPORTS), async (req: any, res) => {
+    try {
+      const storeId = parseInt(req.query.storeId as string);
+      const startDate = req.query.startDate as string;
+      const endDate = req.query.endDate as string;
+      
+      if (!storeId) {
+        return res.status(400).json({ message: "Store ID is required" });
+      }
+      
+      const performance = await storage.getStaffPerformance(storeId, startDate, endDate);
+      res.json(performance);
+    } catch (error) {
+      console.error("Error fetching staff performance:", error);
+      res.status(500).json({ message: "Failed to fetch staff performance" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

@@ -21,6 +21,7 @@ import LoginPageSettings from "@/pages/login-page-settings";
 import Appointments from "@/pages/appointments";
 import AppointmentBooking from "@/pages/appointment-booking";
 import CommunicationSettings from "@/pages/communication-settings";
+import StaffPerformance from "@/pages/staff-performance";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -52,6 +53,7 @@ function Router() {
             <Route path="/stores" component={Stores} />
             <Route path="/whatsapp" component={WhatsApp} />
             <Route path="/appointments" component={Appointments} />
+            <Route path="/staff-performance" component={StaffPerformance} />
             <Route path="/settings" component={Settings} />
             <Route path="/settings/login-page" component={LoginPageSettings} />
             <Route path="/settings/communication" component={CommunicationSettings} />

@@ -107,6 +107,13 @@ export default function Sidebar({ onOpenBilling = () => {}, isMobileMenuOpen = f
       group: "admin"
     },
     { 
+      icon: BarChart3, 
+      label: "Staff Performance", 
+      path: "/staff-performance", 
+      active: location === "/staff-performance",
+      group: "admin"
+    },
+    { 
       icon: Building2, 
       label: "Stores", 
       path: "/stores", 
@@ -131,7 +138,7 @@ export default function Sidebar({ onOpenBilling = () => {}, isMobileMenuOpen = f
     }
     // For executives, hide Reports, Staff, Settings, WhatsApp, and Stores
     if (userRole === "executive") {
-      return !["Reports", "Staff", "Settings", "WhatsApp", "Stores"].includes(item.label);
+      return !["Reports", "Staff", "Staff Performance", "Settings", "WhatsApp", "Stores"].includes(item.label);
     }
     return true;
   });
