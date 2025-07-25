@@ -1568,8 +1568,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: "Unauthorized" });
       }
 
-      const storeId = parseInt(req.query.storeId as string);
+      const storeId = req.query.storeId ? parseInt(req.query.storeId as string) : null;
       const date = req.query.date ? new Date(req.query.date as string) : undefined;
+      
+      if (!storeId || isNaN(storeId)) {
+        return res.status(400).json({ message: "Valid store ID is required" });
+      }
       
       const appointments = await storage.getAppointments(storeId, date);
       res.json(appointments);

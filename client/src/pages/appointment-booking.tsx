@@ -118,8 +118,7 @@ export default function AppointmentBooking() {
     },
   });
 
-  // Calculate total amount and duration
-  const totalAmount = selectedServices.reduce((sum, service) => sum + parseFloat(service.price), 0);
+  // Calculate total duration (remove price calculation)
   const totalDuration = selectedServices.reduce((sum, service) => sum + service.duration, 0);
 
   // Get minimum date (today)
@@ -155,6 +154,27 @@ export default function AppointmentBooking() {
       return;
     }
 
+    // Check age restriction (minimum 16 years)
+    if (formData.dateOfBirth) {
+      const today = new Date();
+      const birthDate = new Date(formData.dateOfBirth);
+      let age = today.getFullYear() - birthDate.getFullYear();
+      const monthDiff = today.getMonth() - birthDate.getMonth();
+      
+      if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+        age--;
+      }
+      
+      if (age < 16) {
+        toast({
+          title: "Age Restriction",
+          description: "Customers must be at least 16 years old to book appointments",
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+
     const appointmentData: AppointmentForm = {
       storeId: selectedStore.id,
       customerName: formData.customerName!,
@@ -166,7 +186,7 @@ export default function AppointmentBooking() {
       appointmentTime: selectedTime,
       serviceIds: selectedServices.map(s => s.id.toString()),
       serviceName: selectedServices.map(s => s.name).join(", "),
-      totalAmount: totalAmount.toFixed(2),
+      totalAmount: "0",
       duration: totalDuration,
       notes: formData.notes || "",
     };
@@ -288,7 +308,6 @@ export default function AppointmentBooking() {
                             <h4 className="font-medium">{service.name}</h4>
                             <p className="text-sm text-gray-600">{service.description}</p>
                             <div className="flex items-center gap-4 mt-2">
-                              <Badge variant="secondary">Rs. {service.price}</Badge>
                               <Badge variant="outline">{service.duration} min</Badge>
                             </div>
                           </div>
@@ -402,10 +421,7 @@ export default function AppointmentBooking() {
                           <span>Duration:</span>
                           <span>{totalDuration} minutes</span>
                         </div>
-                        <div className="flex justify-between font-semibold border-t pt-2">
-                          <span>Total Amount:</span>
-                          <span>Rs. {totalAmount.toFixed(2)}</span>
-                        </div>
+
                       </div>
                     </div>
                   )}

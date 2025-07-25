@@ -47,7 +47,7 @@ export default function QuickActions({ onOpenBilling }: QuickActionsProps) {
               <Link key={index} href={action.href}>
                 <Button
                   variant="ghost"
-                  className={`flex flex-col items-center p-4 h-auto ${action.color} transition-colors`}
+                  className={`flex flex-col items-center p-4 h-auto ${action.color} transition-colors border border-transparent hover:border-gray-300`}
                 >
                   <action.icon size={24} className="mb-2" />
                   <span className="text-sm font-medium">{action.label}</span>
@@ -58,7 +58,7 @@ export default function QuickActions({ onOpenBilling }: QuickActionsProps) {
                 key={index}
                 variant="ghost"
                 onClick={action.onClick}
-                className={`flex flex-col items-center p-4 h-auto ${action.color} transition-colors`}
+                className={`flex flex-col items-center p-4 h-auto ${action.color} transition-colors border border-transparent hover:border-gray-300`}
               >
                 <action.icon size={24} className="mb-2" />
                 <span className="text-sm font-medium">{action.label}</span>

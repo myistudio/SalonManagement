@@ -96,6 +96,27 @@ export default function CustomerForm({ onSuccess, selectedStoreId }: CustomerFor
       return;
     }
 
+    // Check age restriction (minimum 16 years)
+    if (formData.dateOfBirth) {
+      const today = new Date();
+      const birthDate = new Date(formData.dateOfBirth);
+      let age = today.getFullYear() - birthDate.getFullYear();
+      const monthDiff = today.getMonth() - birthDate.getMonth();
+      
+      if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+        age--;
+      }
+      
+      if (age < 16) {
+        toast({
+          title: "Age Restriction",
+          description: "Customers must be at least 16 years old to register",
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+
     const customerData = {
       ...formData,
       storeId: selectedStoreId,

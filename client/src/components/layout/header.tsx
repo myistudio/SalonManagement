@@ -45,32 +45,28 @@ export default function Header({ selectedStoreId, onStoreChange, isMobileMenuOpe
           </div>
 
           <div className="flex items-center space-x-4">
-            {/* Store Selector */}
-            <div className="hidden md:block">
-              <Select 
-                value={selectedStoreId?.toString()} 
-                onValueChange={(value) => onStoreChange(parseInt(value))}
-              >
-                <SelectTrigger className="w-48">
-                  <SelectValue placeholder="Select store" />
-                </SelectTrigger>
-                <SelectContent>
-                  {(stores as any[]).map((store: any) => (
-                    <SelectItem key={store.id} value={store.id.toString()}>
-                      {store.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            {/* Store Selector - Only for super_admin */}
+            {(user as any)?.role === 'super_admin' && (
+              <div className="hidden md:block">
+                <Select 
+                  value={selectedStoreId?.toString()} 
+                  onValueChange={(value) => onStoreChange?.(parseInt(value))}
+                >
+                  <SelectTrigger className="w-48">
+                    <SelectValue placeholder="Select store" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(stores as any[]).map((store: any) => (
+                      <SelectItem key={store.id} value={store.id.toString()}>
+                        {store.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
 
-            {/* Notifications */}
-            <button className="text-gray-500 hover:text-gray-700 relative">
-              <Bell size={20} />
-              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                3
-              </span>
-            </button>
+
             
             {/* User Profile */}
             <DropdownMenu>
