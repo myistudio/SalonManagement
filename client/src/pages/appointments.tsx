@@ -214,11 +214,16 @@ export default function Appointments() {
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
+    if (!dateString) return 'All Dates';
+    try {
+      return new Date(dateString).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+      });
+    } catch (error) {
+      return 'Invalid Date';
+    }
   };
 
   const formatTime = (timeString: string) => {
@@ -337,7 +342,7 @@ export default function Appointments() {
                 </div>
               ) : appointments.length === 0 ? (
                 <div className="text-center py-8 text-gray-500">
-                  No appointments found for this date
+                  {selectedDate ? 'No appointments found for this date' : 'No appointments found'}
                 </div>
               ) : (
                 <Table>

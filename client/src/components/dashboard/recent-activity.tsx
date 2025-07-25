@@ -13,19 +13,25 @@ interface RecentActivityProps {
 
 export default function RecentActivity({ storeId }: RecentActivityProps) {
   const { data: transactions = [], isLoading } = useQuery({
-    queryKey: [`/api/transactions?storeId=${storeId}&limit=10`],
+    queryKey: [`/api/transactions`, storeId, 'recent'],
     enabled: !!storeId,
   });
 
   const { data: appointments = [], isLoading: appointmentsLoading } = useQuery({
-    queryKey: [`/api/appointments?storeId=${storeId}&date=${new Date().toISOString().split('T')[0]}`],
+    queryKey: [`/api/appointments`, storeId],
     enabled: !!storeId,
   });
 
-  const todayAppointments = appointments.filter((apt: any) => {
-    const appointmentDate = new Date(apt.appointmentDate).toDateString();
-    const today = new Date().toDateString();
-    return appointmentDate === today;
+  const todayAppointments = (appointments as any[]).filter((apt: any) => {
+    if (!apt.appointmentDate) return false;
+    try {
+      const appointmentDate = new Date(apt.appointmentDate).toDateString();
+      const today = new Date().toDateString();
+      return appointmentDate === today;
+    } catch (error) {
+      console.error('Invalid appointment date:', apt.appointmentDate);
+      return false;
+    }
   });
 
   return (
@@ -60,7 +66,7 @@ export default function RecentActivity({ storeId }: RecentActivityProps) {
             ) : transactions.length === 0 ? (
               <p className="text-gray-500 text-center py-8">No transactions yet</p>
             ) : (
-              transactions.slice(0, 3).map((transaction: any) => (
+              (transactions as any[]).slice(0, 3).map((transaction: any) => (
                 <div key={transaction.id} className="flex items-center justify-between">
                   <div className="flex items-center">
                     <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
