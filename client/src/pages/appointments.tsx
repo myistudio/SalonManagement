@@ -187,9 +187,9 @@ export default function Appointments() {
       storeId: selectedStoreId,
       customerName: bookingData.customerName,
       customerMobile: bookingData.customerMobile,
-      customerEmail: bookingData.customerEmail,
-      dateOfBirth: bookingData.dateOfBirth,
-      gender: bookingData.gender,
+      customerEmail: bookingData.customerEmail || null,
+      dateOfBirth: bookingData.dateOfBirth || null,
+      gender: bookingData.gender || null,
       appointmentDate: bookingData.appointmentDate,
       appointmentTime: bookingData.appointmentTime,
       serviceIds: bookingData.serviceIds,
@@ -197,7 +197,7 @@ export default function Appointments() {
       totalAmount: totalAmount.toString(),
       duration: totalDuration,
       status: 'confirmed',
-      notes: bookingData.notes
+      notes: bookingData.notes || null
     };
 
     createAppointmentMutation.mutate(appointmentData);
@@ -613,7 +613,7 @@ export default function Appointments() {
               </div>
             </div>
             
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-3 gap-4">
               <div>
                 <Label htmlFor="customerEmail">Email</Label>
                 <Input
@@ -622,6 +622,15 @@ export default function Appointments() {
                   value={bookingData.customerEmail}
                   onChange={(e) => setBookingData(prev => ({ ...prev, customerEmail: e.target.value }))}
                   placeholder="Enter email address"
+                />
+              </div>
+              <div>
+                <Label htmlFor="dateOfBirth">Date of Birth</Label>
+                <Input
+                  id="dateOfBirth"
+                  type="date"
+                  value={bookingData.dateOfBirth}
+                  onChange={(e) => setBookingData(prev => ({ ...prev, dateOfBirth: e.target.value }))}
                 />
               </div>
               <div>

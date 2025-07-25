@@ -1532,7 +1532,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/appointments", async (req, res) => {
     try {
-      const appointment = await storage.createAppointment(req.body);
+      // Handle empty string dates properly for public booking
+      const requestBody = { ...req.body };
+      if (requestBody.dateOfBirth === '') {
+        requestBody.dateOfBirth = null;
+      }
+      if (requestBody.customerEmail === '') {
+        requestBody.customerEmail = null;
+      }
+      if (requestBody.gender === '') {
+        requestBody.gender = null;
+      }
+      if (requestBody.notes === '') {
+        requestBody.notes = null;
+      }
+      
+      const appointment = await storage.createAppointment(requestBody);
       res.status(201).json(appointment);
     } catch (error) {
       console.error("Error creating appointment:", error);

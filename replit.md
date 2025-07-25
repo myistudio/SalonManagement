@@ -244,6 +244,9 @@ Changelog:
 - July 20, 2025. Extended database schema with new tables for SMS settings, email settings, communication templates, message logs, and customer preferences
 - July 20, 2025. Updated navigation structure - removed WhatsApp from main sidebar and integrated Communication Settings as tab within Settings page
 - July 20, 2025. Added role-based permission system for communication features with MANAGE_COMMUNICATIONS and VIEW_COMMUNICATIONS permissions
+- July 25, 2025. Fixed critical product editing validation error - resolved cost field type conversion issues allowing successful product updates
+- July 25, 2025. Implemented comprehensive staff profile editing functionality - managers can now update staff member details including name, email, and mobile
+- July 25, 2025. Added internal appointment booking system for store agents - "Book Appointment" button allows direct appointment creation from store interface with full service selection and customer details
 ```
 
 ## User Preferences

@@ -614,6 +614,11 @@ export const insertAppointmentSchema = createInsertSchema(appointments).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
+}).extend({
+  dateOfBirth: z.string().optional().nullable(),
+  customerEmail: z.string().optional().nullable(),
+  gender: z.string().optional().nullable(),
+  notes: z.string().optional().nullable(),
 });
 
 // SMS Settings table
