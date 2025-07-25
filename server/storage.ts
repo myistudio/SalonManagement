@@ -1806,8 +1806,8 @@ export class DatabaseStorage implements IStorage {
     // Get appointment settings for the store
     const settings = await this.getAppointmentSettings(storeId);
     if (!settings) {
-      // Return empty array if no settings configured
-      return [];
+      // Return default hourly slots if no settings configured
+      return this.generateDefaultTimeSlots();
     }
     
     // Get existing appointments for the date with appointment count per time slot
@@ -1821,7 +1821,7 @@ export class DatabaseStorage implements IStorage {
         and(
           eq(appointments.storeId, storeId),
           eq(appointments.appointmentDate, dateStr),
-          ne(appointments.status, 'cancelled')
+          sql`${appointments.status} != 'cancelled'`
         )
       )
       .groupBy(appointments.appointmentTime);
@@ -1862,6 +1862,16 @@ export class DatabaseStorage implements IStorage {
       const currentCount = appointmentCounts.get(slot) || 0;
       return currentCount < settings.maxConcurrentAppointments;
     });
+  }
+
+  private generateDefaultTimeSlots(): string[] {
+    const slots: string[] = [];
+    // Generate hourly slots from 9 AM to 6 PM
+    for (let hour = 9; hour <= 18; hour++) {
+      const timeString = `${hour.toString().padStart(2, '0')}:00`;
+      slots.push(timeString);
+    }
+    return slots;
   }
 
   // Appointment settings operations

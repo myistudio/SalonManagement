@@ -1899,7 +1899,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Staff Performance Analytics
-  app.get("/api/staff/performance", isAuthenticated, requirePermission(Permission.VIEW_REPORTS), async (req: any, res) => {
+  app.get("/api/staff/performance", isAuthenticated, requirePermission(Permission.VIEW_ALL_REPORTS), async (req: any, res) => {
     try {
       const storeId = parseInt(req.query.storeId as string);
       const startDate = req.query.startDate as string;

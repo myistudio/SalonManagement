@@ -247,6 +247,7 @@ Changelog:
 - July 25, 2025. Fixed critical product editing validation error - resolved cost field type conversion issues allowing successful product updates
 - July 25, 2025. Implemented comprehensive staff profile editing functionality - managers can now update staff member details including name, email, and mobile
 - July 25, 2025. Added internal appointment booking system for store agents - "Book Appointment" button allows direct appointment creation from store interface with full service selection and customer details
+- July 25, 2025. Implemented comprehensive appointment system enhancements - blocked old date bookings, removed price displays from /book-appointment page, added 16+ age restriction for all customer creation, fixed store selector (super_admin only), removed notification icon, and created dynamic time slot generation based on store opening/closing hours
 ```
 
 ## User Preferences
