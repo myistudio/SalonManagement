@@ -9,17 +9,13 @@ import express from "express";
 import {
   insertCustomerSchema,
   insertServiceSchema,
-  insertServiceCategorySchema,
   insertProductSchema,
-  insertProductCategorySchema,
   insertMembershipPlanSchema,
   insertTransactionSchema,
-  insertTransactionItemSchema,
   users,
   storeStaff,
-  whatsappMessages,
   customers,
-} from "@shared/schema";
+} from "@shared/schema-sqlite";
 import { z } from "zod";
 import { db } from "./db";
 import { eq, and, desc } from "drizzle-orm";

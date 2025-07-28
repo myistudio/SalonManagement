@@ -1,6 +1,6 @@
 import Database from 'better-sqlite3';
 import { drizzle } from 'drizzle-orm/better-sqlite3';
-import * as schema from "@shared/schema";
+import * as schema from "@shared/schema-sqlite";
 
 // Create SQLite database
 const sqlite = new Database('salon.db');
@@ -152,10 +152,11 @@ sqlite.exec(`
     company_name TEXT DEFAULT 'SalonPro',
     logo_url TEXT,
     welcome_message TEXT DEFAULT 'Welcome to SalonPro',
+    tagline TEXT,
     background_color TEXT DEFAULT '#ffffff',
     primary_color TEXT DEFAULT '#3b82f6',
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    created_at INTEGER,
+    updated_at INTEGER
   );
 
   CREATE TABLE IF NOT EXISTS service_categories (
@@ -190,8 +191,8 @@ const insertSampleData = () => {
 
     // Insert login page settings
     sqlite.prepare(`
-      INSERT OR IGNORE INTO login_page_settings (id, company_name, welcome_message)
-      VALUES (1, 'SalonPro', 'Welcome to SalonPro Management System')
+      INSERT OR IGNORE INTO login_page_settings (id, company_name, welcome_message, tagline)
+      VALUES (1, 'SalonPro', 'Welcome to SalonPro Management System', 'Professional Salon Management')
     `).run();
 
     // Insert store
