@@ -146,15 +146,52 @@ sqlite.exec(`
     FOREIGN KEY (customer_id) REFERENCES customers(id),
     FOREIGN KEY (staff_id) REFERENCES users(id)
   );
+
+  CREATE TABLE IF NOT EXISTS login_page_settings (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    company_name TEXT DEFAULT 'SalonPro',
+    logo_url TEXT,
+    welcome_message TEXT DEFAULT 'Welcome to SalonPro',
+    background_color TEXT DEFAULT '#ffffff',
+    primary_color TEXT DEFAULT '#3b82f6',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
+
+  CREATE TABLE IF NOT EXISTS service_categories (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    store_id INTEGER NOT NULL,
+    name TEXT NOT NULL,
+    description TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (store_id) REFERENCES stores(id)
+  );
+
+  CREATE TABLE IF NOT EXISTS product_categories (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    store_id INTEGER NOT NULL,
+    name TEXT NOT NULL,
+    description TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (store_id) REFERENCES stores(id)
+  );
 `);
 
 // Insert sample data
 const insertSampleData = () => {
   try {
-    // Insert admin user
+    // Insert admin user with correct password hash for 'admin123'
     sqlite.prepare(`
       INSERT OR IGNORE INTO users (id, email, mobile, password, first_name, last_name, role)
-      VALUES ('admin_001', 'admin@salon.com', '9876543210', '$2b$10$pNs4A7AeEhHHQDm.FBIHneMl9gSanwN7zkty3RcElhu10SwT1WrUS', 'Admin', 'User', 'super_admin')
+      VALUES ('admin_001', 'admin@salon.com', '9876543210', '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Admin', 'User', 'super_admin')
+    `).run();
+
+    // Insert login page settings
+    sqlite.prepare(`
+      INSERT OR IGNORE INTO login_page_settings (id, company_name, welcome_message)
+      VALUES (1, 'SalonPro', 'Welcome to SalonPro Management System')
     `).run();
 
     // Insert store
