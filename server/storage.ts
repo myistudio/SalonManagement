@@ -307,15 +307,20 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getUserByEmailOrMobile(login: string): Promise<User | undefined> {
-    const [user] = await db
-      .select()
-      .from(users)
-      .where(
-        login.includes('@') 
-          ? eq(users.email, login)
-          : eq(users.mobile, login)
-      );
-    return user;
+    try {
+      const [user] = await db
+        .select()
+        .from(users)
+        .where(
+          login.includes('@') 
+            ? eq(users.email, login)
+            : eq(users.mobile, login)
+        );
+      return user;
+    } catch (error) {
+      console.error('Error fetching user by email/mobile:', error);
+      return undefined;
+    }
   }
 
   async createUser(userData: UpsertUser): Promise<User> {
@@ -343,7 +348,12 @@ export class DatabaseStorage implements IStorage {
 
   // Store operations
   async getStores(): Promise<Store[]> {
-    return await db.select().from(stores).where(eq(stores.isActive, true));
+    try {
+      return await db.select().from(stores).where(eq(stores.isActive, 1));
+    } catch (error) {
+      console.error('Error fetching stores:', error);
+      return [];
+    }
   }
 
   async getStore(id: number): Promise<Store | undefined> {
@@ -1617,8 +1627,23 @@ export class DatabaseStorage implements IStorage {
 
   // Login page settings operations
   async getLoginPageSettings(): Promise<LoginPageSettings | undefined> {
-    const [settings] = await db.select().from(loginPageSettings).limit(1);
-    return settings;
+    try {
+      const [settings] = await db.select().from(loginPageSettings).limit(1);
+      return settings;
+    } catch (error) {
+      console.log('Login settings table not found, returning defaults');
+      return {
+        id: 1,
+        companyName: 'SalonPro',
+        logoUrl: null,
+        primaryColor: '#8B5CF6',
+        secondaryColor: '#EC4899',
+        welcomeMessage: 'Welcome to our Salon Management System',
+        footerText: 'Designed by - My Internet',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+    }
   }
 
   async updateLoginPageSettings(settings: Partial<InsertLoginPageSettings>): Promise<LoginPageSettings> {
