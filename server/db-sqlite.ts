@@ -26,15 +26,21 @@ sqlite.exec(`
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
     address TEXT,
+    city TEXT,
+    state TEXT,
+    zip_code TEXT,
     phone TEXT,
     email TEXT,
-    website TEXT,
+    description TEXT,
+    gst_number TEXT,
     logo_url TEXT,
-    enable_tax BOOLEAN DEFAULT false,
+    enable_tax INTEGER DEFAULT 1,
     tax_name TEXT DEFAULT 'GST',
-    tax_rate DECIMAL(5,2) DEFAULT 18.00,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    tax_rate REAL DEFAULT 18.00,
+    is_active INTEGER DEFAULT 1,
+    theme_color TEXT DEFAULT '#8B5CF6',
+    created_at INTEGER,
+    updated_at INTEGER
   );
 
   CREATE TABLE IF NOT EXISTS store_staff (

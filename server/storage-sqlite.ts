@@ -74,6 +74,35 @@ export interface IStorage {
 
   // Login page settings
   getLoginPageSettings(): Promise<any>;
+
+  // Additional methods needed by the application
+  generateInvoiceNumber(): Promise<string>;
+  searchCustomers(storeId: number, query: string): Promise<Customer[]>;
+  getUserStores(userId: string): Promise<Store[]>;
+  deleteStore(id: number): Promise<void>;
+  getStoreStaff(storeId: number): Promise<any[]>;
+  createStoreStaff(data: any): Promise<any>;
+  updateStoreStaff(id: number, data: any): Promise<any>;
+  deleteStoreStaff(id: number): Promise<void>;
+  updateProduct(id: number, data: Partial<InsertProduct>): Promise<Product>;
+  deleteProduct(id: number): Promise<void>;
+  updateService(id: number, data: Partial<InsertService>): Promise<Service>;
+  deleteService(id: number): Promise<void>;
+  deleteCustomer(id: number): Promise<void>;
+  getProductByBarcode(barcode: string): Promise<Product | undefined>;
+  updateMembershipPlan(id: number, data: Partial<InsertMembershipPlan>): Promise<MembershipPlan>;
+  deleteMembershipPlan(id: number): Promise<void>;
+  assignMembershipToCustomer(customerId: number, membershipPlanId: number): Promise<CustomerMembership>;
+  getServiceCategories(storeId: number): Promise<any[]>;
+  createServiceCategory(data: any): Promise<any>;
+  updateServiceCategory(id: number, data: any): Promise<any>;
+  deleteServiceCategory(id: number): Promise<void>;
+  getProductCategories(storeId: number): Promise<any[]>;
+  createProductCategory(data: any): Promise<any>;
+  updateProductCategory(id: number, data: any): Promise<any>;
+  deleteProductCategory(id: number): Promise<void>;
+  getCustomerWithMembership(id: number): Promise<any>;
+  getCustomerMembership(customerId: number): Promise<any>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -341,6 +370,310 @@ export class DatabaseStorage implements IStorage {
       welcomeMessage: 'Welcome to SalonPro',
       tagline: 'Professional Salon Management',
     };
+  }
+
+  // Additional methods implementation
+  async generateInvoiceNumber(): Promise<string> {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const timestamp = Date.now();
+    return `INV-${year}${month}-${timestamp}`;
+  }
+
+  async searchCustomers(storeId: number, query: string): Promise<Customer[]> {
+    const customers = await db
+      .select()
+      .from(customers)
+      .where(
+        and(
+          eq(customers.storeId, storeId),
+          or(
+            like(customers.firstName, `%${query}%`),
+            like(customers.lastName, `%${query}%`),
+            like(customers.mobile, `%${query}%`),
+            like(customers.email, `%${query}%`)
+          )
+        )
+      );
+    return customers;
+  }
+
+  async getUserStores(userId: string): Promise<Store[]> {
+    const userStoreIds = await db
+      .select({ storeId: storeStaff.storeId })
+      .from(storeStaff)
+      .where(eq(storeStaff.userId, userId));
+    
+    if (userStoreIds.length === 0) return [];
+    
+    const storeIds = userStoreIds.map(s => s.storeId);
+    const userStores = await db
+      .select()
+      .from(stores)
+      .where(sql`${stores.id} IN (${storeIds.join(',')})`);
+    
+    return userStores;
+  }
+
+  async deleteStore(id: number): Promise<void> {
+    await db.delete(stores).where(eq(stores.id, id));
+  }
+
+  async getStoreStaff(storeId: number): Promise<any[]> {
+    const staff = await db
+      .select({
+        id: storeStaff.id,
+        userId: storeStaff.userId,
+        role: storeStaff.role,
+        firstName: users.firstName,
+        lastName: users.lastName,
+        email: users.email,
+        mobile: users.mobile,
+      })
+      .from(storeStaff)
+      .leftJoin(users, eq(storeStaff.userId, users.id))
+      .where(eq(storeStaff.storeId, storeId));
+    
+    return staff;
+  }
+
+  async createStoreStaff(data: any): Promise<any> {
+    const now = Date.now();
+    const [staffMember] = await db
+      .insert(storeStaff)
+      .values({
+        ...data,
+        createdAt: now,
+        updatedAt: now,
+      })
+      .returning();
+    return staffMember;
+  }
+
+  async updateStoreStaff(id: number, data: any): Promise<any> {
+    const now = Date.now();
+    const [staffMember] = await db
+      .update(storeStaff)
+      .set({
+        ...data,
+        updatedAt: now,
+      })
+      .where(eq(storeStaff.id, id))
+      .returning();
+    return staffMember;
+  }
+
+  async deleteStoreStaff(id: number): Promise<void> {
+    await db.delete(storeStaff).where(eq(storeStaff.id, id));
+  }
+
+  async updateProduct(id: number, data: Partial<InsertProduct>): Promise<Product> {
+    const now = Date.now();
+    const [product] = await db
+      .update(products)
+      .set({
+        ...data,
+        updatedAt: now,
+      })
+      .where(eq(products.id, id))
+      .returning();
+    return product;
+  }
+
+  async deleteProduct(id: number): Promise<void> {
+    await db.delete(products).where(eq(products.id, id));
+  }
+
+  async updateService(id: number, data: Partial<InsertService>): Promise<Service> {
+    const now = Date.now();
+    const [service] = await db
+      .update(services)
+      .set({
+        ...data,
+        updatedAt: now,
+      })
+      .where(eq(services.id, id))
+      .returning();
+    return service;
+  }
+
+  async deleteService(id: number): Promise<void> {
+    await db.delete(services).where(eq(services.id, id));
+  }
+
+  async deleteCustomer(id: number): Promise<void> {
+    await db.delete(customers).where(eq(customers.id, id));
+  }
+
+  async getProductByBarcode(barcode: string): Promise<Product | undefined> {
+    const [product] = await db
+      .select()
+      .from(products)
+      .where(eq(products.barcode, barcode));
+    return product;
+  }
+
+  async updateMembershipPlan(id: number, data: Partial<InsertMembershipPlan>): Promise<MembershipPlan> {
+    const now = Date.now();
+    const [plan] = await db
+      .update(membershipPlans)
+      .set({
+        ...data,
+        updatedAt: now,
+      })
+      .where(eq(membershipPlans.id, id))
+      .returning();
+    return plan;
+  }
+
+  async deleteMembershipPlan(id: number): Promise<void> {
+    await db.delete(membershipPlans).where(eq(membershipPlans.id, id));
+  }
+
+  async assignMembershipToCustomer(customerId: number, membershipPlanId: number): Promise<CustomerMembership> {
+    const now = Date.now();
+    const [membership] = await db
+      .insert(customerMemberships)
+      .values({
+        customerId,
+        membershipPlanId,
+        startDate: new Date().toISOString().split('T')[0],
+        isActive: true,
+        createdAt: now,
+      })
+      .returning();
+    return membership;
+  }
+
+  async getServiceCategories(storeId: number): Promise<any[]> {
+    return await db
+      .select()
+      .from(serviceCategories)
+      .where(eq(serviceCategories.storeId, storeId));
+  }
+
+  async createServiceCategory(data: any): Promise<any> {
+    const now = Date.now();
+    const [category] = await db
+      .insert(serviceCategories)
+      .values({
+        ...data,
+        createdAt: now,
+        updatedAt: now,
+      })
+      .returning();
+    return category;
+  }
+
+  async updateServiceCategory(id: number, data: any): Promise<any> {
+    const now = Date.now();
+    const [category] = await db
+      .update(serviceCategories)
+      .set({
+        ...data,
+        updatedAt: now,
+      })
+      .where(eq(serviceCategories.id, id))
+      .returning();
+    return category;
+  }
+
+  async deleteServiceCategory(id: number): Promise<void> {
+    await db.delete(serviceCategories).where(eq(serviceCategories.id, id));
+  }
+
+  async getProductCategories(storeId: number): Promise<any[]> {
+    return await db
+      .select()
+      .from(productCategories)
+      .where(eq(productCategories.storeId, storeId));
+  }
+
+  async createProductCategory(data: any): Promise<any> {
+    const now = Date.now();
+    const [category] = await db
+      .insert(productCategories)
+      .values({
+        ...data,
+        createdAt: now,
+        updatedAt: now,
+      })
+      .returning();
+    return category;
+  }
+
+  async updateProductCategory(id: number, data: any): Promise<any> {
+    const now = Date.now();
+    const [category] = await db
+      .update(productCategories)
+      .set({
+        ...data,
+        updatedAt: now,
+      })
+      .where(eq(productCategories.id, id))
+      .returning();
+    return category;
+  }
+
+  async deleteProductCategory(id: number): Promise<void> {
+    await db.delete(productCategories).where(eq(productCategories.id, id));
+  }
+
+  async getCustomerWithMembership(id: number): Promise<any> {
+    const [customer] = await db
+      .select({
+        id: customers.id,
+        firstName: customers.firstName,
+        lastName: customers.lastName,
+        mobile: customers.mobile,
+        email: customers.email,
+        loyaltyPoints: customers.loyaltyPoints,
+        membershipId: customerMemberships.id,
+        membershipPlanId: customerMemberships.membershipPlanId,
+        membershipName: membershipPlans.name,
+        discountPercentage: membershipPlans.discountPercentage,
+        pointsMultiplier: membershipPlans.pointsMultiplier,
+      })
+      .from(customers)
+      .leftJoin(customerMemberships, and(
+        eq(customerMemberships.customerId, customers.id),
+        eq(customerMemberships.isActive, true)
+      ))
+      .leftJoin(membershipPlans, eq(membershipPlans.id, customerMemberships.membershipPlanId))
+      .where(eq(customers.id, id));
+    
+    return customer;
+  }
+
+  async getCustomerByMobile(mobile: string): Promise<Customer | undefined> {
+    const [customer] = await db
+      .select()
+      .from(customers)
+      .where(eq(customers.mobile, mobile));
+    return customer;
+  }
+
+  async getCustomerMembership(customerId: number): Promise<any> {
+    const [membership] = await db
+      .select({
+        id: customerMemberships.id,
+        membershipPlanId: customerMemberships.membershipPlanId,
+        startDate: customerMemberships.startDate,
+        endDate: customerMemberships.endDate,
+        isActive: customerMemberships.isActive,
+        membershipName: membershipPlans.name,
+        discountPercentage: membershipPlans.discountPercentage,
+        pointsMultiplier: membershipPlans.pointsMultiplier,
+      })
+      .from(customerMemberships)
+      .leftJoin(membershipPlans, eq(membershipPlans.id, customerMemberships.membershipPlanId))
+      .where(and(
+        eq(customerMemberships.customerId, customerId),
+        eq(customerMemberships.isActive, true)
+      ));
+    
+    return membership;
   }
 }
 
