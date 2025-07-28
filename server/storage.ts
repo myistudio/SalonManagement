@@ -2341,5 +2341,5 @@ export class DatabaseStorage implements IStorage {
   }
 }
 
-// Export SQLite storage instead
-export { storage } from './storage-sqlite';
+// Export PostgreSQL storage
+export const storage = new DatabaseStorage();

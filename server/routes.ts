@@ -1,6 +1,6 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
-import { storage } from "./storage-sqlite";
+import { storage } from "./storage";
 import { setupBasicAuth, isAuthenticated, hasStoreAccess, requireRole, requirePermission, Permission } from "./auth-basic";
 import multer from "multer";
 import path from "path";
@@ -15,7 +15,7 @@ import {
   users,
   storeStaff,
   customers,
-} from "@shared/schema-sqlite";
+} from "@shared/schema";
 import { z } from "zod";
 import { db } from "./db";
 import { eq, and, desc } from "drizzle-orm";
