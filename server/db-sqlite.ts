@@ -185,8 +185,8 @@ const insertSampleData = () => {
   try {
     // Insert admin user with correct password hash for 'admin123'
     sqlite.prepare(`
-      INSERT OR IGNORE INTO users (id, email, mobile, password, first_name, last_name, role)
-      VALUES ('admin_001', 'admin@salon.com', '9876543210', '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Admin', 'User', 'super_admin')
+      INSERT OR REPLACE INTO users (id, email, mobile, password, first_name, last_name, role)
+      VALUES ('admin_001', 'admin@salon.com', '9876543210', '$2b$10$9KIow1heR8dhuTVOU8UaP.R61ApRxLlZxJSKNBZ/F2FJrNa5KouDC', 'Admin', 'User', 'super_admin')
     `).run();
 
     // Insert login page settings
