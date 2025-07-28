@@ -86,8 +86,12 @@ export interface IStorage {
   // Transaction operations
   getTransactions(storeId: number): Promise<Transaction[]>;
   getTransaction(id: number): Promise<Transaction | undefined>;
-  createTransaction(transaction: InsertTransaction): Promise<Transaction>;
+  generateInvoiceNumber(storeId: number): Promise<string>;
+  createTransaction(transaction: InsertTransaction, items?: any[]): Promise<Transaction>;
   createTransactionItem(item: InsertTransactionItem): Promise<TransactionItem>;
+  getCustomerMembership(customerId: number): Promise<{ membershipPlan?: MembershipPlan } | undefined>;
+  updateCustomerLoyalty(customerId: number, pointsEarned: number, totalAmount: number): Promise<void>;
+  updateProductStock(productId: number, quantitySold: number): Promise<void>;
 
   // Login settings
   getLoginPageSettings(): Promise<LoginPageSettings | undefined>;
@@ -408,12 +412,97 @@ export class DatabaseStorage implements IStorage {
     return transaction;
   }
 
-  async createTransaction(transaction: InsertTransaction): Promise<Transaction> {
-    const [newTransaction] = await db
-      .insert(transactions)
-      .values(transaction)
-      .returning();
-    return newTransaction;
+  async generateInvoiceNumber(storeId: number): Promise<string> {
+    try {
+      // Use a simple timestamp-based approach to avoid schema issues
+      const timestamp = Date.now().toString().slice(-6);
+      return `ST${storeId}-${timestamp}`;
+    } catch (error) {
+      console.error('Error generating invoice number:', error);
+      // Fallback to basic number
+      const fallback = Math.floor(Math.random() * 999999).toString().padStart(6, '0');
+      return `ST${storeId}-${fallback}`;
+    }
+  }
+
+  async createTransaction(transaction: InsertTransaction, items?: any[]): Promise<Transaction> {
+    try {
+      // Create basic transaction data that matches the actual database schema
+      const basicTransactionData = {
+        storeId: transaction.storeId,
+        customerId: transaction.customerId || null,
+        invoiceNumber: transaction.invoiceNumber,
+        subtotal: transaction.subtotal,
+        discountAmount: transaction.discountAmount || 0,
+        taxAmount: transaction.taxAmount || 0,
+        totalAmount: transaction.totalAmount,
+        paymentMethod: transaction.paymentMethod || 'Cash',
+        staffId: transaction.staffId || null,
+        pointsEarned: transaction.pointsEarned || 0,
+        pointsRedeemed: transaction.pointsRedeemed || 0,
+        membershipDiscount: transaction.membershipDiscount || 0
+      };
+      
+      // Create the transaction first using raw SQL to avoid schema issues
+      const result = await db.run(sql`
+        INSERT INTO transactions (
+          store_id, customer_id, invoice_number, subtotal, discount_amount, 
+          tax_amount, total_amount, payment_method, staff_id, points_earned, 
+          points_redeemed, membership_discount, created_at
+        ) VALUES (
+          ${basicTransactionData.storeId}, ${basicTransactionData.customerId}, 
+          ${basicTransactionData.invoiceNumber}, ${basicTransactionData.subtotal}, 
+          ${basicTransactionData.discountAmount}, ${basicTransactionData.taxAmount}, 
+          ${basicTransactionData.totalAmount}, ${basicTransactionData.paymentMethod}, 
+          ${basicTransactionData.staffId}, ${basicTransactionData.pointsEarned}, 
+          ${basicTransactionData.pointsRedeemed}, ${basicTransactionData.membershipDiscount}, 
+          datetime('now')
+        )
+      `);
+
+      const transactionId = result.lastInsertRowid as number;
+
+      // Create transaction items if provided
+      if (items && items.length > 0) {
+        for (const item of items) {
+          await db.run(sql`
+            INSERT INTO transaction_items (
+              transaction_id, item_type, item_id, item_name, quantity, 
+              unit_price, total_price, service_staff_id, membership_plan_id, created_at
+            ) VALUES (
+              ${transactionId}, ${item.itemType}, ${item.itemId}, 
+              ${item.itemName}, ${item.quantity}, ${item.unitPrice}, 
+              ${item.totalPrice}, ${item.serviceStaffId}, ${item.membershipPlanId}, 
+              datetime('now')
+            )
+          `);
+        }
+      }
+
+      // Return a basic transaction object
+      return {
+        id: transactionId,
+        storeId: basicTransactionData.storeId,
+        customerId: basicTransactionData.customerId,
+        invoiceNumber: basicTransactionData.invoiceNumber,
+        subtotal: basicTransactionData.subtotal,
+        discountAmount: basicTransactionData.discountAmount,
+        taxAmount: basicTransactionData.taxAmount,
+        totalAmount: basicTransactionData.totalAmount,
+        paymentMethod: basicTransactionData.paymentMethod,
+        staffId: basicTransactionData.staffId,
+        pointsEarned: basicTransactionData.pointsEarned,
+        pointsRedeemed: basicTransactionData.pointsRedeemed,
+        membershipDiscount: basicTransactionData.membershipDiscount,
+        createdAt: new Date().toISOString(),
+        updatedAt: null,
+        isActive: true,
+        notes: null
+      } as Transaction;
+    } catch (error) {
+      console.error('Error creating transaction:', error);
+      throw error;
+    }
   }
 
   async createTransactionItem(item: InsertTransactionItem): Promise<TransactionItem> {
@@ -422,6 +511,66 @@ export class DatabaseStorage implements IStorage {
       .values(item)
       .returning();
     return newItem;
+  }
+
+  async getCustomerMembership(customerId: number): Promise<{ membershipPlan?: MembershipPlan } | undefined> {
+    try {
+      const [result] = await db
+        .select({
+          membershipPlan: membershipPlans
+        })
+        .from(customerMemberships)
+        .leftJoin(membershipPlans, eq(membershipPlans.id, customerMemberships.membershipPlanId))
+        .where(and(
+          eq(customerMemberships.customerId, customerId),
+          eq(customerMemberships.isActive, true)
+        ));
+
+      return result || undefined;
+    } catch (error) {
+      console.error('Error getting customer membership:', error);
+      return undefined;
+    }
+  }
+
+  async updateCustomerLoyalty(customerId: number, pointsEarned: number, totalAmount: number): Promise<void> {
+    try {
+      // Get current customer data
+      const customer = await this.getCustomer(customerId);
+      if (!customer) return;
+
+      // Update customer loyalty points and stats
+      await db
+        .update(customers)
+        .set({
+          loyaltyPoints: (customer.loyaltyPoints || 0) + pointsEarned,
+          totalVisits: (customer.totalVisits || 0) + 1,
+          totalSpent: (customer.totalSpent || 0) + totalAmount
+        })
+        .where(eq(customers.id, customerId));
+    } catch (error) {
+      console.error('Error updating customer loyalty:', error);
+      throw error;
+    }
+  }
+
+  async updateProductStock(productId: number, quantitySold: number): Promise<void> {
+    try {
+      const product = await this.getProduct(productId);
+      if (!product) return;
+
+      const newStock = Math.max(0, (product.stock || 0) - quantitySold);
+      
+      await db
+        .update(products)
+        .set({
+          stock: newStock
+        })
+        .where(eq(products.id, productId));
+    } catch (error) {
+      console.error('Error updating product stock:', error);
+      throw error;
+    }
   }
 
   // Login settings
