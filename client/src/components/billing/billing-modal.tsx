@@ -672,7 +672,7 @@ export default function BillingModal({ isOpen, onClose, storeId }: BillingModalP
                   </span>
                   {selectedCustomer.membership && (
                     <span className="text-xs text-purple-600 ml-2 font-medium">
-                      {selectedCustomer.membership.membershipPlan.name} ({selectedCustomer.membership.membershipPlan.discountPercentage}% off)
+                      {selectedCustomer.membership.membershipName} ({selectedCustomer.membership.discountPercentage}% off)
                     </span>
                   )}
                 </div>

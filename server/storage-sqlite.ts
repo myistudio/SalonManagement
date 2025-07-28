@@ -103,6 +103,8 @@ export interface IStorage {
   deleteProductCategory(id: number): Promise<void>;
   getCustomerWithMembership(id: number): Promise<any>;
   getCustomerMembership(customerId: number): Promise<any>;
+  getDashboardStats(storeId: number): Promise<any>;
+  getLowStockProducts(storeId: number): Promise<Product[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -674,6 +676,54 @@ export class DatabaseStorage implements IStorage {
       ));
     
     return membership;
+  }
+
+  async getDashboardStats(storeId: number): Promise<any> {
+    // Get total customers
+    const totalCustomers = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(customers)
+      .where(eq(customers.storeId, storeId));
+
+    // Get total products
+    const totalProducts = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(products)
+      .where(eq(products.storeId, storeId));
+
+    // Get total services
+    const totalServices = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(services)
+      .where(eq(services.storeId, storeId));
+
+    // Get recent transactions (last 30 days)
+    const recentTransactions = await db
+      .select({ total: sql<number>`sum(${transactions.totalAmount})` })
+      .from(transactions)
+      .where(and(
+        eq(transactions.storeId, storeId),
+        sql`${transactions.createdAt} >= datetime('now', '-30 days')`
+      ));
+
+    return {
+      totalCustomers: totalCustomers[0]?.count || 0,
+      totalProducts: totalProducts[0]?.count || 0,
+      totalServices: totalServices[0]?.count || 0,
+      monthlyRevenue: recentTransactions[0]?.total || 0,
+      activeAppointments: 0 // placeholder for now
+    };
+  }
+
+  async getLowStockProducts(storeId: number): Promise<Product[]> {
+    return await db
+      .select()
+      .from(products)
+      .where(and(
+        eq(products.storeId, storeId),
+        eq(products.isActive, true),
+        sql`${products.stock} <= ${products.minStock}`
+      ));
   }
 }
 
