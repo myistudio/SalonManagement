@@ -414,7 +414,7 @@ export default function BillingModal({ isOpen, onClose, storeId }: BillingModalP
     
     // Membership discount
     if (selectedCustomer?.membership) {
-      const membershipDiscount = getSubtotal() * (selectedCustomer.membership.membershipPlan.discountPercentage / 100);
+      const membershipDiscount = getSubtotal() * (selectedCustomer.membership.discountPercentage / 100);
       discount += membershipDiscount;
     }
     
@@ -436,7 +436,7 @@ export default function BillingModal({ isOpen, onClose, storeId }: BillingModalP
 
   const getPointsEarned = () => {
     const basePoints = Math.floor(getTotal() * 0.01); // 1% of total as points
-    const multiplier = selectedCustomer?.membership?.membershipPlan?.pointsMultiplier || 1;
+    const multiplier = selectedCustomer?.membership?.pointsMultiplier || 1;
     return Math.floor(basePoints * multiplier);
   };
 
@@ -480,7 +480,7 @@ export default function BillingModal({ isOpen, onClose, storeId }: BillingModalP
         totalAmount: getTotal().toFixed(2),
         pointsEarned: getPointsEarned(),
         pointsRedeemed: pointsToRedeem,
-        membershipDiscount: ((selectedCustomer?.membership?.membershipPlan?.discountPercentage || 0) / 100 * getSubtotal()).toFixed(2),
+        membershipDiscount: ((selectedCustomer?.membership?.discountPercentage || 0) / 100 * getSubtotal()).toFixed(2),
         paymentMethod: paymentMethod,
       },
       items: billItems.map(item => ({
@@ -630,7 +630,7 @@ export default function BillingModal({ isOpen, onClose, storeId }: BillingModalP
                       <div className="font-medium text-sm">{customer.firstName} {customer.lastName}</div>
                       <div className="text-xs text-gray-600">{customer.mobile} • {customer.loyaltyPoints} pts</div>
                       {customer.membership && (
-                        <div className="text-xs text-purple-600 font-medium">{customer.membership.membershipPlan.name} Member</div>
+                        <div className="text-xs text-purple-600 font-medium">{customer.membership.membershipName} Member</div>
                       )}
                     </div>
                   ))}
