@@ -465,7 +465,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put('/api/services/:id', isAuthenticated, async (req: any, res) => {
     try {
       const serviceId = parseInt(req.params.id);
-      const serviceData = insertServiceSchema.partial().parse(req.body);
+      
+      // Handle category assignment for services
+      const requestBody = { ...req.body };
+      
+      // If category is provided as a name, look up the category ID
+      if (requestBody.category !== undefined && requestBody.category !== '') {
+        const categories = await storage.getServiceCategories(parseInt(requestBody.storeId));
+        const category = categories.find(cat => cat.name === requestBody.category);
+        requestBody.categoryId = category ? category.id : null;
+        delete requestBody.category; // Remove category name from the data
+      } else if (requestBody.category === '') {
+        requestBody.categoryId = null;
+        delete requestBody.category;
+      }
+      
+      const serviceData = insertServiceSchema.partial().parse(requestBody);
       const service = await storage.updateService(serviceId, serviceData);
       res.json(service);
     } catch (error) {
@@ -599,7 +614,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (requestBody.price !== undefined) productData.price = requestBody.price.toString();
       if (requestBody.cost !== undefined) productData.cost = requestBody.cost ? requestBody.cost.toString() : null;
       if (requestBody.barcode !== undefined) productData.barcode = requestBody.barcode;
-      if (requestBody.category !== undefined) productData.category = requestBody.category;
+      
+      // Handle category - look up category ID by name if category name is provided
+      if (requestBody.category !== undefined && requestBody.category !== '') {
+        const categories = await storage.getProductCategories(parseInt(requestBody.storeId));
+        const category = categories.find(cat => cat.name === requestBody.category);
+        productData.categoryId = category ? category.id : null;
+      } else if (requestBody.category === '') {
+        productData.categoryId = null;
+      }
+      
       if (requestBody.brand !== undefined) productData.brand = requestBody.brand;
       if (requestBody.stock !== undefined) productData.stock = parseInt(requestBody.stock) || 0;
       if (requestBody.minStock !== undefined) productData.minStock = parseInt(requestBody.minStock) || 5;
