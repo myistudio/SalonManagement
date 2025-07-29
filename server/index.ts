@@ -1,10 +1,15 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import { startAutoBackup, cleanupOldBackups } from "./backup/database-backup";
+import { addTimezoneHeaders } from "./middleware/timezone";
 
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+
+// Add timezone headers to all responses
+app.use(addTimezoneHeaders);
 
 app.use((req, res, next) => {
   const start = Date.now();
@@ -66,5 +71,11 @@ app.use((req, res, next) => {
     reusePort: true,
   }, () => {
     log(`serving on port ${port}`);
+    
+    // Start database backup system
+    startAutoBackup();
+    
+    // Cleanup old backups on startup
+    cleanupOldBackups();
   });
 })();

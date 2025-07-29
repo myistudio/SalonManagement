@@ -1,5 +1,6 @@
 import { eq, desc, asc, and, or, gte, lte, inArray, sql, like } from "drizzle-orm";
 import { db } from "./db";
+import { getISTDateString, getISTDateTime } from "./utils/timezone";
 import {
   users,
   stores,
@@ -799,8 +800,9 @@ export class DatabaseStorage implements IStorage {
   // Dashboard operations
   async getDashboardStats(storeId: number): Promise<any> {
     try {
-      const today = new Date().toISOString().split('T')[0];
-      const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+      // Get IST dates using timezone utility
+      const today = getISTDateString();
+      const yesterday = getISTDateString(new Date(Date.now() - 24 * 60 * 60 * 1000));
       
       // Get basic counts with store filtering
       const customerCount = await db.select().from(customers).where(eq(customers.storeId, storeId));
