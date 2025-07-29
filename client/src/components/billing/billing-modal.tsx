@@ -690,36 +690,37 @@ export default function BillingModal({ isOpen, onClose, storeId }: BillingModalP
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 lg:gap-4">
-          {/* Left Column - Services & Products Side by Side */}
-          <div className="lg:col-span-8 space-y-4">
-            {/* Services, Products, and Memberships in Three Columns */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* iPad Optimized Layout: Services/Products on Left, Current Bill/Summary on Right */}
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
+          {/* Left Section - Services & Products */}
+          <div className="xl:col-span-2">
+            {/* Services and Products in Two Columns */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
               {/* Services Section */}
-              <div className="bg-white border-2 border-green-200 rounded-xl p-5 shadow-sm">
-                <h3 className="text-xl font-bold text-gray-900 mb-4">Services</h3>
-                <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 max-h-96 overflow-y-auto pr-2">
+              <div className="bg-white border-2 border-green-200 rounded-xl p-4 shadow-sm">
+                <h3 className="text-lg font-bold text-gray-900 mb-3">Services</h3>
+                <div className="grid grid-cols-2 gap-3 max-h-80 overflow-y-auto pr-1">
                   {typedServices.map((service: any) => (
                     <div 
                       key={service.id}
-                      className="w-full aspect-square min-h-[120px] border-2 border-gray-200 rounded-xl p-3 hover:border-green-400 hover:bg-green-50 hover:shadow-md transition-all duration-200 cursor-pointer flex flex-col items-center justify-center text-center touch-manipulation active:scale-95"
+                      className="w-full aspect-square min-h-[100px] border-2 border-gray-200 rounded-lg p-2 hover:border-green-400 hover:bg-green-50 hover:shadow-md transition-all duration-200 cursor-pointer flex flex-col items-center justify-center text-center touch-manipulation active:scale-95"
                       onClick={() => addServiceToBill(service)}
                     >
                       {service.imageUrl ? (
                         <img 
                           src={service.imageUrl} 
                           alt={service.name}
-                          className="w-12 h-12 object-cover rounded-lg mb-2"
+                          className="w-10 h-10 object-cover rounded-lg mb-1"
                         />
                       ) : (
-                        <div className="w-12 h-12 bg-green-200 rounded-lg mb-2 flex items-center justify-center">
-                          <Scissors size={16} className="text-green-600" />
+                        <div className="w-10 h-10 bg-green-200 rounded-lg mb-1 flex items-center justify-center">
+                          <Scissors size={14} className="text-green-600" />
                         </div>
                       )}
-                      <span className="text-sm font-semibold text-gray-900 line-clamp-2 leading-tight mb-1">
+                      <span className="text-xs font-semibold text-gray-900 line-clamp-2 leading-tight mb-1">
                         {service.name}
                       </span>
-                      <span className="text-sm text-green-600 font-bold">
+                      <span className="text-xs text-green-600 font-bold">
                         Rs. {service.price.toLocaleString()}
                       </span>
                       {service.duration && (
@@ -733,30 +734,30 @@ export default function BillingModal({ isOpen, onClose, storeId }: BillingModalP
               </div>
 
               {/* Products Section */}
-              <div className="bg-white border-2 border-orange-200 rounded-xl p-5 shadow-sm">
-                <h3 className="text-xl font-bold text-gray-900 mb-4">Products</h3>
-                <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 max-h-96 overflow-y-auto pr-2">
+              <div className="bg-white border-2 border-orange-200 rounded-xl p-4 shadow-sm">
+                <h3 className="text-lg font-bold text-gray-900 mb-3">Products</h3>
+                <div className="grid grid-cols-2 gap-3 max-h-80 overflow-y-auto pr-1">
                   {typedProducts.map((product: any) => (
                     <div 
                       key={product.id}
-                      className="w-full aspect-square min-h-[120px] border-2 border-gray-200 rounded-xl p-3 hover:border-orange-400 hover:bg-orange-50 hover:shadow-md transition-all duration-200 cursor-pointer flex flex-col items-center justify-center text-center touch-manipulation active:scale-95"
+                      className="w-full aspect-square min-h-[100px] border-2 border-gray-200 rounded-lg p-2 hover:border-orange-400 hover:bg-orange-50 hover:shadow-md transition-all duration-200 cursor-pointer flex flex-col items-center justify-center text-center touch-manipulation active:scale-95"
                       onClick={() => addProductToBill(product)}
                     >
                       {product.imageUrl ? (
                         <img 
                           src={product.imageUrl} 
                           alt={product.name}
-                          className="w-12 h-12 object-cover rounded-lg mb-2"
+                          className="w-10 h-10 object-cover rounded-lg mb-1"
                         />
                       ) : (
-                        <div className="w-12 h-12 bg-orange-200 rounded-lg mb-2 flex items-center justify-center">
-                          <Package size={16} className="text-orange-600" />
+                        <div className="w-10 h-10 bg-orange-200 rounded-lg mb-1 flex items-center justify-center">
+                          <Package size={14} className="text-orange-600" />
                         </div>
                       )}
-                      <span className="text-sm font-semibold text-gray-900 line-clamp-2 leading-tight mb-1">
+                      <span className="text-xs font-semibold text-gray-900 line-clamp-2 leading-tight mb-1">
                         {product.name}
                       </span>
-                      <span className="text-sm text-orange-600 font-bold">
+                      <span className="text-xs text-orange-600 font-bold">
                         Rs. {product.price.toLocaleString()}
                       </span>
                       {product.stockQuantity !== undefined && (
@@ -773,9 +774,9 @@ export default function BillingModal({ isOpen, onClose, storeId }: BillingModalP
             </div>
 
             {/* Product Scanner */}
-            <div className="bg-white border-2 border-purple-200 rounded-xl p-5 shadow-sm">
-              <Label className="text-lg font-semibold text-gray-800 mb-3 block">Scan Product</Label>
-              <div className="flex space-x-3">
+            <div className="bg-white border-2 border-purple-200 rounded-xl p-4 shadow-sm">
+              <Label className="text-base font-semibold text-gray-800 mb-2 block">Scan Product</Label>
+              <div className="flex space-x-2">
                 <Input
                   placeholder="Scan or enter barcode..."
                   value={productScan}
@@ -785,7 +786,7 @@ export default function BillingModal({ isOpen, onClose, storeId }: BillingModalP
                       scanProduct.mutate(productScan.trim());
                     }
                   }}
-                  className="flex-1 h-12 text-base border-2 focus:border-purple-500 touch-manipulation"
+                  className="flex-1 h-10 text-sm border-2 focus:border-purple-500 touch-manipulation"
                 />
                 <Button
                   onClick={() => {
@@ -794,16 +795,16 @@ export default function BillingModal({ isOpen, onClose, storeId }: BillingModalP
                     }
                   }}
                   disabled={!productScan.trim() || scanProduct.isPending}
-                  className="h-12 px-6 bg-purple-500 hover:bg-purple-600 touch-manipulation active:scale-95"
+                  className="h-10 px-4 bg-purple-500 hover:bg-purple-600 touch-manipulation active:scale-95"
                 >
-                  <QrCode size={20} />
+                  <QrCode size={16} />
                 </Button>
               </div>
             </div>
           </div>
 
-          {/* Right Column - Wider Bill Summary & Checkout */}
-          <div className="lg:col-span-4 space-y-4">
+          {/* Right Column - Current Bill & Bill Summary */}
+          <div className="xl:col-span-1 space-y-4">
             {/* Walk-in Form */}
             {showWalkInForm && (
               <Card className="bg-blue-50">
@@ -931,15 +932,15 @@ export default function BillingModal({ isOpen, onClose, storeId }: BillingModalP
             )}
 
             {/* Current Bill */}
-            <div className="bg-white border-2 border-gray-300 rounded-xl p-5 shadow-sm">
-              <h3 className="text-xl font-bold text-gray-900 mb-4">Current Bill</h3>
+            <div className="bg-white border-2 border-gray-300 rounded-xl p-4 shadow-sm">
+              <h3 className="text-lg font-bold text-gray-900 mb-3">Current Bill</h3>
               
               {billItems.length === 0 ? (
-                <div className="text-center py-4 text-gray-500">
-                  <p className="text-sm">No items added yet</p>
+                <div className="text-center py-3 text-gray-500">
+                  <p className="text-xs">No items added yet</p>
                 </div>
               ) : (
-                <div className="space-y-2 max-h-80 overflow-y-auto pr-1">
+                <div className="space-y-1 max-h-60 overflow-y-auto pr-1">
                   {billItems.map((item, index) => (
                     <div key={`${item.type}-${item.id}-${index}`} className="border border-gray-200 rounded-lg p-2 bg-gray-50">
                       <div className="flex items-center justify-between gap-2">
@@ -1033,18 +1034,18 @@ export default function BillingModal({ isOpen, onClose, storeId }: BillingModalP
 
             {/* Bill Summary & Checkout */}
             {billItems.length > 0 && (
-              <div className="bg-gradient-to-br from-blue-50 to-indigo-100 border-2 border-blue-300 rounded-xl p-5 shadow-sm">
-                <h3 className="text-xl font-bold text-gray-900 mb-4">Bill Summary</h3>
+              <div className="bg-gradient-to-br from-blue-50 to-indigo-100 border-2 border-blue-300 rounded-xl p-4 shadow-sm">
+                <h3 className="text-lg font-bold text-gray-900 mb-3">Bill Summary</h3>
                 
                 {/* Totals */}
-                <div className="space-y-3 mb-5">
-                  <div className="flex justify-between items-center text-base">
+                <div className="space-y-2 mb-4">
+                  <div className="flex justify-between items-center text-sm">
                     <span className="font-semibold text-gray-700">Subtotal:</span>
                     <span className="font-bold text-gray-900">Rs. {getSubtotal().toLocaleString()}</span>
                   </div>
                   
                   {getDiscount() > 0 && (
-                    <div className="flex justify-between items-center text-base text-green-600">
+                    <div className="flex justify-between items-center text-sm text-green-600">
                       <span className="font-semibold">Discount:</span>
                       <span className="font-bold">- Rs. {getDiscount().toLocaleString()}</span>
                     </div>
@@ -1052,7 +1053,7 @@ export default function BillingModal({ isOpen, onClose, storeId }: BillingModalP
                   
                   {/* Show GST only if store has tax enabled */}
                   {store?.enableTax && (
-                    <div className="flex justify-between items-center text-base">
+                    <div className="flex justify-between items-center text-sm">
                       <span className="font-semibold text-gray-700">
                         {store?.taxName || 'GST'} ({store?.taxRate || 18}%):
                       </span>
@@ -1060,15 +1061,15 @@ export default function BillingModal({ isOpen, onClose, storeId }: BillingModalP
                     </div>
                   )}
                   
-                  <Separator className="my-3" />
+                  <Separator className="my-2" />
                   
-                  <div className="flex justify-between items-center text-xl font-bold text-blue-600">
+                  <div className="flex justify-between items-center text-lg font-bold text-blue-600">
                     <span>Total:</span>
                     <span>Rs. {getTotal().toLocaleString()}</span>
                   </div>
                   
                   {getPointsEarned() > 0 && (
-                    <div className="text-center text-base text-orange-600 font-semibold bg-orange-50 rounded-lg p-2">
+                    <div className="text-center text-sm text-orange-600 font-semibold bg-orange-50 rounded-lg p-2">
                       Points to earn: {getPointsEarned()}
                     </div>
                   )}
