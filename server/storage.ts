@@ -32,7 +32,7 @@ import {
   type StoreStaff,
   type LoginPageSettings,
   type InsertLoginPageSettings
-} from "@shared/schema-sqlite";
+} from "@shared/schema";
 
 export interface IStorage {
   // User operations (required for Replit Auth)
