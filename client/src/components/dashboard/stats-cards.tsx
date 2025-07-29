@@ -8,8 +8,16 @@ interface StatsCardsProps {
 
 export default function StatsCards({ storeId }: StatsCardsProps) {
   const { data: stats = {}, isLoading } = useQuery({
-    queryKey: [`/api/dashboard/stats/${storeId}`],
+    queryKey: ["/api/dashboard/stats", storeId],
+    queryFn: async () => {
+      const res = await fetch(`/api/dashboard/stats/${storeId}`, {
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error(`${res.status}: ${res.statusText}`);
+      return res.json();
+    },
     enabled: !!storeId,
+    refetchInterval: 30000, // Refresh every 30 seconds for live data
   });
 
   if (isLoading) {
@@ -26,21 +34,24 @@ export default function StatsCards({ storeId }: StatsCardsProps) {
     );
   }
 
+  const revenueChange = (stats as any)?.revenueChange || 0;
+  const isPositiveChange = revenueChange >= 0;
+  
   const statsData = [
     {
       title: "Today's Revenue",
-      value: `₹${parseFloat((stats as any)?.todayRevenue || '0').toLocaleString()}`,
+      value: `Rs. ${parseFloat((stats as any)?.todaysRevenue || '0').toLocaleString()}`,
       icon: DollarSign,
       color: "bg-green-100 text-green-600",
-      change: "+12.5% from yesterday",
-      changeColor: "text-green-600"
+      change: `${isPositiveChange ? '+' : ''}${revenueChange}% from yesterday`,
+      changeColor: isPositiveChange ? "text-green-600" : "text-red-600"
     },
     {
       title: "Customers Served", 
       value: (stats as any)?.customersToday || 0,
       icon: Users,
       color: "bg-blue-100 text-blue-600",
-      change: "+8 new customers",
+      change: `+${(stats as any)?.newCustomersToday || 0} new customers`,
       changeColor: "text-blue-600"
     },
     {
@@ -48,7 +59,7 @@ export default function StatsCards({ storeId }: StatsCardsProps) {
       value: (stats as any)?.servicesToday || 0,
       icon: Waves,
       color: "bg-purple-100 text-purple-600",
-      change: "Most popular: Pedicure",
+      change: `${(stats as any)?.todaysTransactions || 0} transactions today`,
       changeColor: "text-purple-600"
     },
     {
@@ -56,7 +67,7 @@ export default function StatsCards({ storeId }: StatsCardsProps) {
       value: (stats as any)?.activeMembers || 0,
       icon: Crown,
       color: "bg-amber-100 text-amber-600",
-      change: "3 VIP renewed today",
+      change: `Total memberships active`,
       changeColor: "text-amber-600"
     }
   ];

@@ -800,6 +800,7 @@ export class DatabaseStorage implements IStorage {
   async getDashboardStats(storeId: number): Promise<any> {
     try {
       const today = new Date().toISOString().split('T')[0];
+      const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().split('T')[0];
       
       // Get basic counts with store filtering
       const customerCount = await db.select().from(customers).where(eq(customers.storeId, storeId));
@@ -813,14 +814,57 @@ export class DatabaseStorage implements IStorage {
           like(transactions.createdAt, `${today}%`)
         ));
       
+      // Get yesterday's transactions for comparison
+      const yesterdayTransactions = await db.select().from(transactions)
+        .where(and(
+          eq(transactions.storeId, storeId),
+          like(transactions.createdAt, `${yesterday}%`)
+        ));
+      
+      // Calculate revenue
       const todaysRevenue = todayTransactions.reduce((sum, t) => sum + (t.totalAmount || 0), 0);
+      const yesterdaysRevenue = yesterdayTransactions.reduce((sum, t) => sum + (t.totalAmount || 0), 0);
+      
+      // Calculate revenue change percentage
+      const revenueChange = yesterdaysRevenue > 0 
+        ? ((todaysRevenue - yesterdaysRevenue) / yesterdaysRevenue * 100).toFixed(1)
+        : todaysRevenue > 0 ? "100" : "0";
+      
+      // Get unique customers served today
+      const customersToday = [...new Set(todayTransactions.map(t => t.customerId))].length;
+      
+      // Get today's customers created
+      const newCustomersToday = await db.select().from(customers)
+        .where(and(
+          eq(customers.storeId, storeId),
+          like(customers.createdAt, `${today}%`)
+        ));
+      
+      // Count services from today's transaction items
+      const todayTransactionItems = await db.select().from(transactionItems)
+        .where(sql`transactionId IN (SELECT id FROM transactions WHERE storeId = ${storeId} AND createdAt LIKE '${today}%')`);
+      
+      const servicesToday = todayTransactionItems.filter(item => item.itemType === 'service').length;
+      
+      // Get active memberships
+      const activeMemberships = await db.select().from(customerMemberships)
+        .where(and(
+          sql`storeId = ${storeId}`,
+          sql`status = 'active'`
+        ));
       
       return {
         customers: customerCount.length,
         products: productCount.length,
         services: serviceCount.length,
         todaysRevenue,
-        todaysTransactions: todayTransactions.length
+        yesterdaysRevenue,
+        revenueChange: parseFloat(revenueChange),
+        todaysTransactions: todayTransactions.length,
+        customersToday,
+        newCustomersToday: newCustomersToday.length,
+        servicesToday,
+        activeMembers: activeMemberships.length
       };
     } catch (error) {
       console.error('Error getting dashboard stats:', error);
@@ -829,7 +873,13 @@ export class DatabaseStorage implements IStorage {
         products: 0,
         services: 0,
         todaysRevenue: 0,
-        todaysTransactions: 0
+        yesterdaysRevenue: 0,
+        revenueChange: 0,
+        todaysTransactions: 0,
+        customersToday: 0,
+        newCustomersToday: 0,
+        servicesToday: 0,
+        activeMembers: 0
       };
     }
   }

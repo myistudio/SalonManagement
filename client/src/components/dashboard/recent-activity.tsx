@@ -13,12 +13,26 @@ interface RecentActivityProps {
 
 export default function RecentActivity({ storeId }: RecentActivityProps) {
   const { data: transactions = [], isLoading } = useQuery({
-    queryKey: [`/api/transactions`, storeId, 'recent'],
+    queryKey: ["/api/transactions", storeId, 'recent'],
+    queryFn: async () => {
+      const res = await fetch(`/api/transactions?storeId=${storeId}&limit=5`, {
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error(`${res.status}: ${res.statusText}`);
+      return res.json();
+    },
     enabled: !!storeId,
   });
 
   const { data: appointments = [], isLoading: appointmentsLoading } = useQuery({
-    queryKey: [`/api/appointments`, storeId],
+    queryKey: ["/api/appointments", storeId],
+    queryFn: async () => {
+      const res = await fetch(`/api/appointments?storeId=${storeId}`, {
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error(`${res.status}: ${res.statusText}`);
+      return res.json();
+    },
     enabled: !!storeId,
   });
 
