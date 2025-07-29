@@ -177,11 +177,8 @@ export default function SettingsPage() {
     queryKey: ["/api/stores"],
   });
 
-  // Fetch current store details
-  const { data: store } = useQuery<Store>({
-    queryKey: ["/api/stores", selectedStore],
-    enabled: !!selectedStore,
-  });
+  // Get current store details from the stores list
+  const store = stores.find(s => s.id === selectedStore);
 
   // Store update mutation
   const updateStoreMutation = useMutation({
@@ -197,7 +194,6 @@ export default function SettingsPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/stores"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/stores", selectedStore] });
       toast({
         title: "Store Updated",
         description: "Store settings have been updated successfully.",
@@ -349,7 +345,7 @@ export default function SettingsPage() {
               </CardHeader>
               <CardContent>
                 {store ? (
-                  <form onSubmit={handleSubmit} className="space-y-6">
+                  <form key={store.id} onSubmit={handleSubmit} className="space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="name">Store Name</Label>
@@ -487,7 +483,18 @@ export default function SettingsPage() {
                   </form>
                 ) : (
                   <div className="text-center py-8">
-                    <p className="text-muted-foreground">Select a store to configure</p>
+                    <p className="text-muted-foreground">
+                      {selectedStore ? "Failed to load store data. Please check your permissions." : "Select a store to configure"}
+                    </p>
+                    {selectedStore && (
+                      <Button 
+                        onClick={() => queryClient.invalidateQueries({ queryKey: ["/api/stores"] })}
+                        className="mt-2"
+                        variant="outline"
+                      >
+                        Retry Loading
+                      </Button>
+                    )}
                   </div>
                 )}
               </CardContent>
