@@ -207,7 +207,7 @@ export default function Appointments() {
     const appointmentData = {
       storeId: selectedStoreId,
       customerName: bookingData.customerName,
-      customerMobile: bookingData.customerMobile,
+      customerPhone: bookingData.customerMobile,
       customerEmail: bookingData.customerEmail || null,
       dateOfBirth: bookingData.dateOfBirth || null,
       gender: bookingData.gender || null,

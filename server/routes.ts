@@ -1707,6 +1707,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Customer phone number is required" });
       }
       
+      // Map serviceIds array to services JSON string for database compatibility
+      if (requestBody.serviceIds && Array.isArray(requestBody.serviceIds)) {
+        requestBody.services = JSON.stringify(requestBody.serviceIds);
+        delete requestBody.serviceIds;
+      } else if (!requestBody.services) {
+        return res.status(400).json({ message: "Services are required" });
+      }
+      
       if (requestBody.dateOfBirth === '') {
         requestBody.dateOfBirth = null;
       }
