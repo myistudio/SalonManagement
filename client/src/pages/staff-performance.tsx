@@ -4,6 +4,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { isUnauthorizedError } from "@/lib/authUtils";
+import { useStore } from "@/contexts/store-context";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -25,7 +26,7 @@ import {
 export default function StaffPerformance() {
   const { toast } = useToast();
   const { isAuthenticated, isLoading } = useAuth();
-  const [selectedStoreId, setSelectedStoreId] = useState<number>(9);
+  const { selectedStoreId } = useStore();
   const [selectedPeriod, setSelectedPeriod] = useState<'daily' | 'weekly' | 'monthly'>('daily');
 
   useEffect(() => {
@@ -70,7 +71,7 @@ export default function StaffPerformance() {
   const { startDate, endDate } = getDateRange();
 
   // Fetch staff performance data
-  const { data: staffPerformance = [], isLoading: performanceLoading } = useQuery({
+  const { data: staffPerformanceData = {}, isLoading: performanceLoading } = useQuery({
     queryKey: [`/api/staff/performance`, selectedStoreId, selectedPeriod, startDate, endDate],
     queryFn: async () => {
       const response = await apiRequest('GET', `/api/staff/performance?storeId=${selectedStoreId}&startDate=${startDate}&endDate=${endDate}`);
@@ -79,6 +80,9 @@ export default function StaffPerformance() {
     enabled: !!selectedStoreId,
     retry: false,
   });
+
+  // Extract performance array from response data
+  const staffPerformance = Array.isArray(staffPerformanceData?.performance) ? staffPerformanceData.performance : [];
 
   // Fetch staff list
   const { data: staff = [], isLoading: staffLoading } = useQuery({
