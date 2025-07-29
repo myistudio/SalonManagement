@@ -824,6 +824,40 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
+  async updateAppointment(id: number, updates: any): Promise<any> {
+    try {
+      const istTimestamp = getISTDateTime();
+      const updatesWithTimestamp = {
+        ...updates,
+        updatedAt: istTimestamp
+      };
+
+      const [updated] = await db
+        .update(appointments)
+        .set(updatesWithTimestamp)
+        .where(eq(appointments.id, id))
+        .returning();
+
+      return updated;
+    } catch (error) {
+      console.error('Error updating appointment:', error);
+      throw error;
+    }
+  }
+
+  async deleteAppointment(id: number): Promise<boolean> {
+    try {
+      await db
+        .delete(appointments)
+        .where(eq(appointments.id, id));
+
+      return true;
+    } catch (error) {
+      console.error('Error deleting appointment:', error);
+      throw error;
+    }
+  }
+
   // Appointment Settings operations
   async getAppointmentSettings(storeId: number): Promise<any> {
     try {
