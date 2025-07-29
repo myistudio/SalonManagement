@@ -31,7 +31,7 @@ interface Service {
 interface AppointmentForm {
   storeId: number;
   customerName: string;
-  customerMobile: string;
+  customerPhone: string;
   customerEmail: string;
   dateOfBirth: string;
   gender: string;
@@ -54,7 +54,7 @@ export default function AppointmentBooking() {
   const [selectedServices, setSelectedServices] = useState<Service[]>([]);
   const [formData, setFormData] = useState<Partial<AppointmentForm>>({
     customerName: "",
-    customerMobile: "",
+    customerPhone: "",
     customerEmail: "",
     dateOfBirth: "",
     gender: "",
@@ -102,7 +102,7 @@ export default function AppointmentBooking() {
       setSelectedServices([]);
       setFormData({
         customerName: "",
-        customerMobile: "",
+        customerPhone: "",
         customerEmail: "",
         dateOfBirth: "",
         gender: "",
@@ -145,7 +145,7 @@ export default function AppointmentBooking() {
       return;
     }
 
-    if (!formData.customerName || !formData.customerMobile) {
+    if (!formData.customerName || !formData.customerPhone) {
       toast({
         title: "Error",
         description: "Please provide your name and mobile number",
@@ -178,7 +178,7 @@ export default function AppointmentBooking() {
     const appointmentData: AppointmentForm = {
       storeId: selectedStore.id,
       customerName: formData.customerName!,
-      customerMobile: formData.customerMobile!,
+      customerPhone: formData.customerPhone!,
       customerEmail: formData.customerEmail || "",
       dateOfBirth: formData.dateOfBirth || null,
       gender: formData.gender || "",
@@ -342,12 +342,12 @@ export default function AppointmentBooking() {
                   </div>
 
                   <div>
-                    <Label htmlFor="customerMobile">Mobile Number *</Label>
+                    <Label htmlFor="customerPhone">Mobile Number *</Label>
                     <Input
-                      id="customerMobile"
+                      id="customerPhone"
                       type="tel"
-                      value={formData.customerMobile}
-                      onChange={(e) => setFormData({...formData, customerMobile: e.target.value})}
+                      value={formData.customerPhone}
+                      onChange={(e) => setFormData({...formData, customerPhone: e.target.value})}
                       required
                     />
                   </div>

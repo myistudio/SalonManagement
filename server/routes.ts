@@ -1695,6 +1695,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       // Handle empty string dates properly for public booking
       const requestBody = { ...req.body };
+      
+      // Map customerMobile to customerPhone for database compatibility
+      if (requestBody.customerMobile) {
+        requestBody.customerPhone = requestBody.customerMobile;
+        delete requestBody.customerMobile;
+      }
+      
+      // Ensure customerPhone is not empty
+      if (!requestBody.customerPhone || requestBody.customerPhone.trim() === '') {
+        return res.status(400).json({ message: "Customer phone number is required" });
+      }
+      
       if (requestBody.dateOfBirth === '') {
         requestBody.dateOfBirth = null;
       }
@@ -1708,6 +1720,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         requestBody.notes = null;
       }
       
+      console.log('Creating appointment with data:', requestBody);
       const appointment = await storage.createAppointment(requestBody);
       res.status(201).json(appointment);
     } catch (error) {
