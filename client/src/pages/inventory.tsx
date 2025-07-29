@@ -31,7 +31,7 @@ export default function Inventory() {
   const { toast } = useToast();
   const { isAuthenticated, isLoading } = useAuth();
   const queryClient = useQueryClient();
-  const [selectedStoreId, setSelectedStoreId] = useState<number>(9);
+  const [selectedStoreId, setSelectedStoreId] = useState<number>(1);
   const [searchTerm, setSearchTerm] = useState("");
   const [showProductForm, setShowProductForm] = useState(false);
   const [showBillingModal, setShowBillingModal] = useState(false);

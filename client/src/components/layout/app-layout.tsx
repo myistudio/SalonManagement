@@ -12,7 +12,7 @@ interface AppLayoutProps {
 export default function AppLayout({ children }: AppLayoutProps) {
   const { user } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [selectedStoreId, setSelectedStoreId] = useState<number>(9);
+  const [selectedStoreId, setSelectedStoreId] = useState<number>(1);
   const [showBillingModal, setShowBillingModal] = useState(false);
 
   // Get stores for the header dropdown

@@ -384,7 +384,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Service category routes
   app.get("/api/service-categories", isAuthenticated, async (req: any, res) => {
     try {
-      const storeId = parseInt(req.query.storeId);
+      const storeId = parseInt(req.query.storeId as string);
       if (!storeId) {
         return res.status(400).json({ message: "Store ID is required" });
       }

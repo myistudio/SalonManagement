@@ -20,7 +20,7 @@ export default function Services() {
   const { toast } = useToast();
   const { isAuthenticated, isLoading } = useAuth();
   const queryClient = useQueryClient();
-  const [selectedStoreId, setSelectedStoreId] = useState<number>(9);
+  const [selectedStoreId, setSelectedStoreId] = useState<number>(1);
   const [searchTerm, setSearchTerm] = useState("");
   const [showServiceForm, setShowServiceForm] = useState(false);
   const [showBillingModal, setShowBillingModal] = useState(false);
