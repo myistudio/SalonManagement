@@ -70,7 +70,8 @@ export default function Memberships() {
         title: "Success",
         description: "Membership plan deleted successfully",
       });
-      queryClient.invalidateQueries({ queryKey: [`/api/memberships?storeId=${selectedStoreId}`] });
+      queryClient.invalidateQueries({ queryKey: ['/api/memberships'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/membership-plans'] });
     },
     onError: (error: any) => {
       if (isUnauthorizedError(error)) {

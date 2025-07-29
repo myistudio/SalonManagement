@@ -382,6 +382,10 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteMembershipPlan(id: number): Promise<void> {
+    // First, remove any customer memberships with this plan
+    await db.delete(customerMemberships).where(eq(customerMemberships.membershipPlanId, id));
+    
+    // Then delete the membership plan
     await db.delete(membershipPlans).where(eq(membershipPlans.id, id));
   }
 

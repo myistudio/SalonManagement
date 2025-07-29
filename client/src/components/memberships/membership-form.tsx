@@ -53,7 +53,8 @@ export default function MembershipForm({ storeId, membership, onSuccess }: Membe
         title: "Success",
         description: `Membership plan ${membership ? 'updated' : 'created'} successfully`,
       });
-      queryClient.invalidateQueries({ queryKey: [`/api/memberships?storeId=${storeId}`] });
+      queryClient.invalidateQueries({ queryKey: ['/api/memberships'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/membership-plans'] });
       onSuccess();
     },
     onError: (error) => {
