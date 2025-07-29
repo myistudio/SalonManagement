@@ -45,8 +45,8 @@ export default function Header({ selectedStoreId, onStoreChange, isMobileMenuOpe
           </div>
 
           <div className="flex items-center space-x-4">
-            {/* Store Selector - For users with multiple store access */}
-            {stores.length > 1 && (
+            {/* Store Selector - Always show for testing */}
+            {stores.length > 0 && (
               <div className="hidden md:block">
                 <Select 
                   value={selectedStoreId?.toString()} 

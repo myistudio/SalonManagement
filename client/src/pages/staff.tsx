@@ -72,7 +72,7 @@ export default function Staff({ selectedStoreId = 1 }: StaffProps) {
   const { data: staff = [], isLoading: staffLoading } = useQuery({
     queryKey: ["/api/staff", selectedStoreId],
     queryFn: async () => {
-      const res = await fetch(`/api/staff?storeId=${selectedStoreId}`, {
+      const res = await fetch(`/api/stores/${selectedStoreId}/staff`, {
         credentials: "include",
       });
       if (!res.ok) throw new Error(`${res.status}: ${res.statusText}`);

@@ -43,7 +43,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
         
         <main className="flex-1 lg:ml-64 pt-16">
           {isValidElement(children) 
-            ? cloneElement(children, { selectedStoreId })
+            ? cloneElement(children as React.ReactElement<any>, { selectedStoreId })
             : children}
         </main>
       </div>

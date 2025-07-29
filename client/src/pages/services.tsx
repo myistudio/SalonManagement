@@ -44,7 +44,14 @@ export default function Services({ selectedStoreId = 1 }: ServicesProps) {
   }, [isAuthenticated, isLoading, toast]);
 
   const { data: services = [], isLoading: servicesLoading } = useQuery({
-    queryKey: [`/api/services?storeId=${selectedStoreId}`],
+    queryKey: ["/api/services", selectedStoreId],
+    queryFn: async () => {
+      const res = await fetch(`/api/services?storeId=${selectedStoreId}`, {
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error(`${res.status}: ${res.statusText}`);
+      return res.json();
+    },
     enabled: !!selectedStoreId,
     retry: false,
   });

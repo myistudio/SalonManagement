@@ -55,7 +55,14 @@ export default function Inventory({ selectedStoreId = 1 }: InventoryProps) {
   }, [isAuthenticated, isLoading, toast]);
 
   const { data: products = [], isLoading: productsLoading } = useQuery({
-    queryKey: [`/api/products?storeId=${selectedStoreId}`],
+    queryKey: ["/api/products", selectedStoreId],
+    queryFn: async () => {
+      const res = await fetch(`/api/products?storeId=${selectedStoreId}`, {
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error(`${res.status}: ${res.statusText}`);
+      return res.json();
+    },
     enabled: !!selectedStoreId,
     retry: false,
   });
