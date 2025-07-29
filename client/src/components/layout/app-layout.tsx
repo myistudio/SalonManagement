@@ -13,6 +13,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
   const { user } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [selectedStoreId, setSelectedStoreId] = useState<number>(1);
+  console.log("AppLayout - selectedStoreId:", selectedStoreId);
   const [showBillingModal, setShowBillingModal] = useState(false);
 
   // Get stores for the header dropdown
@@ -42,9 +43,11 @@ export default function AppLayout({ children }: AppLayoutProps) {
         />
         
         <main className="flex-1 lg:ml-64 pt-16">
-          {isValidElement(children) 
-            ? cloneElement(children as React.ReactElement<any>, { selectedStoreId })
-            : children}
+          <div key={selectedStoreId}>
+            {isValidElement(children) 
+              ? cloneElement(children as React.ReactElement<any>, { selectedStoreId, key: selectedStoreId })
+              : children}
+          </div>
         </main>
       </div>
 

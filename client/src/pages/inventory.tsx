@@ -32,6 +32,7 @@ interface InventoryProps {
 }
 
 export default function Inventory({ selectedStoreId = 1 }: InventoryProps) {
+  console.log("Inventory page - selectedStoreId:", selectedStoreId);
   const { toast } = useToast();
   const { isAuthenticated, isLoading } = useAuth();
   const queryClient = useQueryClient();

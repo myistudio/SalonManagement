@@ -23,6 +23,7 @@ interface CustomersProps {
 }
 
 export default function Customers({ selectedStoreId = 1 }: CustomersProps) {
+  console.log("Customers page - selectedStoreId:", selectedStoreId);
   const { toast } = useToast();
   const { isAuthenticated, isLoading } = useAuth();
   const queryClient = useQueryClient();
