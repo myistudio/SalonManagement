@@ -672,14 +672,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put('/api/memberships/:id', isAuthenticated, async (req: any, res) => {
     try {
       const id = parseInt(req.params.id);
-      const planData = insertMembershipPlanSchema.partial().parse(req.body);
+      
+      // Manual validation and data processing for membership plan updates
+      const planData: any = {};
+      if (req.body.name) planData.name = req.body.name;
+      if (req.body.description !== undefined) planData.description = req.body.description || null;
+      if (req.body.price) planData.price = parseFloat(req.body.price);
+      if (req.body.durationMonths) planData.durationMonths = parseInt(req.body.durationMonths);
+      if (req.body.discountPercentage !== undefined) planData.discountPercentage = parseFloat(req.body.discountPercentage) || 0;
+      if (req.body.pointsMultiplier !== undefined) planData.pointsMultiplier = parseFloat(req.body.pointsMultiplier) || 1.0;
+      if (req.body.benefits !== undefined) planData.benefits = req.body.benefits || null;
+      if (req.body.isActive !== undefined) planData.isActive = req.body.isActive;
+      
+      console.log('Updating membership plan with data:', planData);
       const plan = await storage.updateMembershipPlan(id, planData);
       res.json(plan);
     } catch (error) {
       console.error('Error updating membership plan:', error);
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: "Invalid membership plan data", errors: error.errors });
-      }
       res.status(500).json({ message: "Failed to update membership plan" });
     }
   });

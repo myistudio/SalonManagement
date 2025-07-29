@@ -104,8 +104,30 @@ export const services = sqliteTable('services', {
   description: text('description'),
   price: real('price').notNull(),
   duration: integer('duration').default(60),
-  categoryId: integer('category_id'),
+  categoryId: integer('category_id').references(() => serviceCategories.id),
   imageUrl: text('image_url'),
+  isActive: integer('is_active', { mode: 'boolean' }).default(true),
+  createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: text('updated_at').default(sql`CURRENT_TIMESTAMP`)
+});
+
+// Service categories table
+export const serviceCategories = sqliteTable('service_categories', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  storeId: integer('store_id').notNull().references(() => stores.id),
+  name: text('name').notNull(),
+  description: text('description'),
+  isActive: integer('is_active', { mode: 'boolean' }).default(true),
+  createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: text('updated_at').default(sql`CURRENT_TIMESTAMP`)
+});
+
+// Product categories table
+export const productCategories = sqliteTable('product_categories', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  storeId: integer('store_id').notNull().references(() => stores.id),
+  name: text('name').notNull(),
+  description: text('description'),
   isActive: integer('is_active', { mode: 'boolean' }).default(true),
   createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
   updatedAt: text('updated_at').default(sql`CURRENT_TIMESTAMP`)
@@ -120,7 +142,7 @@ export const products = sqliteTable('products', {
   price: real('price').notNull(),
   cost: real('cost').default(0),
   barcode: text('barcode'),
-  categoryId: integer('category_id'),
+  categoryId: integer('category_id').references(() => productCategories.id),
   brand: text('brand'),
   stock: integer('stock').default(0),
   minStock: integer('min_stock').default(5),
@@ -285,7 +307,9 @@ export type Customer = typeof customers.$inferSelect;
 export type MembershipPlan = typeof membershipPlans.$inferSelect;
 export type CustomerMembership = typeof customerMemberships.$inferSelect;
 export type Service = typeof services.$inferSelect;
+export type ServiceCategory = typeof serviceCategories.$inferSelect;
 export type Product = typeof products.$inferSelect;
+export type ProductCategory = typeof productCategories.$inferSelect;
 export type Transaction = typeof transactions.$inferSelect;
 export type TransactionItem = typeof transactionItems.$inferSelect;
 export type LoginPageSettings = typeof loginPageSettings.$inferSelect;
@@ -297,7 +321,9 @@ export const insertCustomerSchema = createInsertSchema(customers);
 export const insertMembershipPlanSchema = createInsertSchema(membershipPlans);
 export const insertCustomerMembershipSchema = createInsertSchema(customerMemberships);
 export const insertServiceSchema = createInsertSchema(services);
+export const insertServiceCategorySchema = createInsertSchema(serviceCategories);
 export const insertProductSchema = createInsertSchema(products);
+export const insertProductCategorySchema = createInsertSchema(productCategories);
 export const insertTransactionSchema = createInsertSchema(transactions);
 export const insertTransactionItemSchema = createInsertSchema(transactionItems);
 export const insertLoginPageSettingsSchema = createInsertSchema(loginPageSettings);
@@ -309,7 +335,9 @@ export type InsertCustomer = z.infer<typeof insertCustomerSchema>;
 export type InsertMembershipPlan = z.infer<typeof insertMembershipPlanSchema>;
 export type InsertCustomerMembership = z.infer<typeof insertCustomerMembershipSchema>;
 export type InsertService = z.infer<typeof insertServiceSchema>;
+export type InsertServiceCategory = z.infer<typeof insertServiceCategorySchema>;
 export type InsertProduct = z.infer<typeof insertProductSchema>;
+export type InsertProductCategory = z.infer<typeof insertProductCategorySchema>;
 export type InsertTransaction = z.infer<typeof insertTransactionSchema>;
 export type InsertTransactionItem = z.infer<typeof insertTransactionItemSchema>;
 export type InsertLoginPageSettings = z.infer<typeof insertLoginPageSettingsSchema>;

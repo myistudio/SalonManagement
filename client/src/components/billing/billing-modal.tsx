@@ -133,6 +133,7 @@ export default function BillingModal({ isOpen, onClose, storeId }: BillingModalP
   const [discountValue, setDiscountValue] = useState(0);
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'card' | 'upi'>('cash');
   const [selectedStaffId, setSelectedStaffId] = useState<string>("");
+  const [includeGST, setIncludeGST] = useState(true);
 
   // Queries
   const { data: services = [] } = useQuery({
@@ -425,8 +426,8 @@ export default function BillingModal({ isOpen, onClose, storeId }: BillingModalP
   };
 
   const getGST = () => {
-    if (!store?.enableTax) return 0;
-    const taxRate = parseFloat(store.taxRate || '18.00') / 100;
+    if (!includeGST) return 0;
+    const taxRate = 0.18; // 18% GST
     return (getSubtotal() - getDiscount()) * taxRate;
   };
 
@@ -768,58 +769,7 @@ export default function BillingModal({ isOpen, onClose, storeId }: BillingModalP
                 </div>
               </div>
 
-              {/* Memberships Section */}
-              <div className="bg-white border-2 border-purple-200 rounded-xl p-5 shadow-sm">
-                <h3 className="text-xl font-bold text-gray-900 mb-4">Membership Plans</h3>
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 max-h-96 overflow-y-auto pr-2">
-                  {(membershipPlans as any[]).map((plan: any) => (
-                    <div 
-                      key={plan.id}
-                      className="w-full min-h-[120px] border-2 border-gray-200 rounded-xl p-3 hover:border-purple-400 hover:bg-purple-50 hover:shadow-md transition-all duration-200 cursor-pointer flex flex-col items-center justify-center text-center touch-manipulation active:scale-95"
-                      onClick={() => {
-                        const membershipItem: BillItem = {
-                          id: plan.id,
-                          type: 'membership' as any,
-                          name: `Membership: ${plan.name}`,
-                          price: parseFloat(plan.price),
-                          originalPrice: parseFloat(plan.price),
-                          quantity: 1,
-                        };
-                        
-                        // Check if membership already exists in bill
-                        const existingIndex = billItems.findIndex(item => 
-                          item.id === plan.id && item.type === 'membership'
-                        );
-                        
-                        if (existingIndex >= 0) {
-                          // Increment quantity
-                          setBillItems(billItems.map((item, index) => 
-                            index === existingIndex 
-                              ? { ...item, quantity: item.quantity + 1 }
-                              : item
-                          ));
-                        } else {
-                          // Add new membership
-                          setBillItems([...billItems, membershipItem]);
-                        }
-                      }}
-                    >
-                      <div className="w-12 h-12 bg-purple-200 rounded-lg mb-2 flex items-center justify-center">
-                        <span className="text-purple-600 font-bold text-xs">MB</span>
-                      </div>
-                      <span className="text-sm font-semibold text-gray-900 line-clamp-2 leading-tight mb-1">
-                        {plan.name}
-                      </span>
-                      <span className="text-sm text-purple-600 font-bold">
-                        Rs. {parseFloat(plan.price).toLocaleString()}
-                      </span>
-                      <span className="text-xs text-gray-500 mt-1">
-                        {plan.discountPercentage}% off | {plan.pointsMultiplier}x points
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
+
             </div>
 
             {/* Product Scanner */}
@@ -1100,12 +1050,21 @@ export default function BillingModal({ isOpen, onClose, storeId }: BillingModalP
                     </div>
                   )}
                   
-                  {store?.enableTax && (
-                    <div className="flex justify-between items-center text-base">
-                      <span className="font-semibold text-gray-700">{store.taxName || 'GST'} ({store.taxRate || '18.00'}%):</span>
-                      <span className="font-bold text-gray-900">Rs. {getGST().toLocaleString()}</span>
+                  <div className="flex justify-between items-center text-base">
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        id="includeGST"
+                        checked={includeGST}
+                        onChange={(e) => setIncludeGST(e.target.checked)}
+                        className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                      />
+                      <label htmlFor="includeGST" className="font-semibold text-gray-700 cursor-pointer">
+                        GST (18%):
+                      </label>
                     </div>
-                  )}
+                    <span className="font-bold text-gray-900">Rs. {getGST().toLocaleString()}</span>
+                  </div>
                   
                   <Separator className="my-3" />
                   

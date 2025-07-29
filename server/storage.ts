@@ -6,7 +6,9 @@ import {
   storeStaff,
   customers,
   services,
+  serviceCategories,
   products,
+  productCategories,
   membershipPlans,
   customerMemberships,
   transactions,
@@ -20,8 +22,12 @@ import {
   type InsertCustomer,
   type Service,
   type InsertService,
+  type ServiceCategory,
+  type InsertServiceCategory,
   type Product,
   type InsertProduct,
+  type ProductCategory,
+  type InsertProductCategory,
   type MembershipPlan,
   type InsertMembershipPlan,
   type CustomerMembership,
@@ -67,6 +73,12 @@ export interface IStorage {
   updateService(id: number, service: Partial<InsertService>): Promise<Service>;
   deleteService(id: number): Promise<void>;
 
+  // Service category operations
+  getServiceCategories(storeId: number): Promise<ServiceCategory[]>;
+  createServiceCategory(category: InsertServiceCategory): Promise<ServiceCategory>;
+  updateServiceCategory(id: number, category: Partial<InsertServiceCategory>): Promise<ServiceCategory>;
+  deleteServiceCategory(id: number): Promise<void>;
+
   // Product operations
   getProducts(storeId: number): Promise<Product[]>;
   getProduct(id: number): Promise<Product | undefined>;
@@ -74,6 +86,12 @@ export interface IStorage {
   createProduct(product: InsertProduct): Promise<Product>;
   updateProduct(id: number, product: Partial<InsertProduct>): Promise<Product>;
   deleteProduct(id: number): Promise<void>;
+
+  // Product category operations
+  getProductCategories(storeId: number): Promise<ProductCategory[]>;
+  createProductCategory(category: InsertProductCategory): Promise<ProductCategory>;
+  updateProductCategory(id: number, category: Partial<InsertProductCategory>): Promise<ProductCategory>;
+  deleteProductCategory(id: number): Promise<void>;
 
   // Membership operations
   getMembershipPlans(storeId: number): Promise<MembershipPlan[]>;
@@ -252,9 +270,7 @@ export class DatabaseStorage implements IStorage {
     const [result] = await db
       .select({
         customer: customers,
-        membership: {
-          membershipPlan: membershipPlans
-        }
+        membershipPlan: membershipPlans
       })
       .from(customers)
       .leftJoin(customerMemberships, and(
@@ -268,7 +284,7 @@ export class DatabaseStorage implements IStorage {
 
     return {
       customer: result.customer,
-      membership: result.membership.membershipPlan || undefined
+      membership: result.membershipPlan || undefined
     };
   }
 
@@ -305,6 +321,36 @@ export class DatabaseStorage implements IStorage {
 
   async deleteService(id: number): Promise<void> {
     await db.delete(services).where(eq(services.id, id));
+  }
+
+  // Service category operations
+  async getServiceCategories(storeId: number): Promise<ServiceCategory[]> {
+    return await db
+      .select()
+      .from(serviceCategories)
+      .where(and(eq(serviceCategories.storeId, storeId), eq(serviceCategories.isActive, true)))
+      .orderBy(asc(serviceCategories.name));
+  }
+
+  async createServiceCategory(category: InsertServiceCategory): Promise<ServiceCategory> {
+    const [newCategory] = await db
+      .insert(serviceCategories)
+      .values(category)
+      .returning();
+    return newCategory;
+  }
+
+  async updateServiceCategory(id: number, category: Partial<InsertServiceCategory>): Promise<ServiceCategory> {
+    const [updatedCategory] = await db
+      .update(serviceCategories)
+      .set({ ...category, updatedAt: new Date().toISOString() })
+      .where(eq(serviceCategories.id, id))
+      .returning();
+    return updatedCategory;
+  }
+
+  async deleteServiceCategory(id: number): Promise<void> {
+    await db.delete(serviceCategories).where(eq(serviceCategories.id, id));
   }
 
   // Product operations
@@ -348,6 +394,36 @@ export class DatabaseStorage implements IStorage {
 
   async deleteProduct(id: number): Promise<void> {
     await db.delete(products).where(eq(products.id, id));
+  }
+
+  // Product category operations
+  async getProductCategories(storeId: number): Promise<ProductCategory[]> {
+    return await db
+      .select()
+      .from(productCategories)
+      .where(and(eq(productCategories.storeId, storeId), eq(productCategories.isActive, true)))
+      .orderBy(asc(productCategories.name));
+  }
+
+  async createProductCategory(category: InsertProductCategory): Promise<ProductCategory> {
+    const [newCategory] = await db
+      .insert(productCategories)
+      .values(category)
+      .returning();
+    return newCategory;
+  }
+
+  async updateProductCategory(id: number, category: Partial<InsertProductCategory>): Promise<ProductCategory> {
+    const [updatedCategory] = await db
+      .update(productCategories)
+      .set({ ...category, updatedAt: new Date().toISOString() })
+      .where(eq(productCategories.id, id))
+      .returning();
+    return updatedCategory;
+  }
+
+  async deleteProductCategory(id: number): Promise<void> {
+    await db.delete(productCategories).where(eq(productCategories.id, id));
   }
 
   // Membership operations
@@ -530,7 +606,7 @@ export class DatabaseStorage implements IStorage {
           eq(customerMemberships.isActive, true)
         ));
 
-      return result || undefined;
+      return result ? { membershipPlan: result.membershipPlan || undefined } : undefined;
     } catch (error) {
       console.error('Error getting customer membership:', error);
       return undefined;
