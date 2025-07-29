@@ -67,7 +67,14 @@ export default function Inventory() {
   });
 
   const { data: lowStockProducts = [] } = useQuery({
-    queryKey: [`/api/products/low-stock/${selectedStoreId}`],
+    queryKey: ["/api/products/low-stock", selectedStoreId],
+    queryFn: async () => {
+      const res = await fetch(`/api/products/low-stock/${selectedStoreId}`, {
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error(`${res.status}: ${res.statusText}`);
+      return res.json();
+    },
     enabled: !!selectedStoreId,
     retry: false,
   });

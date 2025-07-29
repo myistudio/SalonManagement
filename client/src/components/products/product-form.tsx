@@ -55,8 +55,10 @@ export default function ProductForm({ storeId, product, onSuccess }: ProductForm
         title: "Success",
         description: `Product ${product ? 'updated' : 'created'} successfully`,
       });
-      queryClient.invalidateQueries({ queryKey: [`/api/products?storeId=${storeId}`] });
-      queryClient.invalidateQueries({ queryKey: [`/api/products/low-stock/${storeId}`] });
+      // Invalidate using the correct query key format that matches the inventory page
+      queryClient.invalidateQueries({ queryKey: ["/api/products", storeId] });
+      queryClient.invalidateQueries({ queryKey: ["/api/products/low-stock", storeId] });
+      queryClient.invalidateQueries({ queryKey: [`/api/product-categories?storeId=${storeId}`] });
       onSuccess();
     },
     onError: (error) => {
