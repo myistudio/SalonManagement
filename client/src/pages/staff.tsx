@@ -18,10 +18,13 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Search, Plus, Bus, User, Settings, Mail, Phone, Edit, Trash2, Shield, Building2, Key } from "lucide-react";
 import BillingModal from "@/components/billing/billing-modal";
 
-export default function Staff() {
+interface StaffProps {
+  selectedStoreId?: number;
+}
+
+export default function Staff({ selectedStoreId = 1 }: StaffProps) {
   const { toast } = useToast();
   const { isAuthenticated, isLoading, user } = useAuth();
-  const [selectedStoreId, setSelectedStoreId] = useState<number>(1);
   const [searchTerm, setSearchTerm] = useState("");
   const [showBillingModal, setShowBillingModal] = useState(false);
   const [editingStaff, setEditingStaff] = useState<any>(null);

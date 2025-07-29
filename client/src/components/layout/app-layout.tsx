@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, cloneElement, isValidElement } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery } from "@tanstack/react-query";
 import Header from "./header";
@@ -42,7 +42,9 @@ export default function AppLayout({ children }: AppLayoutProps) {
         />
         
         <main className="flex-1 lg:ml-64 pt-16">
-          {children}
+          {isValidElement(children) 
+            ? cloneElement(children, { selectedStoreId })
+            : children}
         </main>
       </div>
 

@@ -16,11 +16,14 @@ import { Search, Plus, Waves, Edit, Clock } from "lucide-react";
 import ServiceForm from "@/components/services/service-form";
 import BillingModal from "@/components/billing/billing-modal";
 
-export default function Services() {
+interface ServicesProps {
+  selectedStoreId?: number;
+}
+
+export default function Services({ selectedStoreId = 1 }: ServicesProps) {
   const { toast } = useToast();
   const { isAuthenticated, isLoading } = useAuth();
   const queryClient = useQueryClient();
-  const [selectedStoreId, setSelectedStoreId] = useState<number>(1);
   const [searchTerm, setSearchTerm] = useState("");
   const [showServiceForm, setShowServiceForm] = useState(false);
   const [showBillingModal, setShowBillingModal] = useState(false);

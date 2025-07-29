@@ -27,11 +27,14 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-export default function Inventory() {
+interface InventoryProps {
+  selectedStoreId?: number;
+}
+
+export default function Inventory({ selectedStoreId = 1 }: InventoryProps) {
   const { toast } = useToast();
   const { isAuthenticated, isLoading } = useAuth();
   const queryClient = useQueryClient();
-  const [selectedStoreId, setSelectedStoreId] = useState<number>(1);
   const [searchTerm, setSearchTerm] = useState("");
   const [showProductForm, setShowProductForm] = useState(false);
   const [showBillingModal, setShowBillingModal] = useState(false);

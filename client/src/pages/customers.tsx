@@ -18,11 +18,14 @@ import CustomerForm from "@/components/customers/customer-form";
 import CustomerEditForm from "@/components/customers/customer-edit-form";
 import BillingModal from "@/components/billing/billing-modal";
 
-export default function Customers() {
+interface CustomersProps {
+  selectedStoreId?: number;
+}
+
+export default function Customers({ selectedStoreId = 1 }: CustomersProps) {
   const { toast } = useToast();
   const { isAuthenticated, isLoading } = useAuth();
   const queryClient = useQueryClient();
-  const [selectedStoreId, setSelectedStoreId] = useState<number>(1);
   const [searchTerm, setSearchTerm] = useState("");
   const [showCustomerForm, setShowCustomerForm] = useState(false);
   const [showBillingModal, setShowBillingModal] = useState(false);

@@ -16,11 +16,14 @@ import { Search, Plus, Crown, Star, Gift, Users, BarChart3, TrendingUp, Calendar
 import MembershipForm from "@/components/memberships/membership-form";
 import BillingModal from "@/components/billing/billing-modal";
 
-export default function Memberships() {
+interface MembershipsProps {
+  selectedStoreId?: number;
+}
+
+export default function Memberships({ selectedStoreId = 1 }: MembershipsProps) {
   const { toast } = useToast();
   const { isAuthenticated, isLoading } = useAuth();
   const queryClient = useQueryClient();
-  const [selectedStoreId, setSelectedStoreId] = useState<number>(9);
   const [searchTerm, setSearchTerm] = useState("");
   const [showMembershipForm, setShowMembershipForm] = useState(false);
   const [showBillingModal, setShowBillingModal] = useState(false);

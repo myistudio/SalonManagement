@@ -15,10 +15,13 @@ import { CalendarDays, Download, TrendingUp, TrendingDown, Users, Package, Crown
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, Area, AreaChart } from "recharts";
 import BillingModal from "@/components/billing/billing-modal";
 
-export default function Reports() {
+interface ReportsProps {
+  selectedStoreId?: number;
+}
+
+export default function Reports({ selectedStoreId = 1 }: ReportsProps) {
   const { toast } = useToast();
   const { isAuthenticated, isLoading } = useAuth();
-  const [selectedStoreId, setSelectedStoreId] = useState<number>(1);
   const [showBillingModal, setShowBillingModal] = useState(false);
   const [dateRange, setDateRange] = useState({
     startDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 30 days ago
