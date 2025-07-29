@@ -290,11 +290,27 @@ export class DatabaseStorage implements IStorage {
 
   // Service operations
   async getServices(storeId: number): Promise<Service[]> {
-    return await db
-      .select()
+    const results = await db
+      .select({
+        id: services.id,
+        storeId: services.storeId,
+        name: services.name,
+        description: services.description,
+        price: services.price,
+        duration: services.duration,
+        categoryId: services.categoryId,
+        category: serviceCategories.name,
+        imageUrl: services.imageUrl,
+        isActive: services.isActive,
+        createdAt: services.createdAt,
+        updatedAt: services.updatedAt
+      })
       .from(services)
+      .leftJoin(serviceCategories, eq(services.categoryId, serviceCategories.id))
       .where(and(eq(services.storeId, storeId), eq(services.isActive, true)))
       .orderBy(asc(services.name));
+    
+    return results as any[];
   }
 
   async getService(id: number): Promise<Service | undefined> {
@@ -355,11 +371,31 @@ export class DatabaseStorage implements IStorage {
 
   // Product operations
   async getProducts(storeId: number): Promise<Product[]> {
-    return await db
-      .select()
+    const results = await db
+      .select({
+        id: products.id,
+        storeId: products.storeId,
+        name: products.name,
+        description: products.description,
+        price: products.price,
+        cost: products.cost,
+        barcode: products.barcode,
+        categoryId: products.categoryId,
+        category: productCategories.name,
+        brand: products.brand,
+        stock: products.stock,
+        minStock: products.minStock,
+        imageUrl: products.imageUrl,
+        isActive: products.isActive,
+        createdAt: products.createdAt,
+        updatedAt: products.updatedAt
+      })
       .from(products)
+      .leftJoin(productCategories, eq(products.categoryId, productCategories.id))
       .where(and(eq(products.storeId, storeId), eq(products.isActive, true)))
       .orderBy(asc(products.name));
+    
+    return results as any[];
   }
 
   async getProduct(id: number): Promise<Product | undefined> {
