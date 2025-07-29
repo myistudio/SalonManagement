@@ -1,6 +1,7 @@
-import { useState, cloneElement, isValidElement } from "react";
+import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery } from "@tanstack/react-query";
+import { useStore } from "@/contexts/store-context";
 import Header from "./header";
 import Sidebar from "./sidebar";
 import BillingModal from "@/components/billing/billing-modal";
@@ -12,9 +13,8 @@ interface AppLayoutProps {
 export default function AppLayout({ children }: AppLayoutProps) {
   const { user } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [selectedStoreId, setSelectedStoreId] = useState<number>(1);
-  console.log("AppLayout - selectedStoreId:", selectedStoreId);
   const [showBillingModal, setShowBillingModal] = useState(false);
+  const { selectedStoreId, setSelectedStoreId } = useStore();
 
   // Get stores for the header dropdown
   const { data: stores = [] } = useQuery({
@@ -43,11 +43,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
         />
         
         <main className="flex-1 lg:ml-64 pt-16">
-          <div key={selectedStoreId}>
-            {isValidElement(children) 
-              ? cloneElement(children as React.ReactElement<any>, { selectedStoreId, key: selectedStoreId })
-              : children}
-          </div>
+          {children}
         </main>
       </div>
 

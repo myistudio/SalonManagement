@@ -4,6 +4,7 @@ import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
+import { useStore } from "@/contexts/store-context";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,11 +19,8 @@ import CustomerForm from "@/components/customers/customer-form";
 import CustomerEditForm from "@/components/customers/customer-edit-form";
 import BillingModal from "@/components/billing/billing-modal";
 
-interface CustomersProps {
-  selectedStoreId?: number;
-}
-
-export default function Customers({ selectedStoreId = 1 }: CustomersProps) {
+export default function Customers() {
+  const { selectedStoreId } = useStore();
   console.log("Customers page - selectedStoreId:", selectedStoreId);
   const { toast } = useToast();
   const { isAuthenticated, isLoading } = useAuth();

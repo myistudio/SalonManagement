@@ -4,6 +4,7 @@ import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
+import { useStore } from "@/contexts/store-context";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,11 +17,8 @@ import { Search, Plus, Waves, Edit, Clock } from "lucide-react";
 import ServiceForm from "@/components/services/service-form";
 import BillingModal from "@/components/billing/billing-modal";
 
-interface ServicesProps {
-  selectedStoreId?: number;
-}
-
-export default function Services({ selectedStoreId = 1 }: ServicesProps) {
+export default function Services() {
+  const { selectedStoreId } = useStore();
   const { toast } = useToast();
   const { isAuthenticated, isLoading } = useAuth();
   const queryClient = useQueryClient();

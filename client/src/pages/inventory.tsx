@@ -4,6 +4,7 @@ import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
+import { useStore } from "@/contexts/store-context";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,11 +28,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-interface InventoryProps {
-  selectedStoreId?: number;
-}
-
-export default function Inventory({ selectedStoreId = 1 }: InventoryProps) {
+export default function Inventory() {
+  const { selectedStoreId } = useStore();
   console.log("Inventory page - selectedStoreId:", selectedStoreId);
   const { toast } = useToast();
   const { isAuthenticated, isLoading } = useAuth();
