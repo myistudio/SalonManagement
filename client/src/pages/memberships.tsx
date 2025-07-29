@@ -49,14 +49,28 @@ export default function Memberships() {
   }, [isAuthenticated, isLoading, toast]);
 
   const { data: memberships = [], isLoading: membershipsLoading } = useQuery({
-    queryKey: [`/api/membership-plans?storeId=${selectedStoreId}`],
+    queryKey: ["/api/membership-plans", selectedStoreId],
+    queryFn: async () => {
+      const res = await fetch(`/api/membership-plans?storeId=${selectedStoreId}`, {
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error(`${res.status}: ${res.statusText}`);
+      return res.json();
+    },
     enabled: !!selectedStoreId,
     retry: false,
   });
 
   // Membership reports query
   const { data: membershipReports, isLoading: reportsLoading } = useQuery({
-    queryKey: [`/api/reports/memberships?storeId=${selectedStoreId}&startDate=${reportStartDate}&endDate=${reportEndDate}`],
+    queryKey: ["/api/reports/memberships", selectedStoreId, reportStartDate, reportEndDate],
+    queryFn: async () => {
+      const res = await fetch(`/api/reports/memberships?storeId=${selectedStoreId}&startDate=${reportStartDate}&endDate=${reportEndDate}`, {
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error(`${res.status}: ${res.statusText}`);
+      return res.json();
+    },
     enabled: !!selectedStoreId && activeTab === 'reports',
     retry: false,
   });
@@ -71,8 +85,8 @@ export default function Memberships() {
         title: "Success",
         description: "Membership plan deleted successfully",
       });
-      queryClient.invalidateQueries({ queryKey: ['/api/memberships'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/membership-plans'] });
+      queryClient.invalidateQueries({ queryKey: ["/api/membership-plans", selectedStoreId] });
+      queryClient.invalidateQueries({ queryKey: ["/api/reports/memberships", selectedStoreId, reportStartDate, reportEndDate] });
     },
     onError: (error: any) => {
       if (isUnauthorizedError(error)) {
