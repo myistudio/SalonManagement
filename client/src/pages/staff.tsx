@@ -167,9 +167,7 @@ export default function Staff() {
       setNewStaffPassword("");
       setNewStaffFirstName("");
       setNewStaffLastName("");
-      setNewStaffRole("cashier");
-      setNewStaffEmail("");
-      setNewStaffRole("cashier");
+      setNewStaffRole("executive");
       toast({
         title: "Staff Added",
         description: "Staff member has been added successfully.",
@@ -245,8 +243,14 @@ export default function Staff() {
         return 'bg-red-100 text-red-800';
       case 'store_manager':
         return 'bg-blue-100 text-blue-800';
-      case 'cashier':
+      case 'executive':
         return 'bg-green-100 text-green-800';
+      case 'senior_nail_artist':
+        return 'bg-purple-100 text-purple-800';
+      case 'junior_nail_artist':
+        return 'bg-pink-100 text-pink-800';
+      case 'beginner_nail_artist':
+        return 'bg-orange-100 text-orange-800';
       default:
         return 'bg-gray-100 text-gray-800';
     }
@@ -258,8 +262,14 @@ export default function Staff() {
         return 'Super Admin';
       case 'store_manager':
         return 'Store Manager';
-      case 'cashier':
-        return 'Cashier';
+      case 'executive':
+        return 'Executive';
+      case 'senior_nail_artist':
+        return 'Senior Nail Artist';
+      case 'junior_nail_artist':
+        return 'Junior Nail Artist';
+      case 'beginner_nail_artist':
+        return 'Beginner Nail Artist';
       default:
         return role;
     }
@@ -449,6 +459,9 @@ export default function Staff() {
                         <SelectContent>
                           <SelectItem value="executive">Executive</SelectItem>
                           <SelectItem value="store_manager">Store Manager</SelectItem>
+                          <SelectItem value="senior_nail_artist">Senior Nail Artist</SelectItem>
+                          <SelectItem value="junior_nail_artist">Junior Nail Artist</SelectItem>
+                          <SelectItem value="beginner_nail_artist">Beginner Nail Artist</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
