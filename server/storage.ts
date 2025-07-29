@@ -14,6 +14,8 @@ import {
   customerMemberships,
   transactions,
   transactionItems,
+  appointments,
+  appointmentSettings,
   loginPageSettings,
   type User,
   type UpsertUser,
@@ -790,9 +792,166 @@ export class DatabaseStorage implements IStorage {
   // Appointments operations
   async getAppointments(storeId?: number): Promise<any[]> {
     try {
-      return [];
+      const appointmentsQuery = storeId 
+        ? db.select().from(appointments).where(eq(appointments.storeId, storeId))
+        : db.select().from(appointments);
+      
+      return await appointmentsQuery;
     } catch (error) {
       console.error('Error fetching appointments:', error);
+      return [];
+    }
+  }
+
+  async createAppointment(appointment: any): Promise<any> {
+    try {
+      const istTimestamp = getISTDateTime();
+      const appointmentWithTimestamp = {
+        ...appointment,
+        createdAt: istTimestamp,
+        updatedAt: istTimestamp
+      };
+
+      const [created] = await db
+        .insert(appointments)
+        .values(appointmentWithTimestamp)
+        .returning();
+
+      return created;
+    } catch (error) {
+      console.error('Error creating appointment:', error);
+      throw error;
+    }
+  }
+
+  // Appointment Settings operations
+  async getAppointmentSettings(storeId: number): Promise<any> {
+    try {
+      const [settings] = await db
+        .select()
+        .from(appointmentSettings)
+        .where(eq(appointmentSettings.storeId, storeId));
+
+      if (!settings) {
+        // Return default settings
+        return {
+          storeId,
+          openingTime: '09:00',
+          closingTime: '18:00', 
+          slotDuration: 30,
+          maxConcurrentAppointments: 3,
+          workingHours: '09:00-18:00'
+        };
+      }
+
+      return {
+        ...settings,
+        workingHours: `${settings.openingTime}-${settings.closingTime}`
+      };
+    } catch (error) {
+      console.error('Error fetching appointment settings:', error);
+      return {
+        storeId,
+        openingTime: '09:00',
+        closingTime: '18:00',
+        slotDuration: 30,
+        maxConcurrentAppointments: 3,
+        workingHours: '09:00-18:00'
+      };
+    }
+  }
+
+  async updateAppointmentSettings(storeId: number, settings: any): Promise<any> {
+    try {
+      const istTimestamp = getISTDateTime();
+      const settingsWithTimestamp = {
+        ...settings,
+        storeId,
+        updatedAt: istTimestamp
+      };
+
+      // Try to update existing settings
+      const existing = await db
+        .select()
+        .from(appointmentSettings)
+        .where(eq(appointmentSettings.storeId, storeId));
+
+      if (existing.length > 0) {
+        const [updated] = await db
+          .update(appointmentSettings)
+          .set(settingsWithTimestamp)
+          .where(eq(appointmentSettings.storeId, storeId))
+          .returning();
+        return updated;
+      } else {
+        // Create new settings
+        const [created] = await db
+          .insert(appointmentSettings)
+          .values({
+            ...settingsWithTimestamp,
+            createdAt: istTimestamp
+          })
+          .returning();
+        return created;
+      }
+    } catch (error) {
+      console.error('Error updating appointment settings:', error);
+      throw error;
+    }
+  }
+
+  async getTimeSlots(storeId: number, date: string): Promise<string[]> {
+    try {
+      const settings = await this.getAppointmentSettings(storeId);
+      const { openingTime, closingTime, slotDuration } = settings;
+
+      if (!openingTime || !closingTime || !slotDuration) {
+        return [];
+      }
+
+      const slots: string[] = [];
+      const start = new Date(`2000-01-01T${openingTime}:00`);
+      const end = new Date(`2000-01-01T${closingTime}:00`);
+      
+      let current = new Date(start);
+      
+      while (current < end) {
+        slots.push(current.toTimeString().slice(0, 5));
+        current.setMinutes(current.getMinutes() + slotDuration);
+      }
+
+      return slots;
+    } catch (error) {
+      console.error('Error generating time slots:', error);
+      return [];
+    }
+  }
+
+  async getAvailableTimeSlots(storeId: number, date: Date): Promise<string[]> {
+    try {
+      const settings = await this.getAppointmentSettings(storeId);
+      const { openingTime, closingTime, slotDuration } = settings;
+
+      if (!openingTime || !closingTime || !slotDuration) {
+        console.log('Missing appointment settings for store', storeId);
+        return [];
+      }
+
+      const slots: string[] = [];
+      const start = new Date(`2000-01-01T${openingTime}:00`);
+      const end = new Date(`2000-01-01T${closingTime}:00`);
+      
+      let current = new Date(start);
+      
+      while (current < end) {
+        slots.push(current.toTimeString().slice(0, 5));
+        current.setMinutes(current.getMinutes() + slotDuration);
+      }
+
+      console.log(`Generated ${slots.length} time slots for store ${storeId}:`, slots.slice(0, 5));
+      return slots;
+    } catch (error) {
+      console.error('Error generating available time slots:', error);
       return [];
     }
   }

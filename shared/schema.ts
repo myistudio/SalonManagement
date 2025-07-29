@@ -186,6 +186,34 @@ export const transactionItems = sqliteTable('transaction_items', {
   createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`)
 });
 
+// Appointments table
+export const appointments = sqliteTable('appointments', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  storeId: integer('store_id').notNull().references(() => stores.id),
+  customerName: text('customer_name').notNull(),
+  customerEmail: text('customer_email'),
+  customerPhone: text('customer_phone').notNull(),
+  appointmentDate: text('appointment_date').notNull(),
+  appointmentTime: text('appointment_time').notNull(),
+  services: text('services').notNull(), // JSON array of service IDs
+  notes: text('notes'),
+  status: text('status').default('pending'), // pending, confirmed, completed, cancelled
+  createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: text('updated_at').default(sql`CURRENT_TIMESTAMP`)
+});
+
+// Appointment settings table
+export const appointmentSettings = sqliteTable('appointment_settings', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  storeId: integer('store_id').notNull().unique().references(() => stores.id),
+  openingTime: text('opening_time').default('09:00'),
+  closingTime: text('closing_time').default('18:00'),
+  slotDuration: integer('slot_duration').default(30), // in minutes
+  maxConcurrentAppointments: integer('max_concurrent_appointments').default(3),
+  createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: text('updated_at').default(sql`CURRENT_TIMESTAMP`)
+});
+
 // Login page settings table
 export const loginPageSettings = sqliteTable('login_page_settings', {
   id: integer('id').primaryKey({ autoIncrement: true }),
@@ -205,13 +233,15 @@ export const usersRelations = relations(users, ({ many }) => ({
   transactions: many(transactions),
 }));
 
-export const storesRelations = relations(stores, ({ many }) => ({
+export const storesRelations = relations(stores, ({ many, one }) => ({
   staff: many(storeStaff),
   customers: many(customers),
   membershipPlans: many(membershipPlans),
   services: many(services),
   products: many(products),
   transactions: many(transactions),
+  appointments: many(appointments),
+  appointmentSettings: one(appointmentSettings),
 }));
 
 export const storeStaffRelations = relations(storeStaff, ({ one }) => ({
@@ -298,6 +328,20 @@ export const transactionItemsRelations = relations(transactionItems, ({ one }) =
   }),
 }));
 
+export const appointmentsRelations = relations(appointments, ({ one }) => ({
+  store: one(stores, {
+    fields: [appointments.storeId],
+    references: [stores.id],
+  }),
+}));
+
+export const appointmentSettingsRelations = relations(appointmentSettings, ({ one }) => ({
+  store: one(stores, {
+    fields: [appointmentSettings.storeId],
+    references: [stores.id],
+  }),
+}));
+
 // Type definitions
 export type User = typeof users.$inferSelect;
 export type UpsertUser = typeof users.$inferInsert;
@@ -312,6 +356,8 @@ export type Product = typeof products.$inferSelect;
 export type ProductCategory = typeof productCategories.$inferSelect;
 export type Transaction = typeof transactions.$inferSelect;
 export type TransactionItem = typeof transactionItems.$inferSelect;
+export type Appointment = typeof appointments.$inferSelect;
+export type AppointmentSettings = typeof appointmentSettings.$inferSelect;
 export type LoginPageSettings = typeof loginPageSettings.$inferSelect;
 
 // Insert schemas
@@ -326,6 +372,8 @@ export const insertProductSchema = createInsertSchema(products);
 export const insertProductCategorySchema = createInsertSchema(productCategories);
 export const insertTransactionSchema = createInsertSchema(transactions);
 export const insertTransactionItemSchema = createInsertSchema(transactionItems);
+export const insertAppointmentSchema = createInsertSchema(appointments);
+export const insertAppointmentSettingsSchema = createInsertSchema(appointmentSettings);
 export const insertLoginPageSettingsSchema = createInsertSchema(loginPageSettings);
 
 // Insert types
@@ -340,4 +388,6 @@ export type InsertProduct = z.infer<typeof insertProductSchema>;
 export type InsertProductCategory = z.infer<typeof insertProductCategorySchema>;
 export type InsertTransaction = z.infer<typeof insertTransactionSchema>;
 export type InsertTransactionItem = z.infer<typeof insertTransactionItemSchema>;
+export type InsertAppointment = z.infer<typeof insertAppointmentSchema>;
+export type InsertAppointmentSettings = z.infer<typeof insertAppointmentSettingsSchema>;
 export type InsertLoginPageSettings = z.infer<typeof insertLoginPageSettingsSchema>;
