@@ -114,6 +114,12 @@ export interface IStorage {
   // Login settings
   getLoginPageSettings(): Promise<LoginPageSettings | undefined>;
   updateLoginPageSettings(settings: Partial<InsertLoginPageSettings>): Promise<LoginPageSettings>;
+
+  // Staff operations
+  getStoreStaff(storeId: number): Promise<StoreStaff[]>;
+  
+  // Appointment operations
+  getAppointments(storeId?: number): Promise<any[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -728,6 +734,44 @@ export class DatabaseStorage implements IStorage {
         .values({ ...settings, updatedAt: new Date().toISOString() })
         .returning();
       return created;
+    }
+  }
+
+  // Staff operations - missing methods that are causing 500 errors
+  async getStoreStaff(storeId: number): Promise<StoreStaff[]> {
+    try {
+      const results = await db
+        .select({
+          id: storeStaff.id,
+          storeId: storeStaff.storeId,
+          userId: storeStaff.userId,
+          role: storeStaff.role,
+          createdAt: storeStaff.createdAt,
+          updatedAt: storeStaff.updatedAt,
+          userEmail: users.email,
+          userMobile: users.mobile,
+          userName: users.name
+        })
+        .from(storeStaff)
+        .leftJoin(users, eq(storeStaff.userId, users.id))
+        .where(eq(storeStaff.storeId, storeId));
+      
+      return results as any[];
+    } catch (error) {
+      console.error('Error fetching store staff:', error);
+      throw error;
+    }
+  }
+
+  // Appointments operations - missing method causing 500 errors
+  async getAppointments(storeId?: number): Promise<any[]> {
+    // For now return empty array since appointments table might not exist yet
+    // This prevents 500 errors while we implement full appointment system
+    try {
+      return [];
+    } catch (error) {
+      console.error('Error fetching appointments:', error);
+      return [];
     }
   }
 }

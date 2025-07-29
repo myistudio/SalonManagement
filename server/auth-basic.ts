@@ -341,6 +341,30 @@ const rolePermissions = {
     Permission.VIEW_SERVICES,
     Permission.BOOK_APPOINTMENTS,
   ],
+  // Nail Artist roles - specialized positions with service-focused permissions
+  senior_nail_artist: [
+    Permission.CREATE_BILLS,
+    Permission.MANAGE_TRANSACTIONS,
+    Permission.VIEW_CUSTOMERS,
+    Permission.CREATE_CUSTOMERS,
+    Permission.VIEW_INVENTORY,
+    Permission.VIEW_SERVICES,
+    Permission.BOOK_APPOINTMENTS,
+  ],
+  junior_nail_artist: [
+    Permission.CREATE_BILLS,
+    Permission.VIEW_CUSTOMERS,
+    Permission.CREATE_CUSTOMERS,
+    Permission.VIEW_INVENTORY,
+    Permission.VIEW_SERVICES,
+    Permission.BOOK_APPOINTMENTS,
+  ],
+  beginner_nail_artist: [
+    Permission.VIEW_CUSTOMERS,
+    Permission.VIEW_INVENTORY,
+    Permission.VIEW_SERVICES,
+    Permission.BOOK_APPOINTMENTS,
+  ],
 };
 
 // Check if user has specific permission
