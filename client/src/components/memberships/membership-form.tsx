@@ -27,7 +27,7 @@ export default function MembershipForm({ storeId, membership, onSuccess }: Membe
     description: membership?.description || "",
     discountPercentage: membership?.discountPercentage?.toString() || "",
     pointsMultiplier: membership?.pointsMultiplier?.toString() || "1",
-    validityDays: membership?.validityDays?.toString() || "365",
+    durationMonths: membership?.durationMonths?.toString() || "12",
     price: membership?.price?.toString() || "",
   });
 
@@ -92,7 +92,7 @@ export default function MembershipForm({ storeId, membership, onSuccess }: Membe
       ...formData,
       discountPercentage: formData.discountPercentage || "0",
       pointsMultiplier: formData.pointsMultiplier || "1", 
-      validityDays: parseInt(formData.validityDays) || 365,
+      durationMonths: parseInt(formData.durationMonths) || 12,
       price: formData.price,
       benefits: JSON.stringify(benefits.filter(benefit => benefit.trim())),
       isActive: true,
@@ -184,14 +184,14 @@ export default function MembershipForm({ storeId, membership, onSuccess }: Membe
               />
             </div>
             <div>
-              <Label htmlFor="validityDays">Validity (Days)</Label>
+              <Label htmlFor="durationMonths">Duration (Months)</Label>
               <Input
-                id="validityDays"
+                id="durationMonths"
                 type="number"
                 min="1"
-                value={formData.validityDays}
-                onChange={(e) => handleInputChange("validityDays", e.target.value)}
-                placeholder="365"
+                value={formData.durationMonths}
+                onChange={(e) => handleInputChange("durationMonths", e.target.value)}
+                placeholder="12"
               />
             </div>
           </div>

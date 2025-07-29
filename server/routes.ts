@@ -640,17 +640,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/memberships', isAuthenticated, async (req: any, res) => {
     try {
       console.log('Creating membership plan with data:', req.body);
-      const planData = insertMembershipPlanSchema.parse(req.body);
-      console.log('Parsed plan data:', planData);
+      
+      // Manual validation and data processing for membership plans
+      const planData = {
+        storeId: parseInt(req.body.storeId),
+        name: req.body.name,
+        description: req.body.description || null,
+        price: parseFloat(req.body.price),
+        durationMonths: parseInt(req.body.durationMonths) || 12,
+        discountPercentage: req.body.discountPercentage ? parseFloat(req.body.discountPercentage) : 0,
+        pointsMultiplier: req.body.pointsMultiplier ? parseFloat(req.body.pointsMultiplier) : 1.0,
+        benefits: req.body.benefits || null,
+        isActive: req.body.isActive !== false,
+      };
+      
+      // Basic validation
+      if (!planData.name || !planData.storeId || !planData.price || !planData.durationMonths) {
+        return res.status(400).json({ message: "Missing required fields: name, storeId, price, durationMonths" });
+      }
+      
+      console.log('Final plan data:', planData);
       const plan = await storage.createMembershipPlan(planData);
       console.log('Created plan:', plan);
       res.status(201).json(plan);
     } catch (error) {
       console.error('Error creating membership plan:', error);
-      if (error instanceof z.ZodError) {
-        console.error('Validation errors:', error.errors);
-        return res.status(400).json({ message: "Invalid membership plan data", errors: error.errors });
-      }
       res.status(500).json({ message: "Failed to create membership plan", error: error instanceof Error ? error.message : String(error) });
     }
   });
