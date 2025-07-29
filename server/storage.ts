@@ -929,11 +929,14 @@ export class DatabaseStorage implements IStorage {
 
   async getAvailableTimeSlots(storeId: number, date: Date): Promise<string[]> {
     try {
+      console.log(`Getting time slots for store ${storeId} on ${date}`);
       const settings = await this.getAppointmentSettings(storeId);
+      console.log('Appointment settings fetched:', settings);
+      
       const { openingTime, closingTime, slotDuration } = settings;
 
       if (!openingTime || !closingTime || !slotDuration) {
-        console.log('Missing appointment settings for store', storeId);
+        console.log('Missing appointment settings for store', storeId, { openingTime, closingTime, slotDuration });
         return [];
       }
 
@@ -1246,34 +1249,7 @@ export class DatabaseStorage implements IStorage {
     return { id: messageId, status };
   }
 
-  // Appointment methods (stubs)
-  async getAvailableTimeSlots(storeId: number, date: string): Promise<any[]> {
-    return [];
-  }
 
-  async createAppointment(appointmentData: any): Promise<any> {
-    return appointmentData;
-  }
-
-  async updateAppointment(appointmentId: number, updateData: any): Promise<any> {
-    return updateData;
-  }
-
-  async deleteAppointment(appointmentId: number): Promise<void> {
-    // Stub implementation
-  }
-
-  async getAppointmentSettings(storeId: number): Promise<any> {
-    return { storeId, workingHours: '09:00-18:00' };
-  }
-
-  async createAppointmentSettings(storeId: number, settings: any): Promise<any> {
-    return settings;
-  }
-
-  async updateAppointmentSettings(storeId: number, settings: any): Promise<any> {
-    return settings;
-  }
 
   // Export methods
   async exportCustomersToExcel(storeId: number): Promise<any> {
