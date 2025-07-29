@@ -58,7 +58,7 @@ export default function Header({ selectedStoreId, onStoreChange, isMobileMenuOpe
                   <SelectContent>
                     {(stores as any[]).map((store: any) => (
                       <SelectItem key={store.id} value={store.id.toString()}>
-                        {store.name}
+                        {store.name}{store.city ? `, ${store.city}` : ''}
                       </SelectItem>
                     ))}
                   </SelectContent>
