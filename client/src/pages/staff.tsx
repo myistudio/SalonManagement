@@ -363,27 +363,7 @@ export default function Staff() {
         </Button>
       </div>
       
-      {/* Store Selector */}
-      <div className="mb-4">
-        <label htmlFor="store-select" className="block text-sm font-medium text-gray-700 mb-2">
-          Select Store
-        </label>
-        <Select
-          value={selectedStoreId.toString()}
-          onValueChange={(value) => setSelectedStoreId(parseInt(value))}
-        >
-          <SelectTrigger className="w-64">
-            <SelectValue placeholder="Select a store" />
-          </SelectTrigger>
-          <SelectContent>
-            {stores.map((store: any) => (
-              <SelectItem key={store.id} value={store.id.toString()}>
-                {store.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+
 
       {/* Staff List */}
       <Card>
