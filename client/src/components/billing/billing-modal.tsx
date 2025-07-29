@@ -133,7 +133,6 @@ export default function BillingModal({ isOpen, onClose, storeId }: BillingModalP
   const [discountValue, setDiscountValue] = useState(0);
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'card' | 'upi'>('cash');
   const [selectedStaffId, setSelectedStaffId] = useState<string>("");
-  const [includeGST, setIncludeGST] = useState(true);
 
   // Queries
   const { data: services = [] } = useQuery({
@@ -426,8 +425,9 @@ export default function BillingModal({ isOpen, onClose, storeId }: BillingModalP
   };
 
   const getGST = () => {
-    if (!includeGST) return 0;
-    const taxRate = 0.18; // 18% GST
+    // Check if store has tax enabled
+    if (!store?.enableTax) return 0;
+    const taxRate = (store?.taxRate || 18) / 100; // Use store tax rate or default 18%
     return (getSubtotal() - getDiscount()) * taxRate;
   };
 
@@ -1050,21 +1050,15 @@ export default function BillingModal({ isOpen, onClose, storeId }: BillingModalP
                     </div>
                   )}
                   
-                  <div className="flex justify-between items-center text-base">
-                    <div className="flex items-center space-x-2">
-                      <input
-                        type="checkbox"
-                        id="includeGST"
-                        checked={includeGST}
-                        onChange={(e) => setIncludeGST(e.target.checked)}
-                        className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                      />
-                      <label htmlFor="includeGST" className="font-semibold text-gray-700 cursor-pointer">
-                        GST (18%):
-                      </label>
+                  {/* Show GST only if store has tax enabled */}
+                  {store?.enableTax && (
+                    <div className="flex justify-between items-center text-base">
+                      <span className="font-semibold text-gray-700">
+                        {store?.taxName || 'GST'} ({store?.taxRate || 18}%):
+                      </span>
+                      <span className="font-bold text-gray-900">Rs. {getGST().toLocaleString()}</span>
                     </div>
-                    <span className="font-bold text-gray-900">Rs. {getGST().toLocaleString()}</span>
-                  </div>
+                  )}
                   
                   <Separator className="my-3" />
                   
