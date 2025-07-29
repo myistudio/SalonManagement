@@ -13,6 +13,7 @@ import { Settings, Upload, Building, Users, Shield, ArrowLeft, CalendarDays, Clo
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "wouter";
+import type { Store, User } from "@shared/schema";
 
 interface AppointmentSettingsFormProps {
   selectedStoreId: number;
@@ -172,12 +173,12 @@ export default function SettingsPage() {
   const [logoPreview, setLogoPreview] = useState<string>("");
 
   // Fetch stores
-  const { data: stores = [] } = useQuery({
+  const { data: stores = [] } = useQuery<Store[]>({
     queryKey: ["/api/stores"],
   });
 
   // Fetch current store details
-  const { data: store } = useQuery({
+  const { data: store } = useQuery<Store>({
     queryKey: ["/api/stores", selectedStore],
     enabled: !!selectedStore,
   });
@@ -248,7 +249,8 @@ export default function SettingsPage() {
     return roleConfig[role as keyof typeof roleConfig] || { label: role, variant: "secondary" as const };
   };
 
-  if (!user) return null;
+  const typedUser = user as User;
+  if (!typedUser) return null;
 
   return (
     <div className="p-6 space-y-6">
@@ -286,7 +288,7 @@ export default function SettingsPage() {
             <MessageSquare size={16} />
             Communication
           </TabsTrigger>
-          {user?.role === "super_admin" && (
+          {typedUser?.role === "super_admin" && (
             <TabsTrigger value="admin" className="flex items-center gap-2">
               <Settings size={16} />
               Admin
@@ -303,7 +305,7 @@ export default function SettingsPage() {
                 <CardDescription>Choose a store to configure</CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
-                {stores.map((storeItem: any) => (
+                {stores.map((storeItem: Store) => (
                   <div
                     key={storeItem.id}
                     className={`p-3 rounded-lg border cursor-pointer transition-colors ${
@@ -502,9 +504,9 @@ export default function SettingsPage() {
             <CardContent className="space-y-4">
               <div className="flex items-center gap-4">
                 <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
-                  {user.profileImageUrl ? (
+                  {(typedUser as any).profileImageUrl ? (
                     <img
-                      src={user.profileImageUrl}
+                      src={(typedUser as any).profileImageUrl}
                       alt="Profile"
                       className="w-full h-full rounded-full object-cover"
                     />
@@ -514,11 +516,11 @@ export default function SettingsPage() {
                 </div>
                 <div>
                   <h3 className="text-lg font-medium">
-                    {user.firstName} {user.lastName}
+                    {typedUser.firstName} {typedUser.lastName}
                   </h3>
-                  <p className="text-muted-foreground">{user.email}</p>
-                  <Badge {...getRoleBadge(user.role)} className="mt-1">
-                    {getRoleBadge(user.role).label}
+                  <p className="text-muted-foreground">{typedUser.email}</p>
+                  <Badge {...getRoleBadge(typedUser.role)} className="mt-1">
+                    {getRoleBadge(typedUser.role).label}
                   </Badge>
                 </div>
               </div>
@@ -538,14 +540,14 @@ export default function SettingsPage() {
               <div className="space-y-4">
                 <div className="p-4 rounded-lg border">
                   <h4 className="font-medium mb-2">Current Role</h4>
-                  <Badge {...getRoleBadge(user.role)}>
-                    {getRoleBadge(user.role).label}
+                  <Badge {...getRoleBadge(typedUser.role)}>
+                    {getRoleBadge(typedUser.role).label}
                   </Badge>
                 </div>
 
                 <div className="space-y-3">
                   <h4 className="font-medium">Permissions</h4>
-                  {user.role === "super_admin" && (
+                  {typedUser.role === "super_admin" && (
                     <div className="space-y-2">
                       <p className="text-sm">✓ Manage all stores and staff</p>
                       <p className="text-sm">✓ Access all reports and analytics</p>
@@ -554,7 +556,7 @@ export default function SettingsPage() {
                       <p className="text-sm">✓ Process transactions</p>
                     </div>
                   )}
-                  {user.role === "store_manager" && (
+                  {typedUser.role === "store_manager" && (
                     <div className="space-y-2">
                       <p className="text-sm">✓ Manage assigned store</p>
                       <p className="text-sm">✓ View store reports</p>
@@ -563,7 +565,7 @@ export default function SettingsPage() {
                       <p className="text-sm text-muted-foreground">✗ Access other stores</p>
                     </div>
                   )}
-                  {user.role === "cashier" && (
+                  {typedUser.role === "cashier" && (
                     <div className="space-y-2">
                       <p className="text-sm">✓ Process transactions</p>
                       <p className="text-sm">✓ View assigned store inventory</p>
@@ -587,7 +589,7 @@ export default function SettingsPage() {
                 <CardDescription>Choose a store for appointment settings</CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
-                {stores.map((storeItem: any) => (
+                {stores.map((storeItem: Store) => (
                   <div
                     key={storeItem.id}
                     className={`p-3 rounded-lg border cursor-pointer transition-colors ${
