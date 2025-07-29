@@ -759,14 +759,24 @@ export class DatabaseStorage implements IStorage {
         .from(users)
         .where(inArray(users.id, userIds));
       
-      // Combine staff records with user details
+      // Combine staff records with user details in expected format
       return staffRecords.map(staff => {
         const user = userDetails.find(u => u.id === staff.userId);
         return {
-          ...staff,
-          userEmail: user?.email || null,
-          userMobile: user?.mobile || null,
-          userName: user?.name || null
+          id: staff.id,
+          storeId: staff.storeId,
+          userId: staff.userId,
+          role: staff.role,
+          createdAt: staff.createdAt,
+          updatedAt: staff.updatedAt,
+          user: {
+            id: user?.id || staff.userId,
+            email: user?.email || '',
+            mobile: user?.mobile || '',
+            firstName: user?.first_name || '',
+            lastName: user?.last_name || '',
+            role: user?.role || staff.role
+          }
         };
       });
     } catch (error) {

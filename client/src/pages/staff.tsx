@@ -231,11 +231,16 @@ export default function Staff() {
 
   const currentStore = stores.find((store: any) => store.id === selectedStoreId);
 
-  const filteredStaff = staff.filter((member: any) =>
-    member.user.firstName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    member.user.lastName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    member.user.email?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredStaff = staff.filter((member: any) => {
+    // Handle cases where user data might be missing
+    const firstName = member.user?.firstName || member.userEmail || '';
+    const lastName = member.user?.lastName || '';
+    const email = member.user?.email || member.userEmail || '';
+    
+    return firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+           lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+           email.toLowerCase().includes(searchTerm.toLowerCase());
+  });
 
   const getRoleBadgeColor = (role: string) => {
     switch (role) {
