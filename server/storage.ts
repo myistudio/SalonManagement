@@ -773,8 +773,8 @@ export class DatabaseStorage implements IStorage {
             id: user?.id || staff.userId,
             email: user?.email || '',
             mobile: user?.mobile || '',
-            firstName: user?.first_name || '',
-            lastName: user?.last_name || '',
+            firstName: user?.firstName || '',
+            lastName: user?.lastName || '',
             role: user?.role || staff.role
           }
         };
@@ -831,7 +831,11 @@ export class DatabaseStorage implements IStorage {
         : todaysRevenue > 0 ? "100" : "0";
       
       // Get unique customers served today
-      const customersToday = [...new Set(todayTransactions.map(t => t.customerId))].length;
+      const uniqueCustomerIds = new Set();
+      todayTransactions.forEach(t => {
+        if (t.customerId) uniqueCustomerIds.add(t.customerId);
+      });
+      const customersToday = uniqueCustomerIds.size;
       
       // Get today's customers created
       const newCustomersToday = await db.select().from(customers)
@@ -840,18 +844,32 @@ export class DatabaseStorage implements IStorage {
           like(customers.createdAt, `${today}%`)
         ));
       
-      // Count services from today's transaction items
-      const todayTransactionItems = await db.select().from(transactionItems)
-        .where(sql`transactionId IN (SELECT id FROM transactions WHERE storeId = ${storeId} AND createdAt LIKE '${today}%')`);
+      // Count services from today's transactions
+      let servicesToday = 0;
+      try {
+        for (const transaction of todayTransactions) {
+          const items = await db.select().from(transactionItems)
+            .where(eq(transactionItems.transactionId, transaction.id));
+          servicesToday += items.filter(item => item.itemType === 'service').length;
+        }
+      } catch (error) {
+        console.error('Error counting services:', error);
+      }
       
-      const servicesToday = todayTransactionItems.filter(item => item.itemType === 'service').length;
-      
-      // Get active memberships
-      const activeMemberships = await db.select().from(customerMemberships)
-        .where(and(
-          sql`storeId = ${storeId}`,
-          sql`status = 'active'`
-        ));
+      // Get active memberships for store customers
+      let activeMemberships = [];
+      try {
+        const storeCustomers = await db.select().from(customers).where(eq(customers.storeId, storeId));
+        const customerIds = storeCustomers.map(c => c.id);
+        
+        for (const customerId of customerIds) {
+          const membership = await db.select().from(customerMemberships)
+            .where(eq(customerMemberships.customerId, customerId));
+          activeMemberships.push(...membership);
+        }
+      } catch (error) {
+        console.error('Error getting active memberships:', error);
+      }
       
       return {
         customers: customerCount.length,
