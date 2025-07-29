@@ -13,8 +13,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, Plus, User, Phone, Calendar, Award, Receipt, Eye, Download, Users, Gift } from "lucide-react";
+import { Search, Plus, User, Phone, Calendar, Award, Receipt, Eye, Download, Users, Gift, Edit } from "lucide-react";
 import CustomerForm from "@/components/customers/customer-form";
+import CustomerEditForm from "@/components/customers/customer-edit-form";
 import BillingModal from "@/components/billing/billing-modal";
 
 export default function Customers() {
@@ -33,6 +34,7 @@ export default function Customers() {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
   const [viewMode, setViewMode] = useState<'table' | 'grid'>('table');
+  const [showEditForm, setShowEditForm] = useState(false);
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -310,6 +312,16 @@ export default function Customers() {
                                     variant="ghost"
                                     onClick={() => {
                                       setSelectedCustomer(customer);
+                                      setShowEditForm(true);
+                                    }}
+                                  >
+                                    <Edit size={14} />
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => {
+                                      setSelectedCustomer(customer);
                                       setShowMembershipAssignment(true);
                                     }}
                                   >
@@ -449,6 +461,18 @@ export default function Customers() {
                           >
                             <Eye size={14} className="mr-1" />
                             View
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              setSelectedCustomer(customer);
+                              setShowEditForm(true);
+                            }}
+                            className="flex-1"
+                          >
+                            <Edit size={14} className="mr-1" />
+                            Edit
                           </Button>
                           <Button
                             size="sm"
@@ -655,6 +679,16 @@ export default function Customers() {
                 </Button>
                 <Button 
                   variant="outline"
+                  onClick={() => {
+                    setShowCustomerProfile(false);
+                    setShowEditForm(true);
+                  }}
+                >
+                  <Edit size={16} className="mr-2" />
+                  Edit Info
+                </Button>
+                <Button 
+                  variant="outline"
                   onClick={() => setShowCustomerProfile(false)}
                 >
                   Close
@@ -805,6 +839,22 @@ export default function Customers() {
                 </Button>
               </div>
             </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Customer Edit Form Modal */}
+      <Dialog open={showEditForm} onOpenChange={setShowEditForm}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Edit Customer Information</DialogTitle>
+          </DialogHeader>
+          {selectedCustomer && (
+            <CustomerEditForm
+              customer={selectedCustomer}
+              selectedStoreId={selectedStoreId}
+              onSuccess={() => setShowEditForm(false)}
+            />
           )}
         </DialogContent>
       </Dialog>

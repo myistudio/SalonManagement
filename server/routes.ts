@@ -266,6 +266,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.put('/api/customers/:id', isAuthenticated, requirePermission(Permission.MANAGE_CUSTOMERS), hasStoreAccess, async (req: any, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const customerData = req.body;
+      
+      // Validate mobile number if provided
+      if (customerData.mobile && (!/^\d{10}$/.test(customerData.mobile) || customerData.mobile.startsWith('0'))) {
+        return res.status(400).json({ message: "Mobile number must be exactly 10 digits and cannot start with 0" });
+      }
+      
+      const customer = await storage.updateCustomer(id, customerData);
+      res.json(customer);
+    } catch (error) {
+      console.error('Error updating customer:', error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid customer data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Failed to update customer" });
+    }
+  });
+
   app.get('/api/customers/:id', isAuthenticated, async (req: any, res) => {
     try {
       const customerId = parseInt(req.params.id);

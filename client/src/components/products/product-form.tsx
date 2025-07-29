@@ -82,7 +82,7 @@ export default function ProductForm({ storeId, product, onSuccess }: ProductForm
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.name.trim() || !formData.price.trim()) {
+    if (!formData.name.trim() || !String(formData.price).trim()) {
       toast({
         title: "Error",
         description: "Please fill in all required fields",
