@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
+import { useStore } from "@/contexts/store-context";
 
 import StatsCards from "@/components/dashboard/stats-cards";
 import QuickActions from "@/components/dashboard/quick-actions";
@@ -9,11 +10,8 @@ import RecentActivity from "@/components/dashboard/recent-activity";
 import LowStockAlerts from "@/components/dashboard/low-stock-alerts";
 import BillingModal from "@/components/billing/billing-modal";
 
-interface DashboardProps {
-  selectedStoreId?: number;
-}
-
-export default function Dashboard({ selectedStoreId = 1 }: DashboardProps) {
+export default function Dashboard() {
+  const { selectedStoreId } = useStore();
   const { toast } = useToast();
   const { isAuthenticated, isLoading } = useAuth();
   const [showBillingModal, setShowBillingModal] = useState(false);

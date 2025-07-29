@@ -3,6 +3,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import { useQuery } from "@tanstack/react-query";
+import { useStore } from "@/contexts/store-context";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,11 +16,8 @@ import { CalendarDays, Download, TrendingUp, TrendingDown, Users, Package, Crown
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, Area, AreaChart } from "recharts";
 import BillingModal from "@/components/billing/billing-modal";
 
-interface ReportsProps {
-  selectedStoreId?: number;
-}
-
-export default function Reports({ selectedStoreId = 1 }: ReportsProps) {
+export default function Reports() {
+  const { selectedStoreId } = useStore();
   const { toast } = useToast();
   const { isAuthenticated, isLoading } = useAuth();
   const [showBillingModal, setShowBillingModal] = useState(false);

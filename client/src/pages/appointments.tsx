@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useStore } from "@/contexts/store-context";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -39,11 +40,8 @@ interface Appointment {
   updatedAt: string;
 }
 
-interface AppointmentsProps {
-  selectedStoreId?: number;
-}
-
-export default function Appointments({ selectedStoreId = 1 }: AppointmentsProps) {
+export default function Appointments() {
+  const { selectedStoreId } = useStore();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [selectedDate, setSelectedDate] = useState<string>(''); // Show all appointments by default

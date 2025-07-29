@@ -4,6 +4,7 @@ import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
+import { useStore } from "@/contexts/store-context";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,11 +17,8 @@ import { Search, Plus, Crown, Star, Gift, Users, BarChart3, TrendingUp, Calendar
 import MembershipForm from "@/components/memberships/membership-form";
 import BillingModal from "@/components/billing/billing-modal";
 
-interface MembershipsProps {
-  selectedStoreId?: number;
-}
-
-export default function Memberships({ selectedStoreId = 1 }: MembershipsProps) {
+export default function Memberships() {
+  const { selectedStoreId } = useStore();
   const { toast } = useToast();
   const { isAuthenticated, isLoading } = useAuth();
   const queryClient = useQueryClient();
