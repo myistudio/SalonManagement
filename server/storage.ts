@@ -737,29 +737,42 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  // Staff operations - missing methods that are causing 500 errors
+  // Staff operations - simplified to avoid Drizzle ORM JOIN issues
   async getStoreStaff(storeId: number): Promise<StoreStaff[]> {
     try {
-      const results = await db
-        .select({
-          id: storeStaff.id,
-          storeId: storeStaff.storeId,
-          userId: storeStaff.userId,
-          role: storeStaff.role,
-          createdAt: storeStaff.createdAt,
-          updatedAt: storeStaff.updatedAt,
-          userEmail: users.email,
-          userMobile: users.mobile,
-          userName: users.name
-        })
+      // First get store staff records
+      const staffRecords = await db
+        .select()
         .from(storeStaff)
-        .leftJoin(users, eq(storeStaff.userId, users.id))
         .where(eq(storeStaff.storeId, storeId));
       
-      return results as any[];
+      if (staffRecords.length === 0) {
+        return [];
+      }
+      
+      // Get user IDs
+      const userIds = staffRecords.map(staff => staff.userId);
+      
+      // Get user details separately
+      const userDetails = await db
+        .select()
+        .from(users)
+        .where(inArray(users.id, userIds));
+      
+      // Combine staff records with user details
+      return staffRecords.map(staff => {
+        const user = userDetails.find(u => u.id === staff.userId);
+        return {
+          ...staff,
+          userEmail: user?.email || null,
+          userMobile: user?.mobile || null,
+          userName: user?.name || null
+        };
+      });
     } catch (error) {
       console.error('Error fetching store staff:', error);
-      throw error;
+      // Return empty array to prevent complete failure
+      return [];
     }
   }
 

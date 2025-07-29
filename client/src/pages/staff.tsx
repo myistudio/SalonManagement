@@ -636,6 +636,9 @@ export default function Staff() {
                 <SelectContent>
                   <SelectItem value="executive">Executive</SelectItem>
                   <SelectItem value="store_manager">Store Manager</SelectItem>
+                  <SelectItem value="senior_nail_artist">Senior Nail Artist</SelectItem>
+                  <SelectItem value="junior_nail_artist">Junior Nail Artist</SelectItem>
+                  <SelectItem value="beginner_nail_artist">Beginner Nail Artist</SelectItem>
                   {user?.role === 'super_admin' && (
                     <SelectItem value="super_admin">Super Admin</SelectItem>
                   )}

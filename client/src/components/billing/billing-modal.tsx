@@ -54,6 +54,19 @@ interface Customer {
   };
 }
 
+// Helper function to display role names properly
+const getRoleDisplayName = (role: string) => {
+  const roleMap: { [key: string]: string } = {
+    'executive': 'Executive',
+    'store_manager': 'Store Manager',
+    'senior_nail_artist': 'Senior Nail Artist',
+    'junior_nail_artist': 'Junior Nail Artist',
+    'beginner_nail_artist': 'Beginner Nail Artist',
+    'super_admin': 'Super Admin'
+  };
+  return roleMap[role] || role;
+};
+
 // Receipt Dialog Component
 interface ReceiptDialogProps {
   isOpen: boolean;
@@ -1248,7 +1261,7 @@ export default function BillingModal({ isOpen, onClose, storeId }: BillingModalP
                           <option value="">Select Staff Member</option>
                           {allStoreStaff.map((member: any) => (
                             <option key={member.user.id} value={member.user.id}>
-                              {member.user.firstName} {member.user.lastName} ({member.role === 'executive' ? 'Executive' : member.role === 'store_manager' ? 'Store Manager' : member.role})
+                              {member.user.firstName} {member.user.lastName} ({getRoleDisplayName(member.role)})
                             </option>
                           ))}
                         </select>
