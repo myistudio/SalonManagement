@@ -9,7 +9,9 @@ import express from "express";
 import {
   insertCustomerSchema,
   insertServiceSchema,
+  insertServiceCategorySchema,
   insertProductSchema,
+  insertProductCategorySchema,
   insertMembershipPlanSchema,
   insertTransactionSchema,
   users,
