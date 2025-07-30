@@ -3,6 +3,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
+import { useStore } from "@/contexts/StoreContext";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,7 +22,7 @@ import BillingModal from "@/components/billing/billing-modal";
 export default function Bills() {
   const { toast } = useToast();
   const { isAuthenticated, isLoading } = useAuth();
-  const [selectedStoreId, setSelectedStoreId] = useState<number>(9);
+  const { selectedStoreId } = useStore();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedBills, setSelectedBills] = useState<number[]>([]);
   const [showBillDetails, setShowBillDetails] = useState(false);
@@ -44,7 +45,7 @@ export default function Bills() {
     }
   }, [isAuthenticated, isLoading, toast]);
 
-  const { data: transactions = [], isLoading: transactionsLoading } = useQuery({
+  const { data: transactions = [], isLoading: transactionsLoading, refetch: refetchTransactions } = useQuery({
     queryKey: ["/api/transactions", selectedStoreId, startDate, endDate],
     queryFn: async () => {
       let url = `/api/transactions?storeId=${selectedStoreId}&limit=50`;
@@ -56,6 +57,8 @@ export default function Bills() {
     },
     enabled: !!selectedStoreId,
     retry: false,
+    refetchInterval: 5000, // Auto-refresh every 5 seconds
+    refetchOnWindowFocus: true, // Refresh when window gets focus
   });
 
   const { data: stores = [] } = useQuery({
@@ -216,10 +219,7 @@ export default function Bills() {
       <div className="flex h-screen bg-gray-100">
         <Sidebar onOpenBilling={() => setShowBillingModal(true)} />
         <div className="flex-1 flex flex-col">
-          <Header 
-            selectedStoreId={selectedStoreId} 
-            onStoreChange={setSelectedStoreId}
-          />
+          <Header />
           <main className="flex-1 p-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <Skeleton className="h-32" />
@@ -236,11 +236,7 @@ export default function Bills() {
     <div className="flex h-screen bg-gray-100">
       <Sidebar onOpenBilling={() => setShowBillingModal(true)} />
       <div className="flex-1 flex flex-col">
-        <Header 
-          selectedStoreId={selectedStoreId} 
-          onStoreChange={setSelectedStoreId} 
-          stores={stores}
-        />
+        <Header />
         <main className="flex-1 p-6 overflow-auto">
           <div className="space-y-6">
             <div className="flex justify-between items-center">
