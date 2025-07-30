@@ -3,7 +3,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
-import { useStore } from "@/contexts/StoreContext";
+import { useStore } from "@/contexts/store-context";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -48,17 +48,23 @@ export default function Bills() {
   const { data: transactions = [], isLoading: transactionsLoading, refetch: refetchTransactions } = useQuery({
     queryKey: ["/api/transactions", selectedStoreId, startDate, endDate],
     queryFn: async () => {
+      console.log("Fetching transactions for store:", selectedStoreId);
       let url = `/api/transactions?storeId=${selectedStoreId}&limit=50`;
       if (startDate) url += `&startDate=${startDate}`;
       if (endDate) url += `&endDate=${endDate}`;
       
       const response = await apiRequest('GET', url);
-      return response.json();
+      const data = await response.json();
+      console.log("Fetched transactions:", data.length, "for store", selectedStoreId);
+      return data;
     },
     enabled: !!selectedStoreId,
     retry: false,
-    refetchInterval: 5000, // Auto-refresh every 5 seconds
+    refetchInterval: 2000, // Auto-refresh every 2 seconds  
     refetchOnWindowFocus: true, // Refresh when window gets focus
+    staleTime: 0, // Always consider data stale
+    gcTime: 0, // Don't cache old data
+    refetchIntervalInBackground: true // Keep refreshing even when tab is not active
   });
 
   const { data: stores = [] } = useQuery({
@@ -329,7 +335,7 @@ export default function Bills() {
                         <TableHead className="w-12">
                           <Checkbox
                             checked={selectedBills.length === filteredTransactions.length}
-                            onCheckedChange={handleSelectAll}
+                            onCheckedChange={(checked) => handleSelectAll(!!checked)}
                           />
                         </TableHead>
                         <TableHead>Invoice</TableHead>
@@ -346,7 +352,7 @@ export default function Bills() {
                           <TableCell>
                             <Checkbox
                               checked={selectedBills.includes(transaction.id)}
-                              onCheckedChange={(checked) => handleSelectBill(transaction.id, checked)}
+                              onCheckedChange={(checked) => handleSelectBill(transaction.id, !!checked)}
                             />
                           </TableCell>
                           <TableCell className="font-medium">
