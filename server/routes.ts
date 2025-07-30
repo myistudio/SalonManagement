@@ -933,7 +933,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           if (existingUserByEmail.role !== role) {
             await db
               .update(users)
-              .set({ role, updatedAt: new Date() })
+              .set({ role })
               .where(eq(users.id, existingUserByEmail.id));
           }
           
@@ -969,7 +969,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           if (existingUserByMobile.role !== role) {
             await db
               .update(users)
-              .set({ role, updatedAt: new Date() })
+              .set({ role })
               .where(eq(users.id, existingUserByMobile.id));
           }
           

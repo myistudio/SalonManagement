@@ -1204,14 +1204,15 @@ export class DatabaseStorage implements IStorage {
 
   // Staff operations
   async assignUserToStore(userId: string, storeId: number, role: string): Promise<StoreStaff> {
+    const now = new Date();
     const [assignment] = await db.insert(storeStaff)
       .values({
         userId,
         storeId,
         role,
         isActive: true,
-        createdAt: getISTDateTime(),
-        updatedAt: getISTDateTime()
+        createdAt: now,
+        updatedAt: now
       })
       .returning();
     return assignment;
