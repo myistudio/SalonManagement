@@ -512,61 +512,84 @@ export class DatabaseStorage implements IStorage {
   }
 
   async assignMembershipToCustomer(customerId: number, membershipPlanId: number): Promise<CustomerMembership> {
-    const [membership] = await db
-      .insert(customerMemberships)
-      .values({
-        customerId,
-        membershipPlanId,
-        startDate: new Date().toISOString().split('T')[0], // Format as YYYY-MM-DD
-        isActive: true
-      })
-      .returning();
-    return membership;
+    try {
+      // Get membership plan to calculate end date
+      const plan = await this.getMembershipPlan(membershipPlanId);
+      if (!plan) {
+        throw new Error('Membership plan not found');
+      }
+
+      const startDate = new Date();
+      const endDate = new Date(startDate);
+      endDate.setMonth(endDate.getMonth() + (plan.durationMonths || 12)); // Default to 12 months if not specified
+
+      console.log(`Assigning membership: customerId=${customerId}, planId=${membershipPlanId}, duration=${plan.durationMonths} months`);
+
+      const [membership] = await db
+        .insert(customerMemberships)
+        .values({
+          customerId,
+          membershipPlanId,
+          startDate: startDate.toISOString().split('T')[0], // Format as YYYY-MM-DD
+          endDate: endDate.toISOString().split('T')[0], // Format as YYYY-MM-DD
+          isActive: true
+        })
+        .returning();
+      
+      console.log('Membership assigned successfully:', membership);
+      return membership;
+    } catch (error) {
+      console.error('Error assigning membership:', error);
+      throw error;
+    }
   }
 
   // Transaction operations
   async getTransactions(storeId: number, limit?: number, startDate?: string, endDate?: string): Promise<Transaction[]> {
     console.log(`DatabaseStorage.getTransactions called for store: ${storeId}, limit: ${limit}`);
     
-    let query = db
-      .select({
-        id: transactions.id,
-        storeId: transactions.storeId,
-        customerId: transactions.customerId,
-        invoiceNumber: transactions.invoiceNumber,
-        subtotal: transactions.subtotal,
-        discountAmount: transactions.discountAmount,
-        taxAmount: transactions.taxAmount,
-        totalAmount: transactions.totalAmount,
-        paymentMethod: transactions.paymentMethod,
-        paymentStatus: transactions.paymentStatus,
-        pointsEarned: transactions.pointsEarned,
-        pointsRedeemed: transactions.pointsRedeemed,
-        membershipDiscount: transactions.membershipDiscount,
-        staffId: transactions.staffId,
-        notes: transactions.notes,
-        createdAt: transactions.createdAt,
-        updatedAt: transactions.updatedAt,
-        customer: {
-          id: customers.id,
-          firstName: customers.firstName,
-          lastName: customers.lastName,
-          mobile: customers.mobile,
-          email: customers.email
-        }
-      })
+    // First get transactions
+    let baseQuery = db
+      .select()
       .from(transactions)
-      .leftJoin(customers, eq(customers.id, transactions.customerId))
       .where(eq(transactions.storeId, storeId))
       .orderBy(desc(transactions.createdAt));
 
     if (limit) {
-      query = query.limit(limit);
+      baseQuery = baseQuery.limit(limit);
     }
 
-    const results = await query;
-    console.log(`Found ${results.length} transactions for store ${storeId}`);
-    return results as any[];
+    const transactionResults = await baseQuery;
+    console.log(`Found ${transactionResults.length} transactions for store ${storeId}`);
+
+    // Get customer details separately for each transaction
+    const transactionsWithCustomers = await Promise.all(
+      transactionResults.map(async (transaction) => {
+        if (transaction.customerId) {
+          const [customer] = await db
+            .select({
+              id: customers.id,
+              firstName: customers.firstName,
+              lastName: customers.lastName,
+              mobile: customers.mobile,
+              email: customers.email
+            })
+            .from(customers)
+            .where(eq(customers.id, transaction.customerId));
+          
+          return {
+            ...transaction,
+            customer: customer || null
+          };
+        }
+        return {
+          ...transaction,
+          customer: null
+        };
+      })
+    );
+
+    return transactionsWithCustomers as any[];
   }
 
   async getTransaction(id: number): Promise<Transaction | undefined> {
@@ -1106,8 +1129,10 @@ export class DatabaseStorage implements IStorage {
   // Reports operations
   async getSalesReport(storeId: number, startDate: Date, endDate: Date): Promise<any> {
     try {
-      const start = startDate.toISOString().split('T')[0];
-      const end = endDate.toISOString().split('T')[0];
+      const start = `${startDate.toISOString().split('T')[0]} 00:00:00`;
+      const end = `${endDate.toISOString().split('T')[0]} 23:59:59`;
+      
+      console.log(`Getting sales report for store ${storeId} from ${start} to ${end}`);
       
       const salesData = await db.select().from(transactions)
         .where(and(
@@ -1115,6 +1140,8 @@ export class DatabaseStorage implements IStorage {
           gte(transactions.createdAt, start),
           lte(transactions.createdAt, end)
         ));
+      
+      console.log(`Found ${salesData.length} transactions for sales report`);
       
       const totalRevenue = salesData.reduce((sum, t) => sum + (t.totalAmount || 0), 0);
       const totalTransactions = salesData.length;
@@ -1152,12 +1179,19 @@ export class DatabaseStorage implements IStorage {
   async getDailySalesReport(storeId: number, date: Date): Promise<any> {
     try {
       const dateStr = date.toISOString().split('T')[0];
+      const startOfDay = `${dateStr} 00:00:00`;
+      const endOfDay = `${dateStr} 23:59:59`;
+      
+      console.log(`Getting daily sales for store ${storeId} on ${dateStr}`);
       
       const dailySales = await db.select().from(transactions)
         .where(and(
           eq(transactions.storeId, storeId),
-          like(transactions.createdAt, `${dateStr}%`)
+          gte(transactions.createdAt, startOfDay),
+          lte(transactions.createdAt, endOfDay)
         ));
+      
+      console.log(`Found ${dailySales.length} transactions for daily report`);
       
       return {
         date: dateStr,
