@@ -834,15 +834,21 @@ export class DatabaseStorage implements IStorage {
     try {
       console.log('=== CREATE APPOINTMENT: Input data:', appointment);
       
-      // Remove timestamps and let PostgreSQL handle them automatically
+      // Map to actual database schema
       const appointmentData = {
         storeId: appointment.storeId,
         customerName: appointment.customerName,
+        customerMobile: appointment.customerPhone || appointment.customerMobile,
         customerPhone: appointment.customerPhone,
         customerEmail: appointment.customerEmail || null,
+        dateOfBirth: appointment.dateOfBirth || null,
+        gender: appointment.gender || null,
         appointmentDate: appointment.appointmentDate,
         appointmentTime: appointment.appointmentTime,
-        services: appointment.services,
+        serviceIds: appointment.serviceIds || (appointment.services ? JSON.parse(appointment.services) : []), // Convert to array if needed
+        serviceName: appointment.serviceName || 'Service',
+        totalAmount: appointment.totalAmount || '0',
+        duration: appointment.duration || 30,
         status: appointment.status || 'pending',
         notes: appointment.notes || null
       };

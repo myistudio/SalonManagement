@@ -1770,13 +1770,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Customer phone number is required" });
       }
       
-      // Map serviceIds array to services JSON string for database compatibility
+      // Handle serviceIds mapping for database compatibility
       if (requestBody.serviceIds && Array.isArray(requestBody.serviceIds)) {
-        requestBody.services = JSON.stringify(requestBody.serviceIds);
-        delete requestBody.serviceIds;
-      } else if (!requestBody.services) {
+        // serviceIds is already an array, keep it
+      } else if (requestBody.services) {
+        // Convert services JSON string to array
+        try {
+          requestBody.serviceIds = JSON.parse(requestBody.services);
+        } catch (e) {
+          return res.status(400).json({ message: "Invalid services format" });
+        }
+      } else {
         return res.status(400).json({ message: "Services are required" });
       }
+      
+      // Clean up - remove services field to avoid confusion
+      delete requestBody.services;
       
       if (requestBody.dateOfBirth === '') {
         requestBody.dateOfBirth = null;

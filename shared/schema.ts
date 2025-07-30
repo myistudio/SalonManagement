@@ -1,4 +1,4 @@
-import { pgTable, text, integer, real, boolean, timestamp, serial, varchar } from 'drizzle-orm/pg-core';
+import { pgTable, text, integer, real, boolean, timestamp, serial, varchar, date, decimal } from 'drizzle-orm/pg-core';
 import { relations, sql } from 'drizzle-orm';
 import { createInsertSchema } from 'drizzle-zod';
 import { z } from 'zod';
@@ -190,16 +190,22 @@ export const transactionItems = pgTable('transaction_items', {
   createdAt: timestamp('created_at').defaultNow()
 });
 
-// Appointments table
+// Appointments table (matches actual database schema)
 export const appointments = pgTable('appointments', {
   id: serial('id').primaryKey(),
   storeId: integer('store_id').notNull().references(() => stores.id),
   customerName: varchar('customer_name').notNull(),
-  customerPhone: varchar('customer_phone').notNull(),
+  customerMobile: varchar('customer_mobile').notNull(),
+  customerPhone: varchar('customer_phone'),
   customerEmail: varchar('customer_email'),
-  appointmentDate: varchar('appointment_date').notNull(),
+  dateOfBirth: date('date_of_birth'),
+  gender: varchar('gender'),
+  appointmentDate: date('appointment_date').notNull(),
   appointmentTime: varchar('appointment_time').notNull(),
-  services: text('services').notNull(), // JSON string of service IDs
+  serviceIds: text('service_ids').array().notNull(), // Array of service IDs
+  serviceName: text('service_name').notNull(),
+  totalAmount: decimal('total_amount').notNull(),
+  duration: integer('duration').notNull(),
   status: varchar('status').default('pending'),
   notes: text('notes'),
   createdAt: timestamp('created_at').defaultNow(),
