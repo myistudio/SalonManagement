@@ -754,21 +754,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Transaction routes
-  app.get('/api/transactions', isAuthenticated, requirePermission(Permission.MANAGE_TRANSACTIONS), hasStoreAccess, async (req: any, res) => {
+  app.get('/api/transactions', isAuthenticated, async (req: any, res) => {
     try {
       const storeId = parseInt(req.query.storeId as string);
-      const limit = req.query.limit ? parseInt(req.query.limit as string) : 50; // Default to 50
+      const limit = req.query.limit ? parseInt(req.query.limit as string) : 25; // Default to 25 for bills
       const startDate = req.query.startDate as string;
       const endDate = req.query.endDate as string;
       
-      console.log(`Fetching transactions for store: ${storeId}, limit: ${limit}`);
+      console.log(`=== TRANSACTIONS API: Fetching for store: ${storeId}, limit: ${limit}`);
       
       if (!storeId) {
         return res.status(400).json({ message: "Store ID is required" });
       }
       
       const transactions = await storage.getTransactions(storeId, limit, startDate, endDate);
-      console.log(`Found ${transactions.length} transactions for store ${storeId}`);
+      console.log(`=== TRANSACTIONS API: Returning ${transactions.length} transactions for store ${storeId}`);
       
       // Set no-cache headers to prevent caching
       res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
@@ -780,6 +780,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error fetching transactions:', error);
       res.status(500).json({ message: "Failed to fetch transactions", error: (error as Error).message });
+    }
+  });
+
+  // Get transaction items for bill details
+  app.get('/api/transactions/:id/items', isAuthenticated, async (req: any, res) => {
+    try {
+      const transactionId = parseInt(req.params.id);
+      console.log(`=== TRANSACTION ITEMS: Fetching for transaction: ${transactionId}`);
+      
+      const items = await storage.getTransactionItems(transactionId);
+      console.log(`=== TRANSACTION ITEMS: Found ${items.length} items`);
+      
+      res.set('Cache-Control', 'no-store, no-cache, must-revalidate');
+      res.json(items);
+    } catch (error) {
+      console.error("Error fetching transaction items:", error);
+      res.status(500).json({ message: "Failed to fetch transaction items" });
     }
   });
 

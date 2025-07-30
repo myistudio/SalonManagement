@@ -1220,6 +1220,32 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
+  // Transaction items operations
+  async getTransactionItems(transactionId: number): Promise<any[]> {
+    try {
+      console.log(`=== STORAGE: Getting transaction items for transaction ${transactionId}`);
+      
+      const items = await db.select({
+        id: transactionItems.id,
+        transactionId: transactionItems.transactionId,
+        itemType: transactionItems.itemType,
+        itemId: transactionItems.itemId,
+        itemName: transactionItems.itemName,
+        quantity: transactionItems.quantity,
+        unitPrice: transactionItems.unitPrice,
+        totalPrice: transactionItems.totalPrice,
+      }).from(transactionItems)
+        .where(eq(transactionItems.transactionId, transactionId))
+        .orderBy(transactionItems.id);
+      
+      console.log(`=== STORAGE: Found ${items.length} items for transaction ${transactionId}`);
+      return items;
+    } catch (error) {
+      console.error('Error getting transaction items:', error);
+      return [];
+    }
+  }
+
   async getMembershipReport(storeId: number): Promise<any> {
     try {
       const memberships = await db.select().from(customerMemberships)
