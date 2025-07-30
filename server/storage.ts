@@ -973,18 +973,18 @@ export class DatabaseStorage implements IStorage {
       const productCount = await db.select().from(products).where(eq(products.storeId, storeId));
       const serviceCount = await db.select().from(services).where(eq(services.storeId, storeId));
       
-      // Get today's transactions
+      // Get today's transactions using proper date casting
       const todayTransactions = await db.select().from(transactions)
         .where(and(
           eq(transactions.storeId, storeId),
-          like(transactions.createdAt, `${today}%`)
+          sql`DATE(${transactions.createdAt}) = ${today}`
         ));
       
       // Get yesterday's transactions for comparison
       const yesterdayTransactions = await db.select().from(transactions)
         .where(and(
           eq(transactions.storeId, storeId),
-          like(transactions.createdAt, `${yesterday}%`)
+          sql`DATE(${transactions.createdAt}) = ${yesterday}`
         ));
       
       // Calculate revenue
@@ -1007,7 +1007,7 @@ export class DatabaseStorage implements IStorage {
       const newCustomersToday = await db.select().from(customers)
         .where(and(
           eq(customers.storeId, storeId),
-          like(customers.createdAt, `${today}%`)
+          sql`DATE(${customers.createdAt}) = ${today}`
         ));
       
       // Count services from today's transactions
