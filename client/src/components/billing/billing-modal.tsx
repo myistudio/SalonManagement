@@ -438,14 +438,12 @@ export default function BillingModal({ isOpen, onClose, storeId }: BillingModalP
   };
 
   const getGST = () => {
-    // Check if store has tax enabled
-    if (!store?.enableTax) return 0;
-    const taxRate = (store?.taxRate || 18) / 100; // Use store tax rate or default 18%
-    return (getSubtotal() - getDiscount()) * taxRate;
+    // Always return 0 to remove GST from POS
+    return 0;
   };
 
   const getTotal = () => {
-    return getSubtotal() - getDiscount() + getGST();
+    return getSubtotal() - getDiscount();
   };
 
   const getPointsEarned = () => {
@@ -490,7 +488,7 @@ export default function BillingModal({ isOpen, onClose, storeId }: BillingModalP
         customerId: selectedCustomer?.id || null,
         subtotal: getSubtotal().toFixed(2),
         discountAmount: getDiscount().toFixed(2),
-        taxAmount: getGST().toFixed(2),
+        taxAmount: "0.00",
         totalAmount: getTotal().toFixed(2),
         pointsEarned: getPointsEarned(),
         pointsRedeemed: pointsToRedeem,
@@ -1064,15 +1062,7 @@ export default function BillingModal({ isOpen, onClose, storeId }: BillingModalP
                     </div>
                   )}
                   
-                  {/* Show GST only if store has tax enabled */}
-                  {store?.enableTax && (
-                    <div className="flex justify-between items-center text-sm">
-                      <span className="font-semibold text-gray-700">
-                        {store?.taxName || 'GST'} ({store?.taxRate || 18}%):
-                      </span>
-                      <span className="font-bold text-gray-900">Rs. {getGST().toLocaleString()}</span>
-                    </div>
-                  )}
+                  {/* GST removed from POS - no longer shown */}
                   
                   <Separator className="my-2" />
                   
