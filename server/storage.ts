@@ -1023,9 +1023,7 @@ export class DatabaseStorage implements IStorage {
   // Dashboard operations
   async getDashboardStats(storeId: number): Promise<any> {
     try {
-      // Get IST dates using timezone utility
-      const today = getISTDateString();
-      const yesterday = getISTDateString(new Date(Date.now() - 24 * 60 * 60 * 1000));
+      console.log(`=== DASHBOARD STATS: Fetching for store ${storeId}`);
       
       // Get basic counts with store filtering
       const customerCount = await db.select().from(customers).where(eq(customers.storeId, storeId));
