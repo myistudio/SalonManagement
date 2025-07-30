@@ -517,7 +517,7 @@ export class DatabaseStorage implements IStorage {
       .values({
         customerId,
         membershipPlanId,
-        startDate: new Date(),
+        startDate: new Date().toISOString().split('T')[0], // Format as YYYY-MM-DD
         isActive: true
       })
       .returning();
@@ -564,12 +564,11 @@ export class DatabaseStorage implements IStorage {
           discountAmount: transaction.discountAmount || 0,
           taxAmount: transaction.taxAmount || 0,
           totalAmount: transaction.totalAmount,
-          paymentMethod: transaction.paymentMethod || 'Cash',
+          paymentMethod: transaction.paymentMethod || 'cash',
           staffId: transaction.staffId || null,
           pointsEarned: transaction.pointsEarned || 0,
           pointsRedeemed: transaction.pointsRedeemed || 0,
-          membershipDiscount: transaction.membershipDiscount || 0,
-          isActive: true
+          membershipDiscount: transaction.membershipDiscount || 0
         })
         .returning();
 
