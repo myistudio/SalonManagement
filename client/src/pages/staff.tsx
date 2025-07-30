@@ -44,7 +44,7 @@ export default function Staff() {
   const [newStaffPassword, setNewStaffPassword] = useState("");
   const [newStaffFirstName, setNewStaffFirstName] = useState("");
   const [newStaffLastName, setNewStaffLastName] = useState("");
-  const [newStaffRole, setNewStaffRole] = useState("cashier");
+  const [newStaffRole, setNewStaffRole] = useState("executive");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
@@ -358,7 +358,10 @@ export default function Staff() {
             <p className="text-gray-600">Manage store staff and their roles</p>
           </div>
         </div>
-        <Button className="bg-primary hover:bg-primary/90">
+        <Button 
+          onClick={() => setShowAddDialog(true)}
+          className="bg-primary hover:bg-primary/90"
+        >
           <Plus size={16} className="mr-2" />
           Add Staff
         </Button>
@@ -458,12 +461,19 @@ export default function Staff() {
                     </Button>
                     <Button 
                       onClick={() => {
-                        // Add staff member logic here
-                        setShowAddDialog(false);
+                        addStaffMutation.mutate({
+                          email: newStaffEmail,
+                          mobile: newStaffMobile || undefined,
+                          password: newStaffPassword,
+                          firstName: newStaffFirstName,
+                          lastName: newStaffLastName || undefined,
+                          role: newStaffRole,
+                          storeId: selectedStoreId!
+                        });
                       }}
-                      disabled={!newStaffEmail || !newStaffPassword || !newStaffFirstName}
+                      disabled={!newStaffEmail || !newStaffPassword || !newStaffFirstName || addStaffMutation.isPending}
                     >
-                      Add Staff
+                      {addStaffMutation.isPending ? 'Adding...' : 'Add Staff'}
                     </Button>
                   </DialogFooter>
                 </DialogContent>
