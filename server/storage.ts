@@ -1256,6 +1256,38 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
+  // Transaction Items operations
+  async getTransactionItems(transactionId: number): Promise<any[]> {
+    try {
+      console.log(`=== TRANSACTION ITEMS: Fetching for transaction ${transactionId}`);
+      const items = await db.select().from(transactionItems)
+        .where(eq(transactionItems.transactionId, transactionId));
+      console.log(`=== TRANSACTION ITEMS: Found ${items.length} items`);
+      return items;
+    } catch (error) {
+      console.error('Error getting transaction items:', error);
+      return [];
+    }
+  }
+
+  // Delete transaction
+  async deleteTransaction(transactionId: number): Promise<void> {
+    try {
+      console.log(`=== DELETE TRANSACTION: Starting deletion for ${transactionId}`);
+      
+      // First delete transaction items
+      await db.delete(transactionItems).where(eq(transactionItems.transactionId, transactionId));
+      console.log(`=== DELETE TRANSACTION: Deleted items for transaction ${transactionId}`);
+      
+      // Then delete the transaction
+      await db.delete(transactions).where(eq(transactions.id, transactionId));
+      console.log(`=== DELETE TRANSACTION: Deleted transaction ${transactionId}`);
+    } catch (error) {
+      console.error('Error deleting transaction:', error);
+      throw error;
+    }
+  }
+
   // Product operations
   async getLowStockProducts(storeId: number): Promise<any[]> {
     try {
