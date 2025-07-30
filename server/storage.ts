@@ -1084,12 +1084,19 @@ export class DatabaseStorage implements IStorage {
       // Get active memberships for store customers
       let activeMemberships = [];
       try {
+        console.log(`=== DASHBOARD STATS: Fetching active memberships for store ${storeId}`);
         const storeCustomers = await db.select().from(customers).where(eq(customers.storeId, storeId));
+        console.log(`=== DASHBOARD STATS: Found ${storeCustomers.length} customers in store ${storeId}`);
+        
         const customerIds = storeCustomers.map(c => c.id);
         
         if (customerIds.length > 0) {
           activeMemberships = await db.select().from(customerMemberships)
-            .where(inArray(customerMemberships.customerId, customerIds));
+            .where(and(
+              inArray(customerMemberships.customerId, customerIds),
+              sql`${customerMemberships.endDate} > CURRENT_DATE OR ${customerMemberships.endDate} IS NULL`
+            ));
+          console.log(`=== DASHBOARD STATS: Found ${activeMemberships.length} active memberships for store ${storeId}`);
         }
       } catch (error) {
         console.error('Error getting active memberships:', error);
