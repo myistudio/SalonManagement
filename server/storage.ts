@@ -1178,17 +1178,16 @@ export class DatabaseStorage implements IStorage {
 
   async getDailySalesReport(storeId: number, date: Date): Promise<any> {
     try {
-      const dateStr = date.toISOString().split('T')[0];
-      const startOfDay = `${dateStr} 00:00:00`;
-      const endOfDay = `${dateStr} 23:59:59`;
+      const today = new Date();
+      const dateStr = today.toISOString().split('T')[0]; // Use today's date
       
       console.log(`Getting daily sales for store ${storeId} on ${dateStr}`);
       
+      // Use SQL function to filter by date
       const dailySales = await db.select().from(transactions)
         .where(and(
           eq(transactions.storeId, storeId),
-          gte(transactions.createdAt, startOfDay),
-          lte(transactions.createdAt, endOfDay)
+          sql`DATE(${transactions.createdAt}) = ${dateStr}`
         ));
       
       console.log(`Found ${dailySales.length} transactions for daily report`);

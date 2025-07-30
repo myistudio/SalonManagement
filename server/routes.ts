@@ -734,10 +734,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/membership-plans', isAuthenticated, async (req: any, res) => {
     try {
       const storeId = parseInt(req.query.storeId as string);
+      console.log('Fetching membership plans for store:', storeId);
       if (!storeId) {
         return res.status(400).json({ message: "Store ID is required" });
       }
       const plans = await storage.getMembershipPlans(storeId);
+      console.log('Found membership plans:', plans.length);
+      
+      // Set no-cache headers
+      res.set('Cache-Control', 'no-store, no-cache, must-revalidate');
+      res.set('Pragma', 'no-cache');
+      res.set('Expires', '0');
+      
       res.json(plans);
     } catch (error) {
       console.error('Error fetching membership plans:', error);
@@ -1260,13 +1268,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/reports/daily-sales', isAuthenticated, requirePermission(Permission.VIEW_STORE_REPORTS), hasStoreAccess, async (req: any, res) => {
     try {
       const storeId = parseInt(req.query.storeId as string);
-      const date = new Date(req.query.date as string);
       
-      if (!storeId || !date) {
-        return res.status(400).json({ message: "Store ID and date are required" });
+      if (!storeId) {
+        return res.status(400).json({ message: "Store ID is required" });
       }
       
-      const report = await storage.getDailySalesReport(storeId, date);
+      // Use today's date if no date provided
+      const today = new Date();
+      const report = await storage.getDailySalesReport(storeId, today);
+      
+      // Set no-cache headers  
+      res.set('Cache-Control', 'no-store, no-cache, must-revalidate');
+      res.set('Pragma', 'no-cache');
+      res.set('Expires', '0');
+      
       res.json(report);
     } catch (error) {
       console.error("Daily sales report error:", error);

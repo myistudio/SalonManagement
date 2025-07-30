@@ -46,37 +46,26 @@ export default function Bills() {
   }, [isAuthenticated, isLoading, toast]);
 
   const { data: transactions = [], isLoading: transactionsLoading, refetch: refetchTransactions } = useQuery({
-    queryKey: ["/api/transactions", selectedStoreId, startDate, endDate, Date.now()], // Add timestamp to force refresh
-    queryFn: async () => {
-      console.log("Fetching transactions for store:", selectedStoreId);
-      let url = `/api/transactions?storeId=${selectedStoreId}&limit=50&_t=${Date.now()}`; // Add cache busting
-      if (startDate) url += `&startDate=${startDate}`;
-      if (endDate) url += `&endDate=${endDate}`;
-      
-      const response = await apiRequest('GET', url);
-      const data = await response.json();
-      console.log("Fetched transactions:", data.length, "for store", selectedStoreId);
-      return data;
-    },
-    enabled: !!selectedStoreId,
-    retry: false,
-    refetchInterval: 2000, // Auto-refresh every 2 seconds  
-    refetchOnWindowFocus: true, // Refresh when window gets focus
-    staleTime: 0, // Always consider data stale
-    gcTime: 0, // Don't cache old data
-    refetchIntervalInBackground: true, // Keep refreshing even when tab is not active
+    queryKey: ["/api/transactions", selectedStoreId, startDate, endDate],
     queryFn: async ({ queryKey }) => {
       const [, storeId] = queryKey;
-      console.log("=== BILLS QUERY: Fetching transactions for store:", storeId);
+      console.log("=== BILLS FETCH: Starting for store:", storeId);
       let url = `/api/transactions?storeId=${storeId}&limit=50&_t=${Date.now()}`;
       if (startDate) url += `&startDate=${startDate}`;
       if (endDate) url += `&endDate=${endDate}`;
       
       const response = await apiRequest('GET', url);
       const data = await response.json();
-      console.log("=== BILLS QUERY: Fetched", data.length, "transactions for store", storeId);
+      console.log("=== BILLS FETCH: Got", data.length, "transactions for store", storeId);
       return data;
-    }
+    },
+    enabled: !!selectedStoreId,
+    retry: false,
+    refetchInterval: 5000, // Auto-refresh every 5 seconds  
+    refetchOnWindowFocus: true, // Refresh when window gets focus
+    staleTime: 0, // Always consider data stale
+    gcTime: 0, // Don't cache old data
+    refetchIntervalInBackground: true // Keep refreshing even when tab is not active
   });
 
   const { data: stores = [] } = useQuery({
