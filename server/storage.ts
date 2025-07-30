@@ -125,6 +125,7 @@ export interface IStorage {
   getAppointments(storeId?: number): Promise<any[]>;
 }
 
+// Switch from SQLite to PostgreSQL
 export class DatabaseStorage implements IStorage {
   // User operations (required for Replit Auth)
   async getUser(id: string): Promise<User | undefined> {

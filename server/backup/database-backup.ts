@@ -14,21 +14,11 @@ export async function ensureBackupDirectory(): Promise<void> {
   }
 }
 
-// Create database backup
+// Create database backup (disabled for PostgreSQL)
 export async function createBackup(): Promise<string> {
-  await ensureBackupDirectory();
-  
-  const timestamp = getISTDateTime().replace(/[:\s]/g, '-');
-  const backupFile = path.join(BACKUP_DIR, `salon-backup-${timestamp}.db`);
-  
-  try {
-    await fs.copyFile(DATABASE_FILE, backupFile);
-    console.log(`Database backup created: ${backupFile}`);
-    return backupFile;
-  } catch (error) {
-    console.error('Error creating backup:', error);
-    throw error;
-  }
+  // No longer needed with PostgreSQL - database is persistent
+  console.log('Database backup skipped - using PostgreSQL');
+  return 'backup-skipped';
 }
 
 // Auto backup every hour

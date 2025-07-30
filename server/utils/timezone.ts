@@ -1,36 +1,36 @@
-// IST Timezone utility functions
-const IST_OFFSET = 5.5 * 60 * 60 * 1000; // IST is UTC + 5:30
-
+// IST Timezone utility functions using proper timezone handling
 export function getISTDate(date?: Date): Date {
   const baseDate = date || new Date();
-  return new Date(baseDate.getTime() + IST_OFFSET);
+  // Use proper timezone conversion instead of manual offset
+  return new Date(baseDate.toLocaleString("en-US", { timeZone: "Asia/Kolkata" }));
 }
 
 export function getISTDateString(date?: Date): string {
-  return getISTDate(date).toISOString().split('T')[0];
+  const d = date || new Date();
+  return d.toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' }); // Returns YYYY-MM-DD format
 }
 
 export function getISTTimeString(date?: Date): string {
-  const istDate = getISTDate(date);
-  return istDate.toISOString().split('T')[1].split('.')[0];
+  const d = date || new Date();
+  return d.toLocaleTimeString('en-GB', { timeZone: 'Asia/Kolkata', hour12: false }); // Returns HH:MM:SS format
 }
 
 export function getISTDateTime(date?: Date): string {
-  return getISTDate(date).toISOString().replace('T', ' ').split('.')[0];
+  const d = date || new Date();
+  return d.toLocaleString('sv-SE', { timeZone: 'Asia/Kolkata' }); // Returns YYYY-MM-DD HH:MM:SS format
 }
 
 export function formatISTDate(date: Date | string, format: 'date' | 'time' | 'datetime' = 'datetime'): string {
   const d = typeof date === 'string' ? new Date(date) : date;
-  const istDate = getISTDate(d);
   
   switch (format) {
     case 'date':
-      return istDate.toLocaleDateString('en-IN');
+      return d.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata' });
     case 'time': 
-      return istDate.toLocaleTimeString('en-IN');
+      return d.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata' });
     case 'datetime':
-      return istDate.toLocaleString('en-IN');
+      return d.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
     default:
-      return istDate.toLocaleString('en-IN');
+      return d.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
   }
 }

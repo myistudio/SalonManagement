@@ -102,247 +102,296 @@ export const customerMemberships = pgTable('customer_memberships', {
 
 // Services table
 export const services = pgTable('services', {
-  id: serial('id').primaryKey(),
+  id: serial }),
   storeId: integer('store_id').notNull().references(() => stores.id),
-  name: varchar('name').notNull(),
+  name: text('name').notNull(),
   description: text('description'),
   price: real('price').notNull(),
   duration: integer('duration').default(60),
   categoryId: integer('category_id').references(() => serviceCategories.id),
   imageUrl: text('image_url'),
-  isActive: boolean('is_active').default(true),
-  createdAt: timestamp('created_at').defaultNow(),
-  updatedAt: timestamp('updated_at').defaultNow()
+  isActive: boolean' }).default(true),
+  createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: text('updated_at').default(sql`CURRENT_TIMESTAMP`)
 });
 
 // Service categories table
 export const serviceCategories = pgTable('service_categories', {
-  id: serial('id').primaryKey(),
+  id: serial }),
   storeId: integer('store_id').notNull().references(() => stores.id),
-  name: varchar('name').notNull(),
+  name: text('name').notNull(),
   description: text('description'),
-  isActive: boolean('is_active').default(true),
-  createdAt: timestamp('created_at').defaultNow(),
-  updatedAt: timestamp('updated_at').defaultNow()
+  isActive: boolean' }).default(true),
+  createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: text('updated_at').default(sql`CURRENT_TIMESTAMP`)
 });
 
 // Product categories table
 export const productCategories = pgTable('product_categories', {
-  id: serial('id').primaryKey(),
+  id: serial }),
   storeId: integer('store_id').notNull().references(() => stores.id),
-  name: varchar('name').notNull(),
+  name: text('name').notNull(),
   description: text('description'),
-  isActive: boolean('is_active').default(true),
-  createdAt: timestamp('created_at').defaultNow(),
-  updatedAt: timestamp('updated_at').defaultNow()
+  isActive: boolean' }).default(true),
+  createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: text('updated_at').default(sql`CURRENT_TIMESTAMP`)
 });
 
 // Products table
 export const products = pgTable('products', {
-  id: serial('id').primaryKey(),
+  id: serial }),
   storeId: integer('store_id').notNull().references(() => stores.id),
-  name: varchar('name').notNull(),
+  name: text('name').notNull(),
   description: text('description'),
   price: real('price').notNull(),
   cost: real('cost').default(0),
-  barcode: varchar('barcode'),
+  barcode: text('barcode'),
   categoryId: integer('category_id').references(() => productCategories.id),
-  brand: varchar('brand'),
+  brand: text('brand'),
   stock: integer('stock').default(0),
-  minStock: integer('min_stock').default(0),
+  minStock: integer('min_stock').default(5),
   imageUrl: text('image_url'),
-  isActive: boolean('is_active').default(true),
-  createdAt: timestamp('created_at').defaultNow(),
-  updatedAt: timestamp('updated_at').defaultNow()
+  isActive: boolean' }).default(true),
+  createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: text('updated_at').default(sql`CURRENT_TIMESTAMP`)
 });
 
 // Transactions table
 export const transactions = pgTable('transactions', {
-  id: serial('id').primaryKey(),
+  id: serial }),
   storeId: integer('store_id').notNull().references(() => stores.id),
   customerId: integer('customer_id').references(() => customers.id),
-  invoiceNumber: varchar('invoice_number').notNull(),
+  invoiceNumber: text('invoice_number').unique().notNull(),
   subtotal: real('subtotal').notNull(),
   discountAmount: real('discount_amount').default(0),
   taxAmount: real('tax_amount').default(0),
   totalAmount: real('total_amount').notNull(),
-  paymentMethod: varchar('payment_method').default('cash'),
-  staffId: varchar('staff_id').references(() => users.id),
+  paymentMethod: text('payment_method').default('Cash'),
+  staffId: text('staff_id').references(() => users.id),
   pointsEarned: integer('points_earned').default(0),
   pointsRedeemed: integer('points_redeemed').default(0),
   membershipDiscount: real('membership_discount').default(0),
-  createdAt: timestamp('created_at').defaultNow(),
-  updatedAt: timestamp('updated_at').defaultNow()
+  createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: text('updated_at').default(sql`CURRENT_TIMESTAMP`)
 });
 
 // Transaction items table
 export const transactionItems = pgTable('transaction_items', {
-  id: serial('id').primaryKey(),
+  id: serial }),
   transactionId: integer('transaction_id').notNull().references(() => transactions.id),
-  itemType: varchar('item_type').notNull(), // 'service' or 'product'
+  itemType: text('item_type').notNull(), // 'service' or 'product'
   itemId: integer('item_id').notNull(),
-  itemName: varchar('item_name').notNull(),
-  quantity: integer('quantity').notNull(),
+  itemName: text('item_name').notNull(),
+  quantity: integer('quantity').default(1).notNull(),
   unitPrice: real('unit_price').notNull(),
   totalPrice: real('total_price').notNull(),
-  serviceStaffId: varchar('service_staff_id').references(() => users.id),
+  serviceStaffId: text('service_staff_id').references(() => users.id),
   membershipPlanId: integer('membership_plan_id').references(() => membershipPlans.id),
-  createdAt: timestamp('created_at').defaultNow()
+  createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`)
 });
 
 // Appointments table
 export const appointments = pgTable('appointments', {
-  id: serial('id').primaryKey(),
+  id: serial }),
   storeId: integer('store_id').notNull().references(() => stores.id),
-  customerName: varchar('customer_name').notNull(),
-  customerPhone: varchar('customer_phone').notNull(),
-  customerEmail: varchar('customer_email'),
-  appointmentDate: varchar('appointment_date').notNull(),
-  appointmentTime: varchar('appointment_time').notNull(),
-  services: text('services').notNull(), // JSON string of service IDs
-  status: varchar('status').default('pending'),
+  customerName: text('customer_name').notNull(),
+  customerEmail: text('customer_email'),
+  customerPhone: text('customer_phone').notNull(),
+  appointmentDate: text('appointment_date').notNull(),
+  appointmentTime: text('appointment_time').notNull(),
+  services: text('services').notNull(), // JSON array of service IDs
   notes: text('notes'),
-  createdAt: timestamp('created_at').defaultNow(),
-  updatedAt: timestamp('updated_at').defaultNow()
+  status: text('status').default('pending'), // pending, confirmed, completed, cancelled
+  createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: text('updated_at').default(sql`CURRENT_TIMESTAMP`)
 });
 
 // Appointment settings table
 export const appointmentSettings = pgTable('appointment_settings', {
-  id: serial('id').primaryKey(),
-  storeId: integer('store_id').notNull().references(() => stores.id),
-  openingTime: varchar('opening_time').default('09:00'),
-  closingTime: varchar('closing_time').default('18:00'),
-  slotDuration: integer('slot_duration').default(30),
-  isActive: boolean('is_active').default(true),
-  createdAt: timestamp('created_at').defaultNow(),
-  updatedAt: timestamp('updated_at').defaultNow()
+  id: serial }),
+  storeId: integer('store_id').notNull().unique().references(() => stores.id),
+  openingTime: text('opening_time').default('09:00'),
+  closingTime: text('closing_time').default('18:00'),
+  slotDuration: integer('slot_duration').default(30), // in minutes
+  maxConcurrentAppointments: integer('max_concurrent_appointments').default(3),
+  createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: text('updated_at').default(sql`CURRENT_TIMESTAMP`)
 });
 
 // Login page settings table
 export const loginPageSettings = pgTable('login_page_settings', {
-  id: serial('id').primaryKey(),
-  companyName: varchar('company_name').default('SalonPro'),
+  id: serial }),
+  companyName: text('company_name').default('SalonPro'),
   logoUrl: text('logo_url'),
-  welcomeMessage: text('welcome_message').default('Welcome to your salon management system'),
+  primaryColor: text('primary_color').default('#8B5CF6'),
+  secondaryColor: text('secondary_color').default('#EC4899'),
+  welcomeMessage: text('welcome_message').default('Welcome to our Salon Management System'),
   footerText: text('footer_text').default('Designed by - My Internet'),
-  primaryColor: varchar('primary_color').default('#8B5CF6'),
-  backgroundImage: text('background_image'),
-  createdAt: timestamp('created_at').defaultNow(),
-  updatedAt: timestamp('updated_at').defaultNow()
+  createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: text('updated_at').default(sql`CURRENT_TIMESTAMP`)
 });
 
-// Relations
+// Define relations
 export const usersRelations = relations(users, ({ many }) => ({
   storeStaff: many(storeStaff),
+  transactions: many(transactions),
 }));
 
-export const storesRelations = relations(stores, ({ many }) => ({
+export const storesRelations = relations(stores, ({ many, one }) => ({
   staff: many(storeStaff),
   customers: many(customers),
+  membershipPlans: many(membershipPlans),
   services: many(services),
   products: many(products),
   transactions: many(transactions),
-  membershipPlans: many(membershipPlans),
-  serviceCategories: many(serviceCategories),
-  productCategories: many(productCategories),
   appointments: many(appointments),
+  appointmentSettings: one(appointmentSettings),
 }));
 
 export const storeStaffRelations = relations(storeStaff, ({ one }) => ({
-  user: one(users, { fields: [storeStaff.userId], references: [users.id] }),
-  store: one(stores, { fields: [storeStaff.storeId], references: [stores.id] }),
+  store: one(stores, {
+    fields: [storeStaff.storeId],
+    references: [stores.id],
+  }),
+  user: one(users, {
+    fields: [storeStaff.userId],
+    references: [users.id],
+  }),
 }));
 
 export const customersRelations = relations(customers, ({ one, many }) => ({
-  store: one(stores, { fields: [customers.storeId], references: [stores.id] }),
-  transactions: many(transactions),
+  store: one(stores, {
+    fields: [customers.storeId],
+    references: [stores.id],
+  }),
   memberships: many(customerMemberships),
+  transactions: many(transactions),
 }));
 
 export const membershipPlansRelations = relations(membershipPlans, ({ one, many }) => ({
-  store: one(stores, { fields: [membershipPlans.storeId], references: [stores.id] }),
+  store: one(stores, {
+    fields: [membershipPlans.storeId],
+    references: [stores.id],
+  }),
   customerMemberships: many(customerMemberships),
 }));
 
 export const customerMembershipsRelations = relations(customerMemberships, ({ one }) => ({
-  customer: one(customers, { fields: [customerMemberships.customerId], references: [customers.id] }),
-  membershipPlan: one(membershipPlans, { fields: [customerMemberships.membershipPlanId], references: [membershipPlans.id] }),
+  customer: one(customers, {
+    fields: [customerMemberships.customerId],
+    references: [customers.id],
+  }),
+  membershipPlan: one(membershipPlans, {
+    fields: [customerMemberships.membershipPlanId],
+    references: [membershipPlans.id],
+  }),
 }));
 
-export const servicesRelations = relations(services, ({ one, many }) => ({
-  store: one(stores, { fields: [services.storeId], references: [stores.id] }),
-  category: one(serviceCategories, { fields: [services.categoryId], references: [serviceCategories.id] }),
-  transactionItems: many(transactionItems),
+export const servicesRelations = relations(services, ({ one }) => ({
+  store: one(stores, {
+    fields: [services.storeId],
+    references: [stores.id],
+  }),
 }));
 
-export const servicesCategoriesRelations = relations(serviceCategories, ({ one, many }) => ({
-  store: one(stores, { fields: [serviceCategories.storeId], references: [stores.id] }),
-  services: many(services),
-}));
-
-export const productCategoriesRelations = relations(productCategories, ({ one, many }) => ({
-  store: one(stores, { fields: [productCategories.storeId], references: [stores.id] }),
-  products: many(products),
-}));
-
-export const productsRelations = relations(products, ({ one, many }) => ({
-  store: one(stores, { fields: [products.storeId], references: [stores.id] }),
-  category: one(productCategories, { fields: [products.categoryId], references: [productCategories.id] }),
-  transactionItems: many(transactionItems),
+export const productsRelations = relations(products, ({ one }) => ({
+  store: one(stores, {
+    fields: [products.storeId],
+    references: [stores.id],
+  }),
 }));
 
 export const transactionsRelations = relations(transactions, ({ one, many }) => ({
-  store: one(stores, { fields: [transactions.storeId], references: [stores.id] }),
-  customer: one(customers, { fields: [transactions.customerId], references: [customers.id] }),
-  staff: one(users, { fields: [transactions.staffId], references: [users.id] }),
+  store: one(stores, {
+    fields: [transactions.storeId],
+    references: [stores.id],
+  }),
+  customer: one(customers, {
+    fields: [transactions.customerId],
+    references: [customers.id],
+  }),
+  staff: one(users, {
+    fields: [transactions.staffId],
+    references: [users.id],
+  }),
   items: many(transactionItems),
 }));
 
 export const transactionItemsRelations = relations(transactionItems, ({ one }) => ({
-  transaction: one(transactions, { fields: [transactionItems.transactionId], references: [transactions.id] }),
-  serviceStaff: one(users, { fields: [transactionItems.serviceStaffId], references: [users.id] }),
-  membershipPlan: one(membershipPlans, { fields: [transactionItems.membershipPlanId], references: [membershipPlans.id] }),
+  transaction: one(transactions, {
+    fields: [transactionItems.transactionId],
+    references: [transactions.id],
+  }),
+  serviceStaff: one(users, {
+    fields: [transactionItems.serviceStaffId],
+    references: [users.id],
+  }),
+  membershipPlan: one(membershipPlans, {
+    fields: [transactionItems.membershipPlanId],
+    references: [membershipPlans.id],
+  }),
 }));
 
 export const appointmentsRelations = relations(appointments, ({ one }) => ({
-  store: one(stores, { fields: [appointments.storeId], references: [stores.id] }),
+  store: one(stores, {
+    fields: [appointments.storeId],
+    references: [stores.id],
+  }),
 }));
 
-// Type exports
+export const appointmentSettingsRelations = relations(appointmentSettings, ({ one }) => ({
+  store: one(stores, {
+    fields: [appointmentSettings.storeId],
+    references: [stores.id],
+  }),
+}));
+
+// Type definitions
 export type User = typeof users.$inferSelect;
 export type UpsertUser = typeof users.$inferInsert;
 export type Store = typeof stores.$inferSelect;
-export type InsertStore = typeof stores.$inferInsert;
 export type StoreStaff = typeof storeStaff.$inferSelect;
 export type Customer = typeof customers.$inferSelect;
-export type InsertCustomer = typeof customers.$inferInsert;
 export type MembershipPlan = typeof membershipPlans.$inferSelect;
-export type InsertMembershipPlan = typeof membershipPlans.$inferInsert;
 export type CustomerMembership = typeof customerMemberships.$inferSelect;
 export type Service = typeof services.$inferSelect;
-export type InsertService = typeof services.$inferInsert;
 export type ServiceCategory = typeof serviceCategories.$inferSelect;
-export type InsertServiceCategory = typeof serviceCategories.$inferInsert;
-export type ProductCategory = typeof productCategories.$inferSelect;
-export type InsertProductCategory = typeof productCategories.$inferInsert;
 export type Product = typeof products.$inferSelect;
-export type InsertProduct = typeof products.$inferInsert;
+export type ProductCategory = typeof productCategories.$inferSelect;
 export type Transaction = typeof transactions.$inferSelect;
-export type InsertTransaction = typeof transactions.$inferInsert;
 export type TransactionItem = typeof transactionItems.$inferSelect;
-export type InsertTransactionItem = typeof transactionItems.$inferInsert;
+export type Appointment = typeof appointments.$inferSelect;
+export type AppointmentSettings = typeof appointmentSettings.$inferSelect;
 export type LoginPageSettings = typeof loginPageSettings.$inferSelect;
-export type InsertLoginPageSettings = typeof loginPageSettings.$inferInsert;
 
-// Zod schemas for validation
+// Insert schemas
 export const insertUserSchema = createInsertSchema(users);
 export const insertStoreSchema = createInsertSchema(stores);
 export const insertCustomerSchema = createInsertSchema(customers);
 export const insertMembershipPlanSchema = createInsertSchema(membershipPlans);
+export const insertCustomerMembershipSchema = createInsertSchema(customerMemberships);
 export const insertServiceSchema = createInsertSchema(services);
 export const insertServiceCategorySchema = createInsertSchema(serviceCategories);
-export const insertProductCategorySchema = createInsertSchema(productCategories);
 export const insertProductSchema = createInsertSchema(products);
+export const insertProductCategorySchema = createInsertSchema(productCategories);
 export const insertTransactionSchema = createInsertSchema(transactions);
 export const insertTransactionItemSchema = createInsertSchema(transactionItems);
+export const insertAppointmentSchema = createInsertSchema(appointments);
+export const insertAppointmentSettingsSchema = createInsertSchema(appointmentSettings);
 export const insertLoginPageSettingsSchema = createInsertSchema(loginPageSettings);
+
+// Insert types
+export type InsertUser = z.infer<typeof insertUserSchema>;
+export type InsertStore = z.infer<typeof insertStoreSchema>;
+export type InsertCustomer = z.infer<typeof insertCustomerSchema>;
+export type InsertMembershipPlan = z.infer<typeof insertMembershipPlanSchema>;
+export type InsertCustomerMembership = z.infer<typeof insertCustomerMembershipSchema>;
+export type InsertService = z.infer<typeof insertServiceSchema>;
+export type InsertServiceCategory = z.infer<typeof insertServiceCategorySchema>;
+export type InsertProduct = z.infer<typeof insertProductSchema>;
+export type InsertProductCategory = z.infer<typeof insertProductCategorySchema>;
+export type InsertTransaction = z.infer<typeof insertTransactionSchema>;
+export type InsertTransactionItem = z.infer<typeof insertTransactionItemSchema>;
+export type InsertAppointment = z.infer<typeof insertAppointmentSchema>;
+export type InsertAppointmentSettings = z.infer<typeof insertAppointmentSettingsSchema>;
+export type InsertLoginPageSettings = z.infer<typeof insertLoginPageSettingsSchema>;
