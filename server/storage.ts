@@ -1028,10 +1028,9 @@ export class DatabaseStorage implements IStorage {
         const storeCustomers = await db.select().from(customers).where(eq(customers.storeId, storeId));
         const customerIds = storeCustomers.map(c => c.id);
         
-        for (const customerId of customerIds) {
-          const membership = await db.select().from(customerMemberships)
-            .where(eq(customerMemberships.customerId, customerId));
-          activeMemberships.push(...membership);
+        if (customerIds.length > 0) {
+          activeMemberships = await db.select().from(customerMemberships)
+            .where(inArray(customerMemberships.customerId, customerIds));
         }
       } catch (error) {
         console.error('Error getting active memberships:', error);
@@ -1210,7 +1209,9 @@ export class DatabaseStorage implements IStorage {
         userId,
         storeId,
         role,
-        isActive: true
+        isActive: true,
+        createdAt: getISTDateTime(),
+        updatedAt: getISTDateTime()
       })
       .returning();
     return assignment;
