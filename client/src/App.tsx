@@ -13,7 +13,7 @@ import Inventory from "@/pages/inventory";
 import Services from "@/pages/services";
 import Memberships from "@/pages/memberships";
 import Reports from "@/pages/reports";
-import Bills from "@/pages/bills-simple";
+import Bills from "@/pages/bills";
 import Staff from "@/pages/staff";
 import Stores from "@/pages/stores";
 import Settings from "@/pages/settings";

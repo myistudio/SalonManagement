@@ -51,13 +51,7 @@ export default function Sidebar({ onOpenBilling = () => {}, isMobileMenuOpen = f
       active: location === "/appointments",
       group: "core"
     },
-    { 
-      icon: Receipt, 
-      label: "Bills", 
-      path: "/bills", 
-      active: location === "/bills",
-      group: "core"
-    },
+
     
     // Customer & Inventory Management
     { 
