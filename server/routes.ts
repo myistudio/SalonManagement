@@ -1215,15 +1215,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Dashboard routes
+  // Dashboard routes - Real-time data
   app.get('/api/dashboard/stats/:storeId', isAuthenticated, hasStoreAccess, async (req: any, res) => {
     try {
       const storeId = parseInt(req.params.storeId);
+      console.log(`=== DASHBOARD STATS API: Fetching for store ${storeId}`);
+      
       const stats = await storage.getDashboardStats(storeId);
+      console.log(`=== DASHBOARD STATS API: Returning stats for store ${storeId}:`, JSON.stringify(stats, null, 2));
+      
+      // Set no-cache headers for real-time data
+      res.set('Cache-Control', 'no-store, no-cache, must-revalidate');
+      res.set('Pragma', 'no-cache');
+      res.set('Expires', '0');
+      
       res.json(stats);
     } catch (error) {
       console.error("Error fetching dashboard stats:", error);
-      res.status(500).json({ message: "Failed to fetch dashboard stats" });
+      res.status(500).json({ 
+        message: "Failed to fetch dashboard stats",
+        customers: 0,
+        products: 0,
+        services: 0,
+        revenue: 0,
+        transactions: 0,
+        revenueChange: 0,
+        customersToday: 0,
+        newCustomers: 0,
+        servicesToday: 0,
+        activeMemberships: 0
+      });
     }
   });
 
