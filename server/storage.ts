@@ -832,18 +832,29 @@ export class DatabaseStorage implements IStorage {
 
   async createAppointment(appointment: any): Promise<any> {
     try {
-      const istTimestamp = getISTDateTime();
-      const appointmentWithTimestamp = {
-        ...appointment,
-        createdAt: istTimestamp,
-        updatedAt: istTimestamp
+      console.log('=== CREATE APPOINTMENT: Input data:', appointment);
+      
+      // Remove timestamps and let PostgreSQL handle them automatically
+      const appointmentData = {
+        storeId: appointment.storeId,
+        customerName: appointment.customerName,
+        customerPhone: appointment.customerPhone,
+        customerEmail: appointment.customerEmail || null,
+        appointmentDate: appointment.appointmentDate,
+        appointmentTime: appointment.appointmentTime,
+        services: appointment.services,
+        status: appointment.status || 'pending',
+        notes: appointment.notes || null
       };
+
+      console.log('=== CREATE APPOINTMENT: Processed data:', appointmentData);
 
       const [created] = await db
         .insert(appointments)
-        .values(appointmentWithTimestamp)
+        .values(appointmentData)
         .returning();
 
+      console.log('=== CREATE APPOINTMENT: Success:', created);
       return created;
     } catch (error) {
       console.error('Error creating appointment:', error);
@@ -853,18 +864,19 @@ export class DatabaseStorage implements IStorage {
 
   async updateAppointment(id: number, updates: any): Promise<any> {
     try {
-      const istTimestamp = getISTDateTime();
-      const updatesWithTimestamp = {
-        ...updates,
-        updatedAt: istTimestamp
-      };
+      console.log('=== UPDATE APPOINTMENT: ID:', id, 'Updates:', updates);
+      
+      // Let PostgreSQL handle updatedAt automatically
+      const updateData = { ...updates };
+      delete updateData.updatedAt; // Remove to let PostgreSQL default handle it
 
       const [updated] = await db
         .update(appointments)
-        .set(updatesWithTimestamp)
+        .set(updateData)
         .where(eq(appointments.id, id))
         .returning();
 
+      console.log('=== UPDATE APPOINTMENT: Success:', updated);
       return updated;
     } catch (error) {
       console.error('Error updating appointment:', error);
@@ -924,11 +936,9 @@ export class DatabaseStorage implements IStorage {
 
   async updateAppointmentSettings(storeId: number, settings: any): Promise<any> {
     try {
-      const istTimestamp = getISTDateTime();
-      const settingsWithTimestamp = {
+      const settingsData = {
         ...settings,
-        storeId,
-        updatedAt: istTimestamp
+        storeId
       };
 
       // Try to update existing settings
@@ -940,7 +950,7 @@ export class DatabaseStorage implements IStorage {
       if (existing.length > 0) {
         const [updated] = await db
           .update(appointmentSettings)
-          .set(settingsWithTimestamp)
+          .set(settingsData)
           .where(eq(appointmentSettings.storeId, storeId))
           .returning();
         return updated;
@@ -948,10 +958,7 @@ export class DatabaseStorage implements IStorage {
         // Create new settings
         const [created] = await db
           .insert(appointmentSettings)
-          .values({
-            ...settingsWithTimestamp,
-            createdAt: istTimestamp
-          })
+          .values(settingsData)
           .returning();
         return created;
       }
