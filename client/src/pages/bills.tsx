@@ -1,32 +1,64 @@
 import { useState, useEffect } from "react";
-import { useAuth } from "@/hooks/useAuth";
-import { useToast } from "@/hooks/use-toast";
-import { useQuery } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
-import { useStore } from "@/contexts/store-context";
-
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Search, Receipt, Download, Calendar, Filter, Eye, Printer } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/use-auth";
+import { useStore } from "@/contexts/store-context";
+import { apiRequest } from "@/lib/queryClient";
+import { Calendar, Search, Plus, Eye, Trash2, Download, Filter, Clock, User, CreditCard, Receipt } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { format } from "date-fns";
-import Sidebar from "@/components/layout/sidebar";
-import Header from "@/components/layout/header";
-import BillingModal from "@/components/billing/billing-modal";
+import { Separator } from "@/components/ui/separator";
+import BillingModal from "@/components/billing-modal";
+
+interface Transaction {
+  id: number;
+  storeId: number;
+  customerId?: number;
+  invoiceNumber: string;
+  subtotal: number;
+  discountAmount: number;
+  taxAmount: number;
+  totalAmount: number;
+  paymentMethod: string;
+  paymentStatus: string;
+  pointsEarned: number;
+  pointsRedeemed: number;
+  membershipDiscount: number;
+  staffId?: number;
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+  customer?: {
+    id: number;
+    firstName: string;
+    lastName: string;
+    mobile: string;
+    email?: string;
+  };
+  items?: {
+    id: number;
+    itemType: 'product' | 'service';
+    itemName: string;
+    quantity: number;
+    price: number;
+    total: number;
+  }[];
+}
 
 export default function Bills() {
   const { toast } = useToast();
   const { isAuthenticated, isLoading } = useAuth();
   const { selectedStoreId } = useStore();
+  const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedBills, setSelectedBills] = useState<number[]>([]);
   const [showBillDetails, setShowBillDetails] = useState(false);
-  const [selectedTransaction, setSelectedTransaction] = useState<any>(null);
+  const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [showBillingModal, setShowBillingModal] = useState(false);
@@ -45,35 +77,58 @@ export default function Bills() {
     }
   }, [isAuthenticated, isLoading, toast]);
 
+  // Fetch bills/transactions with real-time data
   const { data: transactions = [], isLoading: transactionsLoading, refetch: refetchTransactions } = useQuery({
     queryKey: ["/api/transactions", selectedStoreId, startDate, endDate],
     queryFn: async ({ queryKey }) => {
       const [, storeId] = queryKey;
-      console.log("=== BILLS FETCH: Starting for store:", storeId);
-      let url = `/api/transactions?storeId=${storeId}&limit=50&_t=${Date.now()}`;
+      if (!storeId) return [];
+      
+      console.log("=== BILLS: Fetching transactions for store:", storeId);
+      let url = `/api/transactions?storeId=${storeId}&limit=100`;
       if (startDate) url += `&startDate=${startDate}`;
       if (endDate) url += `&endDate=${endDate}`;
       
       const response = await apiRequest('GET', url);
       const data = await response.json();
-      console.log("=== BILLS FETCH: Got", data.length, "transactions for store", storeId);
-      return data;
+      console.log("=== BILLS: Received", data.length, "transactions for store", storeId);
+      return data as Transaction[];
     },
     enabled: !!selectedStoreId,
-    retry: false,
-    refetchInterval: 5000, // Auto-refresh every 5 seconds  
-    refetchOnWindowFocus: true, // Refresh when window gets focus
-    staleTime: 0, // Always consider data stale
-    gcTime: 0, // Don't cache old data
-    refetchIntervalInBackground: true // Keep refreshing even when tab is not active
+    refetchInterval: 5000, // Auto-refresh every 5 seconds
+    refetchOnWindowFocus: true,
+    staleTime: 0,
+    gcTime: 0
   });
 
-  const { data: stores = [] } = useQuery({
-    queryKey: ["/api/stores"],
-    retry: false,
+  // Delete transaction mutation
+  const deleteTransactionMutation = useMutation({
+    mutationFn: async (transactionId: number) => {
+      const response = await apiRequest('DELETE', `/api/transactions/${transactionId}`);
+      if (!response.ok) {
+        throw new Error('Failed to delete transaction');
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "Transaction deleted successfully",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/transactions"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete transaction",
+        variant: "destructive",
+      });
+    }
   });
 
-  const filteredTransactions = (transactions as any[]).filter((transaction: any) => {
+  // Filter transactions based on search
+  const filteredTransactions = transactions.filter((transaction: Transaction) => {
     const matchesSearch = searchTerm === "" || 
       transaction.invoiceNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (transaction.customer?.firstName || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -85,7 +140,7 @@ export default function Bills() {
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
-      setSelectedBills(filteredTransactions.map((t: any) => t.id));
+      setSelectedBills(filteredTransactions.map((t: Transaction) => t.id));
     } else {
       setSelectedBills([]);
     }
@@ -99,395 +154,409 @@ export default function Bills() {
     }
   };
 
-  const handleBulkPrint = () => {
-    const selectedTransactions = filteredTransactions.filter((t: any) => selectedBills.includes(t.id));
-    
-    // Create a new window for printing
-    const printWindow = window.open('', '_blank');
-    if (!printWindow) return;
-
-    let printContent = `
-      <html>
-        <head>
-          <title>Bulk Bill Print</title>
-          <style>
-            body { font-family: Arial, sans-serif; margin: 20px; }
-            .bill { margin-bottom: 50px; page-break-after: always; }
-            .bill:last-child { page-break-after: avoid; }
-            .header { text-align: center; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 20px; }
-            .details { margin-bottom: 20px; }
-            .items table { width: 100%; border-collapse: collapse; }
-            .items th, .items td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-            .items th { background-color: #f2f2f2; }
-            .totals { text-align: right; margin-top: 20px; }
-            .totals div { margin-bottom: 5px; }
-            .total-amount { font-weight: bold; font-size: 1.2em; border-top: 2px solid #000; padding-top: 10px; }
-          </style>
-        </head>
-        <body>
-    `;
-
-    selectedTransactions.forEach((transaction: any) => {
-      printContent += `
-        <div class="bill">
-          <div class="header">
-            <h2>VEEPRESS</h2>
-            <p>Invoice: ${transaction.invoiceNumber}</p>
-            <p>Date: ${new Date(transaction.createdAt).toLocaleString()}</p>
-          </div>
-          
-          ${transaction.customer ? `
-            <div class="details">
-              <h3>Customer Details</h3>
-              <p><strong>Name:</strong> ${transaction.customer.firstName} ${transaction.customer.lastName || ''}</p>
-              <p><strong>Mobile:</strong> ${transaction.customer.mobile}</p>
-            </div>
-          ` : ''}
-          
-          <div class="items">
-            <h3>Items</h3>
-            <table>
-              <thead>
-                <tr>
-                  <th>Description</th>
-                  <th>Qty</th>
-                  <th>Rate</th>
-                  <th>Amount</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${transaction.items ? transaction.items.map((item: any) => `
-                  <tr>
-                    <td>${item.itemName}</td>
-                    <td>${item.quantity}</td>
-                    <td>Rs. ${parseFloat(item.unitPrice).toLocaleString()}</td>
-                    <td>Rs. ${parseFloat(item.totalPrice).toLocaleString()}</td>
-                  </tr>
-                `).join('') : '<tr><td colspan="4">No items found</td></tr>'}
-              </tbody>
-            </table>
-          </div>
-          
-          <div class="totals">
-            <div>Subtotal: Rs. ${parseFloat(transaction.subtotal).toLocaleString()}</div>
-            <div>Discount: Rs. ${parseFloat(transaction.discountAmount).toLocaleString()}</div>
-            <div>GST: Rs. ${parseFloat(transaction.taxAmount).toLocaleString()}</div>
-            <div class="total-amount">Total: Rs. ${parseFloat(transaction.totalAmount).toLocaleString()}</div>
-            <div>Payment Method: ${transaction.paymentMethod}</div>
-          </div>
-        </div>
-      `;
-    });
-
-    printContent += `
-        </body>
-      </html>
-    `;
-
-    printWindow.document.write(printContent);
-    printWindow.document.close();
-    printWindow.print();
-  };
-
-  const handleBulkExport = () => {
-    const selectedTransactions = filteredTransactions.filter((t: any) => selectedBills.includes(t.id));
-    
-    // Create CSV content
-    let csvContent = "Invoice Number,Date,Customer Name,Mobile,Total Amount,Payment Method,Items\n";
-    
-    selectedTransactions.forEach((transaction: any) => {
-      const customerName = transaction.customer ? 
-        `${transaction.customer.firstName} ${transaction.customer.lastName || ''}` : 
-        'Walk-in Customer';
-      const mobile = transaction.customer?.mobile || '';
-      const items = transaction.items ? 
-        transaction.items.map((item: any) => `${item.itemName}(${item.quantity})`).join('; ') : 
-        'No items';
+  const handleViewDetails = async (transaction: Transaction) => {
+    try {
+      // Fetch transaction items
+      const response = await apiRequest('GET', `/api/transactions/${transaction.id}/items`);
+      const items = await response.json();
       
-      csvContent += `"${transaction.invoiceNumber}","${new Date(transaction.createdAt).toLocaleDateString()}","${customerName}","${mobile}","${transaction.totalAmount}","${transaction.paymentMethod}","${items}"\n`;
-    });
-
-    // Create and download CSV file
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    if (link.download !== undefined) {
-      const url = URL.createObjectURL(blob);
-      link.setAttribute('href', url);
-      link.setAttribute('download', `bills_export_${format(new Date(), 'yyyy-MM-dd')}.csv`);
-      link.style.visibility = 'hidden';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      setSelectedTransaction({
+        ...transaction,
+        items
+      });
+      setShowBillDetails(true);
+    } catch (error) {
+      console.error('Error fetching transaction details:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load transaction details",
+        variant: "destructive"
+      });
     }
   };
 
+  const formatCurrency = (amount: number) => {
+    return `Rs. ${amount.toFixed(2)}`;
+  };
+
+  const getPaymentMethodIcon = (method: string) => {
+    switch (method?.toLowerCase()) {
+      case 'cash': return '💵';
+      case 'card': return '💳';
+      case 'upi': return '📱';
+      default: return '💰';
+    }
+  };
+
+  const getStatusBadge = (status: string) => {
+    const variant = status === 'completed' ? 'default' : 
+                   status === 'pending' ? 'secondary' : 'destructive';
+    return <Badge variant={variant}>{status}</Badge>;
+  };
+
   if (isLoading) {
+    return <div className="flex items-center justify-center h-64">Loading...</div>;
+  }
+
+  if (!isAuthenticated) {
+    return <div className="flex items-center justify-center h-64">Redirecting to login...</div>;
+  }
+
+  if (!selectedStoreId) {
     return (
-      <div className="flex h-screen bg-gray-100">
-        <Sidebar onOpenBilling={() => setShowBillingModal(true)} />
-        <div className="flex-1 flex flex-col">
-          <Header />
-          <main className="flex-1 p-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <Skeleton className="h-32" />
-              <Skeleton className="h-32" />
-              <Skeleton className="h-32" />
-            </div>
-          </main>
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <p className="text-muted-foreground">Please select a store to view bills</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="flex h-screen bg-gray-100">
-      <Sidebar onOpenBilling={() => setShowBillingModal(true)} />
-      <div className="flex-1 flex flex-col">
-        <Header />
-        <main className="flex-1 p-6 overflow-auto">
-          <div className="space-y-6">
-            <div className="flex justify-between items-center">
-              <h1 className="text-2xl font-bold text-gray-900">Bills Management</h1>
-              <div className="flex space-x-2">
-                {selectedBills.length > 0 && (
-                  <>
-                    <Button onClick={handleBulkPrint} className="flex items-center">
-                      <Printer className="mr-2 h-4 w-4" />
-                      Print Selected ({selectedBills.length})
-                    </Button>
-                    <Button onClick={handleBulkExport} variant="outline" className="flex items-center">
-                      <Download className="mr-2 h-4 w-4" />
-                      Export Selected
-                    </Button>
-                  </>
-                )}
+    <div className="space-y-6 p-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h1 className="text-3xl font-bold">Bills Management</h1>
+          <p className="text-muted-foreground">
+            View and manage all transaction records for your store
+          </p>
+        </div>
+        <Button onClick={() => setShowBillingModal(true)} className="flex items-center gap-2">
+          <Plus className="h-4 w-4" />
+          New Bill
+        </Button>
+      </div>
+
+      {/* Filters */}
+      <Card>
+        <CardContent className="p-4">
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="flex-1">
+              <div className="relative">
+                <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search by invoice number, customer name, or mobile..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
               </div>
             </div>
+            <div className="flex gap-2">
+              <Input
+                type="date"
+                placeholder="Start Date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                className="w-40"
+              />
+              <Input
+                type="date"
+                placeholder="End Date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                className="w-40"
+              />
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setStartDate("");
+                  setEndDate("");
+                  setSearchTerm("");
+                }}
+              >
+                <Filter className="h-4 w-4 mr-2" />
+                Clear
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
-            {/* Search and Filter Controls */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Search & Filter</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex flex-col md:flex-row gap-4">
-                  <div className="flex-1">
-                    <div className="relative">
-                      <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                      <Input
-                        placeholder="Search by invoice number, customer name, or mobile..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="pl-10"
-                      />
+      {/* Summary Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">Total Bills</p>
+                <p className="text-2xl font-bold">{filteredTransactions.length}</p>
+              </div>
+              <Receipt className="h-8 w-8 text-primary" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">Total Revenue</p>
+                <p className="text-2xl font-bold">
+                  {formatCurrency(filteredTransactions.reduce((sum, t) => sum + t.totalAmount, 0))}
+                </p>
+              </div>
+              <CreditCard className="h-8 w-8 text-green-600" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">Avg. Bill</p>
+                <p className="text-2xl font-bold">
+                  {formatCurrency(filteredTransactions.length > 0 
+                    ? filteredTransactions.reduce((sum, t) => sum + t.totalAmount, 0) / filteredTransactions.length 
+                    : 0
+                  )}
+                </p>
+              </div>
+              <User className="h-8 w-8 text-blue-600" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">Today's Bills</p>
+                <p className="text-2xl font-bold">
+                  {filteredTransactions.filter(t => 
+                    new Date(t.createdAt).toDateString() === new Date().toDateString()
+                  ).length}
+                </p>
+              </div>
+              <Clock className="h-8 w-8 text-orange-600" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Bills Table */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle>Transaction Records</CardTitle>
+            <div className="flex gap-2">
+              {selectedBills.length > 0 && (
+                <Button variant="destructive" size="sm">
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete Selected ({selectedBills.length})
+                </Button>
+              )}
+              <Button variant="outline" size="sm">
+                <Download className="h-4 w-4 mr-2" />
+                Export
+              </Button>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {transactionsLoading ? (
+            <div className="flex items-center justify-center h-32">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
+                <p>Loading transactions...</p>
+              </div>
+            </div>
+          ) : filteredTransactions.length === 0 ? (
+            <div className="text-center py-8">
+              <Receipt className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-semibold mb-2">No Bills Found</h3>
+              <p className="text-muted-foreground mb-4">
+                {transactions.length === 0 
+                  ? "No transactions have been created yet."
+                  : "No bills match your current filters."
+                }
+              </p>
+              <Button onClick={() => setShowBillingModal(true)}>
+                <Plus className="h-4 w-4 mr-2" />
+                Create First Bill
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {/* Select All */}
+              <div className="flex items-center space-x-2 border-b pb-2">
+                <Checkbox
+                  checked={selectedBills.length === filteredTransactions.length}
+                  onCheckedChange={handleSelectAll}
+                />
+                <span className="text-sm font-medium">Select All</span>
+              </div>
+
+              {/* Transaction List */}
+              <div className="space-y-2">
+                {filteredTransactions.map((transaction) => (
+                  <div key={transaction.id} className="border rounded-lg p-4 hover:bg-muted/50 transition-colors">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        <Checkbox
+                          checked={selectedBills.includes(transaction.id)}
+                          onCheckedChange={(checked) => handleSelectBill(transaction.id, checked as boolean)}
+                        />
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3 mb-2">
+                            <h3 className="font-semibold">{transaction.invoiceNumber}</h3>
+                            {getStatusBadge(transaction.paymentStatus)}
+                            <span className="text-sm text-muted-foreground">
+                              {getPaymentMethodIcon(transaction.paymentMethod)} {transaction.paymentMethod}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                            <span>
+                              Customer: {transaction.customer 
+                                ? `${transaction.customer.firstName} ${transaction.customer.lastName}` 
+                                : 'Walk-in Customer'
+                              }
+                            </span>
+                            <span>
+                              {format(new Date(transaction.createdAt), 'PPp')}
+                            </span>
+                            {transaction.customer?.mobile && (
+                              <span>📞 {transaction.customer.mobile}</span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <div className="text-right">
+                          <div className="text-lg font-bold">{formatCurrency(transaction.totalAmount)}</div>
+                          {transaction.discountAmount > 0 && (
+                            <div className="text-sm text-green-600">
+                              -{formatCurrency(transaction.discountAmount)} discount
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex gap-2">
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => handleViewDetails(transaction)}
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button 
+                            variant="destructive" 
+                            size="sm"
+                            onClick={() => deleteTransactionMutation.mutate(transaction.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
                     </div>
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <Calendar className="h-4 w-4 text-gray-400" />
-                    <Input
-                      type="date"
-                      placeholder="Start Date"
-                      value={startDate}
-                      onChange={(e) => setStartDate(e.target.value)}
-                      className="w-40"
-                    />
-                    <span className="text-gray-400">to</span>
-                    <Input
-                      type="date"
-                      placeholder="End Date"
-                      value={endDate}
-                      onChange={(e) => setEndDate(e.target.value)}
-                      className="w-40"
-                    />
-                    <Button
-                      variant="outline"
-                      onClick={() => {
-                        setStartDate("");
-                        setEndDate("");
-                      }}
-                      className="flex items-center"
-                    >
-                      <Filter className="mr-2 h-4 w-4" />
-                      Clear
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Bills Table */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Bills List</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {transactionsLoading ? (
-                  <div className="space-y-2">
-                    <Skeleton className="h-4 w-full" />
-                    <Skeleton className="h-4 w-full" />
-                    <Skeleton className="h-4 w-full" />
-                  </div>
-                ) : filteredTransactions.length === 0 ? (
-                  <p className="text-gray-500 text-center py-8">No bills found</p>
-                ) : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="w-12">
-                          <Checkbox
-                            checked={selectedBills.length === filteredTransactions.length}
-                            onCheckedChange={(checked) => handleSelectAll(!!checked)}
-                          />
-                        </TableHead>
-                        <TableHead>Invoice</TableHead>
-                        <TableHead>Date</TableHead>
-                        <TableHead>Customer</TableHead>
-                        <TableHead>Amount</TableHead>
-                        <TableHead>Payment</TableHead>
-                        <TableHead>Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {filteredTransactions.map((transaction: any) => (
-                        <TableRow key={transaction.id}>
-                          <TableCell>
-                            <Checkbox
-                              checked={selectedBills.includes(transaction.id)}
-                              onCheckedChange={(checked) => handleSelectBill(transaction.id, !!checked)}
-                            />
-                          </TableCell>
-                          <TableCell className="font-medium">
-                            {transaction.invoiceNumber}
-                          </TableCell>
-                          <TableCell>
-                            {new Date(transaction.createdAt).toLocaleDateString()}
-                          </TableCell>
-                          <TableCell>
-                            {transaction.customer ? 
-                              `${transaction.customer.firstName} ${transaction.customer.lastName || ''}` : 
-                              'Walk-in Customer'
-                            }
-                          </TableCell>
-                          <TableCell>
-                            Rs. {parseFloat(transaction.totalAmount).toLocaleString()}
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant="outline" className="capitalize">
-                              {transaction.paymentMethod}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => {
-                                setSelectedTransaction(transaction);
-                                setShowBillDetails(true);
-                              }}
-                            >
-                              <Eye size={16} className="mr-1" />
-                              View
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                )}
-              </CardContent>
-            </Card>
-          </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Bill Details Modal */}
       <Dialog open={showBillDetails} onOpenChange={setShowBillDetails}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Bill Details</DialogTitle>
+            <DialogTitle>Bill Details - {selectedTransaction?.invoiceNumber}</DialogTitle>
           </DialogHeader>
           {selectedTransaction && (
             <div className="space-y-4">
-              <div className="text-center pb-4 border-b">
-                <h2 className="text-xl font-bold">VEEPRESS</h2>
-                <p className="text-sm text-gray-600">Invoice: {selectedTransaction.invoiceNumber}</p>
-                <p className="text-sm text-gray-600">Date: {new Date(selectedTransaction.createdAt).toLocaleString()}</p>
-              </div>
-              
-              {selectedTransaction.customer && (
-                <div className="pb-4 border-b">
-                  <h3 className="font-semibold mb-2">Customer Details</h3>
-                  <p>{selectedTransaction.customer.firstName} {selectedTransaction.customer.lastName}</p>
-                  <p>Mobile: {selectedTransaction.customer.mobile}</p>
+              {/* Customer Info */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <h4 className="font-semibold mb-2">Customer Information</h4>
+                  <div className="space-y-1 text-sm">
+                    <p><strong>Name:</strong> {selectedTransaction.customer 
+                      ? `${selectedTransaction.customer.firstName} ${selectedTransaction.customer.lastName}`
+                      : 'Walk-in Customer'
+                    }</p>
+                    {selectedTransaction.customer?.mobile && (
+                      <p><strong>Mobile:</strong> {selectedTransaction.customer.mobile}</p>
+                    )}
+                    {selectedTransaction.customer?.email && (
+                      <p><strong>Email:</strong> {selectedTransaction.customer.email}</p>
+                    )}
+                  </div>
                 </div>
-              )}
-              
-              <div className="pb-4 border-b">
-                <h3 className="font-semibold mb-2">Items</h3>
+                <div>
+                  <h4 className="font-semibold mb-2">Transaction Details</h4>
+                  <div className="space-y-1 text-sm">
+                    <p><strong>Date:</strong> {format(new Date(selectedTransaction.createdAt), 'PPp')}</p>
+                    <p><strong>Payment Method:</strong> {selectedTransaction.paymentMethod}</p>
+                    <p><strong>Status:</strong> {selectedTransaction.paymentStatus}</p>
+                  </div>
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* Items */}
+              <div>
+                <h4 className="font-semibold mb-2">Items</h4>
                 {selectedTransaction.items && selectedTransaction.items.length > 0 ? (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Description</TableHead>
-                        <TableHead>Qty</TableHead>
-                        <TableHead>Rate</TableHead>
-                        <TableHead>Amount</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {selectedTransaction.items.map((item: any, index: number) => (
-                        <TableRow key={index}>
-                          <TableCell>{item.itemName}</TableCell>
-                          <TableCell>{item.quantity}</TableCell>
-                          <TableCell>Rs. {parseFloat(item.unitPrice).toLocaleString()}</TableCell>
-                          <TableCell>Rs. {parseFloat(item.totalPrice).toLocaleString()}</TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                  <div className="space-y-2">
+                    {selectedTransaction.items.map((item, index) => (
+                      <div key={index} className="flex justify-between items-center py-2 border-b">
+                        <div>
+                          <p className="font-medium">{item.itemName}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {item.itemType} • Qty: {item.quantity} • {formatCurrency(item.price)} each
+                          </p>
+                        </div>
+                        <p className="font-medium">{formatCurrency(item.total)}</p>
+                      </div>
+                    ))}
+                  </div>
                 ) : (
-                  <p className="text-gray-500">No items found</p>
+                  <p className="text-muted-foreground">No items found</p>
                 )}
               </div>
-              
+
+              <Separator />
+
+              {/* Summary */}
               <div className="space-y-2">
                 <div className="flex justify-between">
                   <span>Subtotal:</span>
-                  <span>Rs. {parseFloat(selectedTransaction.subtotal).toLocaleString()}</span>
+                  <span>{formatCurrency(selectedTransaction.subtotal)}</span>
                 </div>
-                <div className="flex justify-between">
-                  <span>Discount:</span>
-                  <span>Rs. {parseFloat(selectedTransaction.discountAmount).toLocaleString()}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>GST:</span>
-                  <span>Rs. {parseFloat(selectedTransaction.taxAmount).toLocaleString()}</span>
-                </div>
-                <div className="flex justify-between font-semibold text-lg border-t pt-2">
+                {selectedTransaction.discountAmount > 0 && (
+                  <div className="flex justify-between text-green-600">
+                    <span>Discount:</span>
+                    <span>-{formatCurrency(selectedTransaction.discountAmount)}</span>
+                  </div>
+                )}
+                {selectedTransaction.membershipDiscount > 0 && (
+                  <div className="flex justify-between text-blue-600">
+                    <span>Membership Discount:</span>
+                    <span>-{formatCurrency(selectedTransaction.membershipDiscount)}</span>
+                  </div>
+                )}
+                {selectedTransaction.taxAmount > 0 && (
+                  <div className="flex justify-between">
+                    <span>Tax:</span>
+                    <span>{formatCurrency(selectedTransaction.taxAmount)}</span>
+                  </div>
+                )}
+                <Separator />
+                <div className="flex justify-between text-lg font-bold">
                   <span>Total:</span>
-                  <span>Rs. {parseFloat(selectedTransaction.totalAmount).toLocaleString()}</span>
+                  <span>{formatCurrency(selectedTransaction.totalAmount)}</span>
                 </div>
-                <div className="flex justify-between">
-                  <span>Payment Method:</span>
-                  <span className="capitalize">{selectedTransaction.paymentMethod}</span>
-                </div>
-              </div>
-              
-              <div className="flex space-x-3 pt-4 border-t">
-                <Button 
-                  className="flex-1"
-                  onClick={() => {
-                    setSelectedBills([selectedTransaction.id]);
-                    handleBulkPrint();
-                  }}
-                >
-                  <Receipt className="mr-2 h-4 w-4" />
-                  Print Bill
-                </Button>
-                <Button 
-                  variant="outline"
-                  onClick={() => setShowBillDetails(false)}
-                >
-                  Close
-                </Button>
+                {selectedTransaction.pointsEarned > 0 && (
+                  <div className="flex justify-between text-sm text-muted-foreground">
+                    <span>Points Earned:</span>
+                    <span>{selectedTransaction.pointsEarned}</span>
+                  </div>
+                )}
+                {selectedTransaction.pointsRedeemed > 0 && (
+                  <div className="flex justify-between text-sm text-muted-foreground">
+                    <span>Points Redeemed:</span>
+                    <span>{selectedTransaction.pointsRedeemed}</span>
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -495,11 +564,16 @@ export default function Bills() {
       </Dialog>
 
       {/* Billing Modal */}
-      <BillingModal 
-        isOpen={showBillingModal}
-        onClose={() => setShowBillingModal(false)}
-        storeId={selectedStoreId}
-      />
+      {showBillingModal && (
+        <BillingModal
+          isOpen={showBillingModal}
+          onClose={() => setShowBillingModal(false)}
+          onSuccess={() => {
+            setShowBillingModal(false);
+            refetchTransactions();
+          }}
+        />
+      )}
     </div>
   );
 }
