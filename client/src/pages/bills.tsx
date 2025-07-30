@@ -20,14 +20,23 @@ interface Transaction {
   customerName?: string;
   customerPhone?: string;
   invoiceNumber: string;
+  subtotal: number;
   totalAmount: number;
   discountAmount: number;
-  finalAmount: number;
+  taxAmount: number;
   paymentMethod: string;
   staffId?: string;
   staffName?: string;
-  notes?: string;
+  pointsEarned?: number;
+  pointsRedeemed?: number;
+  membershipDiscount?: number;
   createdAt: string;
+  customer?: {
+    firstName: string;
+    lastName: string;
+    mobile: string;
+    email: string;
+  };
 }
 
 interface TransactionItem {
@@ -61,9 +70,13 @@ function BillDetailsDialog({ transaction }: { transaction: Transaction }) {
         <div className="grid grid-cols-2 gap-4 text-sm">
           <div>
             <p className="font-medium">Customer</p>
-            <p className="text-gray-600">{transaction.customerName || "Walk-in Customer"}</p>
-            {transaction.customerPhone && (
-              <p className="text-gray-600">{transaction.customerPhone}</p>
+            <p className="text-gray-600">
+              {transaction.customer 
+                ? `${transaction.customer.firstName} ${transaction.customer.lastName}` 
+                : "Walk-in Customer"}
+            </p>
+            {transaction.customer?.mobile && (
+              <p className="text-gray-600">{transaction.customer.mobile}</p>
             )}
           </div>
           <div>
@@ -113,17 +126,23 @@ function BillDetailsDialog({ transaction }: { transaction: Transaction }) {
         <div className="space-y-2">
           <div className="flex justify-between">
             <span>Subtotal:</span>
-            <span>Rs. {transaction.totalAmount}</span>
+            <span>Rs. {transaction.subtotal || 0}</span>
           </div>
-          {transaction.discountAmount > 0 && (
+          {(transaction.discountAmount || 0) > 0 && (
             <div className="flex justify-between text-green-600">
               <span>Discount:</span>
               <span>- Rs. {transaction.discountAmount}</span>
             </div>
           )}
+          {(transaction.taxAmount || 0) > 0 && (
+            <div className="flex justify-between">
+              <span>Tax:</span>
+              <span>Rs. {transaction.taxAmount}</span>
+            </div>
+          )}
           <div className="flex justify-between font-bold text-lg pt-2 border-t">
             <span>Total:</span>
-            <span>Rs. {transaction.finalAmount}</span>
+            <span>Rs. {transaction.totalAmount || 0}</span>
           </div>
         </div>
 
@@ -157,6 +176,7 @@ export default function Bills() {
       const response = await apiRequest('GET', `/api/transactions?storeId=${storeId}&limit=25`);
       const data = await response.json();
       console.log("=== BILLS: Received", data.length, "transactions");
+      console.log("=== BILLS: Sample transaction data:", data[0]);
       return data;
     },
     enabled: !!selectedStoreId,
@@ -182,9 +202,10 @@ export default function Bills() {
     const searchLower = searchTerm.toLowerCase();
     return (
       transaction.invoiceNumber?.toLowerCase().includes(searchLower) ||
-      transaction.customerName?.toLowerCase().includes(searchLower) ||
-      transaction.customerPhone?.includes(searchTerm) ||
-      transaction.staffName?.toLowerCase().includes(searchLower)
+      transaction.customer?.firstName?.toLowerCase().includes(searchLower) ||
+      transaction.customer?.lastName?.toLowerCase().includes(searchLower) ||
+      transaction.customer?.mobile?.includes(searchTerm) ||
+      transaction.staffId?.toLowerCase().includes(searchLower)
     );
   }) || [];
 
@@ -257,7 +278,9 @@ export default function Bills() {
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-sm text-gray-600">
                       <div className="flex items-center gap-1">
                         <User className="h-3 w-3" />
-                        {transaction.customerName || "Walk-in Customer"}
+                        {transaction.customer 
+                          ? `${transaction.customer.firstName} ${transaction.customer.lastName}` 
+                          : "Walk-in Customer"}
                       </div>
                       <div className="flex items-center gap-1">
                         <Calendar className="h-3 w-3" />
@@ -272,8 +295,10 @@ export default function Bills() {
 
                   <div className="flex items-center gap-4">
                     <div className="text-right">
-                      <p className="font-bold text-lg">Rs. {transaction.finalAmount}</p>
-                      {transaction.discountAmount > 0 && (
+                      <p className="font-bold text-lg">
+                        Rs. {transaction.totalAmount || 0}
+                      </p>
+                      {(transaction.discountAmount || 0) > 0 && (
                         <p className="text-sm text-green-600">
                           Save Rs. {transaction.discountAmount}
                         </p>
