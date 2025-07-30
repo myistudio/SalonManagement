@@ -46,10 +46,10 @@ export default function Bills() {
   }, [isAuthenticated, isLoading, toast]);
 
   const { data: transactions = [], isLoading: transactionsLoading, refetch: refetchTransactions } = useQuery({
-    queryKey: ["/api/transactions", selectedStoreId, startDate, endDate],
+    queryKey: ["/api/transactions", selectedStoreId, startDate, endDate, Date.now()], // Add timestamp to force refresh
     queryFn: async () => {
       console.log("Fetching transactions for store:", selectedStoreId);
-      let url = `/api/transactions?storeId=${selectedStoreId}&limit=50`;
+      let url = `/api/transactions?storeId=${selectedStoreId}&limit=50&_t=${Date.now()}`; // Add cache busting
       if (startDate) url += `&startDate=${startDate}`;
       if (endDate) url += `&endDate=${endDate}`;
       
@@ -64,7 +64,19 @@ export default function Bills() {
     refetchOnWindowFocus: true, // Refresh when window gets focus
     staleTime: 0, // Always consider data stale
     gcTime: 0, // Don't cache old data
-    refetchIntervalInBackground: true // Keep refreshing even when tab is not active
+    refetchIntervalInBackground: true, // Keep refreshing even when tab is not active
+    queryFn: async ({ queryKey }) => {
+      const [, storeId] = queryKey;
+      console.log("=== BILLS QUERY: Fetching transactions for store:", storeId);
+      let url = `/api/transactions?storeId=${storeId}&limit=50&_t=${Date.now()}`;
+      if (startDate) url += `&startDate=${startDate}`;
+      if (endDate) url += `&endDate=${endDate}`;
+      
+      const response = await apiRequest('GET', url);
+      const data = await response.json();
+      console.log("=== BILLS QUERY: Fetched", data.length, "transactions for store", storeId);
+      return data;
+    }
   });
 
   const { data: stores = [] } = useQuery({

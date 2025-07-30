@@ -105,7 +105,7 @@ export interface IStorage {
   assignMembershipToCustomer(customerId: number, membershipPlanId: number): Promise<CustomerMembership>;
 
   // Transaction operations
-  getTransactions(storeId: number): Promise<Transaction[]>;
+  getTransactions(storeId: number, limit?: number, startDate?: string, endDate?: string): Promise<Transaction[]>;
   getTransaction(id: number): Promise<Transaction | undefined>;
   generateInvoiceNumber(storeId: number): Promise<string>;
   createTransaction(transaction: InsertTransaction, items?: any[]): Promise<Transaction>;
@@ -525,12 +525,48 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Transaction operations
-  async getTransactions(storeId: number): Promise<Transaction[]> {
-    return await db
-      .select()
+  async getTransactions(storeId: number, limit?: number, startDate?: string, endDate?: string): Promise<Transaction[]> {
+    console.log(`DatabaseStorage.getTransactions called for store: ${storeId}, limit: ${limit}`);
+    
+    let query = db
+      .select({
+        id: transactions.id,
+        storeId: transactions.storeId,
+        customerId: transactions.customerId,
+        invoiceNumber: transactions.invoiceNumber,
+        subtotal: transactions.subtotal,
+        discountAmount: transactions.discountAmount,
+        taxAmount: transactions.taxAmount,
+        totalAmount: transactions.totalAmount,
+        paymentMethod: transactions.paymentMethod,
+        paymentStatus: transactions.paymentStatus,
+        pointsEarned: transactions.pointsEarned,
+        pointsRedeemed: transactions.pointsRedeemed,
+        membershipDiscount: transactions.membershipDiscount,
+        staffId: transactions.staffId,
+        notes: transactions.notes,
+        createdAt: transactions.createdAt,
+        updatedAt: transactions.updatedAt,
+        customer: {
+          id: customers.id,
+          firstName: customers.firstName,
+          lastName: customers.lastName,
+          mobile: customers.mobile,
+          email: customers.email
+        }
+      })
       .from(transactions)
+      .leftJoin(customers, eq(customers.id, transactions.customerId))
       .where(eq(transactions.storeId, storeId))
       .orderBy(desc(transactions.createdAt));
+
+    if (limit) {
+      query = query.limit(limit);
+    }
+
+    const results = await query;
+    console.log(`Found ${results.length} transactions for store ${storeId}`);
+    return results as any[];
   }
 
   async getTransaction(id: number): Promise<Transaction | undefined> {
