@@ -205,7 +205,7 @@ export class DatabaseStorage implements IStorage {
   async updateStore(id: number, store: Partial<InsertStore>): Promise<Store> {
     const [updatedStore] = await db
       .update(stores)
-      .set({ ...store, updatedAt: new Date().toISOString() })
+      .set({ ...store, updatedAt: new Date() })
       .where(eq(stores.id, id))
       .returning();
     return updatedStore;
@@ -249,7 +249,7 @@ export class DatabaseStorage implements IStorage {
   async updateCustomer(id: number, customer: Partial<InsertCustomer>): Promise<Customer> {
     const [updatedCustomer] = await db
       .update(customers)
-      .set({ ...customer, updatedAt: new Date().toISOString() })
+      .set({ ...customer, updatedAt: new Date() })
       .where(eq(customers.id, id))
       .returning();
     return updatedCustomer;
@@ -432,7 +432,7 @@ export class DatabaseStorage implements IStorage {
   async updateProduct(id: number, product: Partial<InsertProduct>): Promise<Product> {
     const [updatedProduct] = await db
       .update(products)
-      .set({ ...product, updatedAt: new Date().toISOString() })
+      .set({ ...product, updatedAt: new Date() })
       .where(eq(products.id, id))
       .returning();
     return updatedProduct;
@@ -462,7 +462,7 @@ export class DatabaseStorage implements IStorage {
   async updateProductCategory(id: number, category: Partial<InsertProductCategory>): Promise<ProductCategory> {
     const [updatedCategory] = await db
       .update(productCategories)
-      .set({ ...category, updatedAt: new Date().toISOString() })
+      .set({ ...category, updatedAt: new Date() })
       .where(eq(productCategories.id, id))
       .returning();
     return updatedCategory;
@@ -497,7 +497,7 @@ export class DatabaseStorage implements IStorage {
   async updateMembershipPlan(id: number, plan: Partial<InsertMembershipPlan>): Promise<MembershipPlan> {
     const [updatedPlan] = await db
       .update(membershipPlans)
-      .set({ ...plan, updatedAt: new Date().toISOString() })
+      .set({ ...plan, updatedAt: new Date() })
       .where(eq(membershipPlans.id, id))
       .returning();
     return updatedPlan;
@@ -517,7 +517,7 @@ export class DatabaseStorage implements IStorage {
       .values({
         customerId,
         membershipPlanId,
-        startDate: new Date().toISOString(),
+        startDate: new Date(),
         isActive: true
       })
       .returning();
@@ -553,78 +553,46 @@ export class DatabaseStorage implements IStorage {
 
   async createTransaction(transaction: InsertTransaction, items?: any[]): Promise<Transaction> {
     try {
-      // Create basic transaction data that matches the actual database schema
-      const basicTransactionData = {
-        storeId: transaction.storeId,
-        customerId: transaction.customerId || null,
-        invoiceNumber: transaction.invoiceNumber,
-        subtotal: transaction.subtotal,
-        discountAmount: transaction.discountAmount || 0,
-        taxAmount: transaction.taxAmount || 0,
-        totalAmount: transaction.totalAmount,
-        paymentMethod: transaction.paymentMethod || 'Cash',
-        staffId: transaction.staffId || null,
-        pointsEarned: transaction.pointsEarned || 0,
-        pointsRedeemed: transaction.pointsRedeemed || 0,
-        membershipDiscount: transaction.membershipDiscount || 0
-      };
-      
-      // Create the transaction first using raw SQL to avoid schema issues
-      const result = await db.run(sql`
-        INSERT INTO transactions (
-          store_id, customer_id, invoice_number, subtotal, discount_amount, 
-          tax_amount, total_amount, payment_method, staff_id, points_earned, 
-          points_redeemed, membership_discount, created_at
-        ) VALUES (
-          ${basicTransactionData.storeId}, ${basicTransactionData.customerId}, 
-          ${basicTransactionData.invoiceNumber}, ${basicTransactionData.subtotal}, 
-          ${basicTransactionData.discountAmount}, ${basicTransactionData.taxAmount}, 
-          ${basicTransactionData.totalAmount}, ${basicTransactionData.paymentMethod}, 
-          ${basicTransactionData.staffId}, ${basicTransactionData.pointsEarned}, 
-          ${basicTransactionData.pointsRedeemed}, ${basicTransactionData.membershipDiscount}, 
-          datetime('now')
-        )
-      `);
-
-      const transactionId = result.lastInsertRowid as number;
+      // Create the transaction using proper Drizzle ORM
+      const [newTransaction] = await db
+        .insert(transactions)
+        .values({
+          storeId: transaction.storeId,
+          customerId: transaction.customerId || null,
+          invoiceNumber: transaction.invoiceNumber,
+          subtotal: transaction.subtotal,
+          discountAmount: transaction.discountAmount || 0,
+          taxAmount: transaction.taxAmount || 0,
+          totalAmount: transaction.totalAmount,
+          paymentMethod: transaction.paymentMethod || 'Cash',
+          staffId: transaction.staffId || null,
+          pointsEarned: transaction.pointsEarned || 0,
+          pointsRedeemed: transaction.pointsRedeemed || 0,
+          membershipDiscount: transaction.membershipDiscount || 0,
+          isActive: true
+        })
+        .returning();
 
       // Create transaction items if provided
       if (items && items.length > 0) {
         for (const item of items) {
-          await db.run(sql`
-            INSERT INTO transaction_items (
-              transaction_id, item_type, item_id, item_name, quantity, 
-              unit_price, total_price, service_staff_id, membership_plan_id, created_at
-            ) VALUES (
-              ${transactionId}, ${item.itemType}, ${item.itemId}, 
-              ${item.itemName}, ${item.quantity}, ${item.unitPrice}, 
-              ${item.totalPrice}, ${item.serviceStaffId}, ${item.membershipPlanId}, 
-              datetime('now')
-            )
-          `);
+          await db
+            .insert(transactionItems)
+            .values({
+              transactionId: newTransaction.id,
+              itemType: item.itemType,
+              itemId: item.itemId,
+              itemName: item.itemName,
+              quantity: item.quantity,
+              unitPrice: item.unitPrice,
+              totalPrice: item.totalPrice,
+              serviceStaffId: item.serviceStaffId || null,
+              membershipPlanId: item.membershipPlanId || null
+            });
         }
       }
 
-      // Return a basic transaction object
-      return {
-        id: transactionId,
-        storeId: basicTransactionData.storeId,
-        customerId: basicTransactionData.customerId,
-        invoiceNumber: basicTransactionData.invoiceNumber,
-        subtotal: basicTransactionData.subtotal,
-        discountAmount: basicTransactionData.discountAmount,
-        taxAmount: basicTransactionData.taxAmount,
-        totalAmount: basicTransactionData.totalAmount,
-        paymentMethod: basicTransactionData.paymentMethod,
-        staffId: basicTransactionData.staffId,
-        pointsEarned: basicTransactionData.pointsEarned,
-        pointsRedeemed: basicTransactionData.pointsRedeemed,
-        membershipDiscount: basicTransactionData.membershipDiscount,
-        createdAt: new Date().toISOString(),
-        updatedAt: null,
-        isActive: true,
-        notes: null
-      } as Transaction;
+      return newTransaction;
     } catch (error) {
       console.error('Error creating transaction:', error);
       throw error;
@@ -1243,9 +1211,7 @@ export class DatabaseStorage implements IStorage {
         userId,
         storeId,
         role,
-        isActive: true,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
+        isActive: true
       })
       .returning();
     return assignment;
