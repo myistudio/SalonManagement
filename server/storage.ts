@@ -212,7 +212,64 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteStore(id: number): Promise<void> {
-    await db.delete(stores).where(eq(stores.id, id));
+    console.log('Storage deleteStore called for store ID:', id);
+    try {
+      // Delete all dependent records in order (most dependent first)
+      
+      // 1. Delete transaction items first
+      const transactionIds = await db
+        .select({ id: transactions.id })
+        .from(transactions)
+        .where(eq(transactions.storeId, id));
+      
+      for (const transaction of transactionIds) {
+        await db.delete(transactionItems).where(eq(transactionItems.transactionId, transaction.id));
+      }
+      
+      // 2. Delete transactions
+      await db.delete(transactions).where(eq(transactions.storeId, id));
+      
+      // 3. Delete appointments
+      await db.delete(appointments).where(eq(appointments.storeId, id));
+      
+      // 4. Delete customer memberships for this store
+      const customerIds = await db
+        .select({ id: customers.id })
+        .from(customers)
+        .where(eq(customers.storeId, id));
+      
+      for (const customer of customerIds) {
+        await db.delete(customerMemberships).where(eq(customerMemberships.customerId, customer.id));
+      }
+      
+      // 5. Delete customers
+      await db.delete(customers).where(eq(customers.storeId, id));
+      
+      // 6. Delete membership plans
+      await db.delete(membershipPlans).where(eq(membershipPlans.storeId, id));
+      
+      // 7. Delete store staff assignments
+      await db.delete(storeStaff).where(eq(storeStaff.storeId, id));
+      
+      // 8. Delete products and services
+      await db.delete(products).where(eq(products.storeId, id));
+      await db.delete(services).where(eq(services.storeId, id));
+      
+      // 9. Delete categories
+      await db.delete(productCategories).where(eq(productCategories.storeId, id));
+      await db.delete(serviceCategories).where(eq(serviceCategories.storeId, id));
+      
+      // 10. Delete appointment settings
+      await db.delete(appointmentSettings).where(eq(appointmentSettings.storeId, id));
+      
+      // 11. Finally delete the store itself
+      await db.delete(stores).where(eq(stores.id, id));
+      
+      console.log('Storage deleteStore completed successfully for store ID:', id);
+    } catch (error) {
+      console.error('Storage deleteStore error:', error);
+      throw error;
+    }
   }
 
   async getUserStores(userId: string): Promise<Store[]> {
