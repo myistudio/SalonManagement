@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Plus, Building2, MapPin, Phone, Mail, Edit, Users, ArrowLeft, Trash2 } from "lucide-react";
+import { Plus, Building2, MapPin, Phone, Mail, Edit, Users, ArrowLeft, Power } from "lucide-react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Switch } from "@/components/ui/switch";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -91,21 +91,22 @@ export default function Stores() {
     },
   });
 
-  const deleteStoreMutation = useMutation({
-    mutationFn: async (id: number) => {
-      await apiRequest("DELETE", `/api/stores/${id}`);
+  const toggleStoreMutation = useMutation({
+    mutationFn: async ({ id, isActive }: { id: number; isActive: boolean }) => {
+      const res = await apiRequest("PUT", `/api/stores/${id}/toggle`, { isActive });
+      return await res.json();
     },
-    onSuccess: () => {
+    onSuccess: (updatedStore, variables) => {
       queryClient.invalidateQueries({ queryKey: ['/api/stores'] });
       toast({
         title: "Success",
-        description: "Store deleted successfully",
+        description: `Store ${variables.isActive ? 'enabled' : 'disabled'} successfully`,
       });
     },
     onError: (error: Error) => {
       toast({
         title: "Error",
-        description: error.message,
+        description: "Failed to update store status",
         variant: "destructive",
       });
     },
@@ -494,34 +495,22 @@ export default function Stores() {
                     {store.name}
                   </div>
                   {canCreateStores && (
-                    <div className="flex items-center space-x-1">
+                    <div className="flex items-center space-x-2">
                       <Button variant="ghost" size="sm" onClick={() => openEditDialog(store)}>
                         <Edit className="h-4 w-4" />
                       </Button>
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button variant="ghost" size="sm" className="text-red-600 hover:text-red-700">
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Delete Store</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              Are you sure you want to delete "{store.name}"? This action cannot be undone and will remove all associated data.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction
-                              onClick={() => deleteStoreMutation.mutate(store.id)}
-                              className="bg-red-600 hover:bg-red-700"
-                            >
-                              Delete Store
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
+                      <div className="flex items-center space-x-2">
+                        <Switch
+                          checked={store.isActive}
+                          onCheckedChange={(checked) => 
+                            toggleStoreMutation.mutate({ id: store.id, isActive: checked })
+                          }
+                          disabled={toggleStoreMutation.isPending}
+                        />
+                        <span className="text-xs text-gray-500">
+                          {store.isActive ? 'Active' : 'Inactive'}
+                        </span>
+                      </div>
                     </div>
                   )}
                 </CardTitle>
@@ -559,9 +548,17 @@ export default function Stores() {
                   <p className="text-sm text-gray-600 mt-3">{store.description}</p>
                 )}
 
-                <div className="flex items-center pt-3 border-t">
-                  <Users className="h-4 w-4 mr-2 text-gray-400" />
-                  <span className="text-sm text-gray-600">Store ID: {store.id}</span>
+                <div className="flex items-center justify-between pt-3 border-t">
+                  <div className="flex items-center">
+                    <Users className="h-4 w-4 mr-2 text-gray-400" />
+                    <span className="text-sm text-gray-600">Store ID: {store.id}</span>
+                  </div>
+                  <div className="flex items-center">
+                    <Power className={`h-4 w-4 mr-1 ${store.isActive ? 'text-green-500' : 'text-gray-400'}`} />
+                    <span className={`text-xs font-medium ${store.isActive ? 'text-green-600' : 'text-gray-500'}`}>
+                      {store.isActive ? 'Active' : 'Inactive'}
+                    </span>
+                  </div>
                 </div>
               </CardContent>
             </Card>

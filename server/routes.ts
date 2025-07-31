@@ -201,14 +201,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // DELETE /api/stores/:id - Disable store (mark as inactive)
   app.delete('/api/stores/:id', isAuthenticated, requireRole(['super_admin']), async (req: any, res) => {
     try {
       const storeId = parseInt(req.params.id);
-      await storage.deleteStore(storeId);
-      res.json({ message: "Store deleted successfully" });
+      await storage.deleteStore(storeId); // This now marks as inactive instead of deleting
+      res.json({ message: "Store disabled successfully" });
     } catch (error) {
-      console.error("Error deleting store:", error);
-      res.status(500).json({ message: "Failed to delete store" });
+      console.error("Error disabling store:", error);
+      res.status(500).json({ message: "Failed to disable store" });
+    }
+  });
+
+  // PUT /api/stores/:id/toggle - Toggle store active status
+  app.put('/api/stores/:id/toggle', isAuthenticated, requireRole(['super_admin']), async (req: any, res) => {
+    try {
+      const storeId = parseInt(req.params.id);
+      const { isActive } = req.body;
+      
+      const updatedStore = await storage.toggleStoreStatus(storeId, isActive);
+      res.json(updatedStore);
+    } catch (error) {
+      console.error("Error toggling store status:", error);
+      res.status(500).json({ message: "Failed to toggle store status" });
     }
   });
 

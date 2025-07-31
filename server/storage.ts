@@ -214,74 +214,40 @@ export class DatabaseStorage implements IStorage {
   async deleteStore(id: number): Promise<void> {
     console.log('Storage deleteStore called for store ID:', id);
     try {
-      // Get all customers for this store first
-      const storeCustomerIds = await db
-        .select({ id: customers.id })
-        .from(customers)
-        .where(eq(customers.storeId, id));
+      // Instead of actual deletion, mark store as inactive
+      const [updatedStore] = await db
+        .update(stores)
+        .set({ 
+          isActive: false, 
+          updatedAt: new Date() 
+        })
+        .where(eq(stores.id, id))
+        .returning();
       
-      const customerIdList = storeCustomerIds.map(c => c.id);
-      console.log('Found customers to delete:', customerIdList);
-      
-      if (customerIdList.length > 0) {
-        // 1. Delete transaction items for ALL transactions that reference these customers
-        const allTransactionsWithCustomers = await db
-          .select({ id: transactions.id })
-          .from(transactions)
-          .where(inArray(transactions.customerId, customerIdList));
-        
-        console.log('Found transactions referencing store customers:', allTransactionsWithCustomers.map(t => t.id));
-        
-        for (const transaction of allTransactionsWithCustomers) {
-          await db.delete(transactionItems).where(eq(transactionItems.transactionId, transaction.id));
-        }
-        
-        // 2. Delete ALL transactions that reference customers from this store (not just store transactions)
-        await db.delete(transactions).where(inArray(transactions.customerId, customerIdList));
-      }
-      
-      // 3. Delete transactions for this store (that don't have customers)
-      await db.delete(transactionItems).where(
-        inArray(transactionItems.transactionId, 
-          db.select({ id: transactions.id }).from(transactions).where(eq(transactions.storeId, id))
-        )
-      );
-      await db.delete(transactions).where(eq(transactions.storeId, id));
-      
-      // 4. Delete appointments
-      await db.delete(appointments).where(eq(appointments.storeId, id));
-      
-      // 5. Delete customer memberships for this store
-      if (customerIdList.length > 0) {
-        await db.delete(customerMemberships).where(inArray(customerMemberships.customerId, customerIdList));
-      }
-      
-      // 6. Delete customers
-      await db.delete(customers).where(eq(customers.storeId, id));
-      
-      // 7. Delete membership plans
-      await db.delete(membershipPlans).where(eq(membershipPlans.storeId, id));
-      
-      // 8. Delete store staff assignments
-      await db.delete(storeStaff).where(eq(storeStaff.storeId, id));
-      
-      // 9. Delete products and services
-      await db.delete(products).where(eq(products.storeId, id));
-      await db.delete(services).where(eq(services.storeId, id));
-      
-      // 10. Delete categories
-      await db.delete(productCategories).where(eq(productCategories.storeId, id));
-      await db.delete(serviceCategories).where(eq(serviceCategories.storeId, id));
-      
-      // 11. Delete appointment settings
-      await db.delete(appointmentSettings).where(eq(appointmentSettings.storeId, id));
-      
-      // 12. Finally delete the store itself
-      await db.delete(stores).where(eq(stores.id, id));
-      
-      console.log('Storage deleteStore completed successfully for store ID:', id);
+      console.log('Storage deleteStore completed - marked store as inactive:', id);
+      return;
     } catch (error) {
       console.error('Storage deleteStore error:', error);
+      throw error;
+    }
+  }
+
+  async toggleStoreStatus(id: number, isActive: boolean): Promise<Store> {
+    console.log(`Storage toggleStoreStatus called for store ID: ${id}, setting active: ${isActive}`);
+    try {
+      const [updatedStore] = await db
+        .update(stores)
+        .set({ 
+          isActive, 
+          updatedAt: new Date() 
+        })
+        .where(eq(stores.id, id))
+        .returning();
+      
+      console.log('Storage toggleStoreStatus completed successfully:', updatedStore);
+      return updatedStore;
+    } catch (error) {
+      console.error('Storage toggleStoreStatus error:', error);
       throw error;
     }
   }
