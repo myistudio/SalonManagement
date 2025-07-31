@@ -462,31 +462,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put('/api/services/:id', isAuthenticated, async (req: any, res) => {
+  app.put('/api/services/:id', isAuthenticated, requirePermission(Permission.MANAGE_SERVICES), hasStoreAccess, async (req: any, res) => {
     try {
       const serviceId = parseInt(req.params.id);
       
-      // Handle category assignment for services
+      console.log('Service update request body:', req.body);
+      
+      // Create clean request body similar to product update handling
       const requestBody = { ...req.body };
       
-      // If category is provided as a name, look up the category ID
+      // Skip Zod validation for updates and manually prepare data like product updates
+      const serviceData: any = {};
+      
+      if (requestBody.name !== undefined) serviceData.name = requestBody.name;
+      if (requestBody.description !== undefined) serviceData.description = requestBody.description || null;
+      if (requestBody.price !== undefined) serviceData.price = requestBody.price.toString();
+      if (requestBody.duration !== undefined) serviceData.duration = parseInt(requestBody.duration) || 30;
+      
+      // Handle category - look up category ID by name if category name is provided
       if (requestBody.category !== undefined && requestBody.category !== '') {
         const categories = await storage.getServiceCategories(parseInt(requestBody.storeId));
         const category = categories.find(cat => cat.name === requestBody.category);
-        requestBody.categoryId = category ? category.id : null;
-        delete requestBody.category; // Remove category name from the data
+        serviceData.categoryId = category ? category.id : null;
       } else if (requestBody.category === '') {
-        requestBody.categoryId = null;
-        delete requestBody.category;
+        serviceData.categoryId = null;
       }
       
-      const serviceData = insertServiceSchema.partial().parse(requestBody);
+      if (requestBody.imageUrl !== undefined) serviceData.imageUrl = requestBody.imageUrl;
+      if (requestBody.storeId !== undefined) serviceData.storeId = parseInt(requestBody.storeId);
+      
+      console.log('Final service data for update:', serviceData);
       const service = await storage.updateService(serviceId, serviceData);
       res.json(service);
     } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: "Invalid service data", errors: error.errors });
-      }
+      console.error("Error updating service:", error);
       res.status(500).json({ message: "Failed to update service" });
     }
   });

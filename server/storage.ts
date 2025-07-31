@@ -337,12 +337,19 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateService(id: number, service: Partial<InsertService>): Promise<Service> {
-    const [updatedService] = await db
-      .update(services)
-      .set({ ...service, updatedAt: new Date().toISOString() })
-      .where(eq(services.id, id))
-      .returning();
-    return updatedService;
+    console.log('Storage updateService called with id:', id, 'data:', service);
+    try {
+      const [updatedService] = await db
+        .update(services)
+        .set({ ...service, updatedAt: new Date() })
+        .where(eq(services.id, id))
+        .returning();
+      console.log('Storage updateService result:', updatedService);
+      return updatedService;
+    } catch (error) {
+      console.error('Storage updateService error:', error);
+      throw error;
+    }
   }
 
   async deleteService(id: number): Promise<void> {
