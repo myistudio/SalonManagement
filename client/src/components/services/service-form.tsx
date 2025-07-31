@@ -36,7 +36,7 @@ export default function ServiceForm({ storeId, service, onSuccess }: ServiceForm
 
   // Fetch service categories for this store
   const { data: serviceCategories = [] } = useQuery<any[]>({
-    queryKey: [`/api/service-categories?storeId=${storeId}`],
+    queryKey: ["/api/service-categories", storeId],
   });
 
   const createService = useMutation({
@@ -51,7 +51,9 @@ export default function ServiceForm({ storeId, service, onSuccess }: ServiceForm
         title: "Success",
         description: `Service ${service ? 'updated' : 'created'} successfully`,
       });
-      queryClient.invalidateQueries({ queryKey: [`/api/services?storeId=${storeId}`] });
+      // Use the same query key format as the services page
+      queryClient.invalidateQueries({ queryKey: ["/api/services", storeId] });
+      queryClient.invalidateQueries({ queryKey: ["/api/service-categories", storeId] });
       onSuccess();
     },
     onError: (error) => {

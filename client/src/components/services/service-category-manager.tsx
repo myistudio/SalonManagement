@@ -39,7 +39,7 @@ export default function ServiceCategoryManager({ storeId, onCategorySelect }: Se
 
   // Fetch service categories
   const { data: categories = [], isLoading } = useQuery<any[]>({
-    queryKey: [`/api/service-categories?storeId=${storeId}`],
+    queryKey: ["/api/service-categories", storeId],
     enabled: isManagerOpen,
   });
 
@@ -54,7 +54,7 @@ export default function ServiceCategoryManager({ storeId, onCategorySelect }: Se
         title: "Success",
         description: "Service category created successfully",
       });
-      queryClient.invalidateQueries({ queryKey: [`/api/service-categories?storeId=${storeId}`] });
+      queryClient.invalidateQueries({ queryKey: ["/api/service-categories", storeId] });
       setIsAddingCategory(false);
       resetForm();
       if (onCategorySelect) {
@@ -75,7 +75,7 @@ export default function ServiceCategoryManager({ storeId, onCategorySelect }: Se
         title: "Success",
         description: "Service category updated successfully",
       });
-      queryClient.invalidateQueries({ queryKey: [`/api/service-categories?storeId=${storeId}`] });
+      queryClient.invalidateQueries({ queryKey: ["/api/service-categories", storeId] });
       setEditingCategory(null);
       resetForm();
     },
@@ -92,7 +92,7 @@ export default function ServiceCategoryManager({ storeId, onCategorySelect }: Se
         title: "Success",
         description: "Service category deleted successfully",
       });
-      queryClient.invalidateQueries({ queryKey: [`/api/service-categories?storeId=${storeId}`] });
+      queryClient.invalidateQueries({ queryKey: ["/api/service-categories", storeId] });
     },
     onError: handleError,
   });
