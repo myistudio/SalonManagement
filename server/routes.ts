@@ -1848,6 +1848,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log('Creating appointment with data:', requestBody);
       const appointment = await storage.createAppointment(requestBody);
+      
+      // Send automatic confirmation SMS and email
+      try {
+        console.log('Sending appointment confirmation notifications...');
+        const { sendAppointmentNotification } = await import('./communication-service');
+        await sendAppointmentNotification(appointment.id, 'confirmation', appointment.storeId);
+        console.log('Appointment confirmation notifications sent successfully');
+      } catch (error) {
+        console.error('Failed to send appointment confirmation notifications:', error);
+        // Don't fail the appointment creation if notifications fail
+      }
+      
       res.status(201).json(appointment);
     } catch (error) {
       console.error("Error creating appointment:", error);
@@ -2190,6 +2202,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error sending appointment notification:", error);
       res.status(500).json({ message: "Failed to send appointment notification" });
+    }
+  });
+
+  // Initialize default communication settings for a store
+  app.post("/api/stores/:id/init-communication", isAuthenticated, requireRole(['super_admin', 'store_manager']), async (req: any, res) => {
+    try {
+      const storeId = parseInt(req.params.id);
+      const { ensureDefaultTemplates } = await import('./communication-service');
+      
+      await ensureDefaultTemplates(storeId);
+      
+      res.json({ message: "Default communication templates created successfully" });
+    } catch (error) {
+      console.error("Error initializing communication settings:", error);
+      res.status(500).json({ message: "Failed to initialize communication settings" });
     }
   });
 

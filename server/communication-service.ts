@@ -318,6 +318,70 @@ export class UnifiedCommunicationService implements CommunicationServiceAPI {
 // Singleton instance
 export const communicationService = new UnifiedCommunicationService();
 
+// Helper function to ensure default communication templates exist
+export async function ensureDefaultTemplates(storeId: number): Promise<void> {
+  try {
+    const { storage } = await import('./storage');
+    
+    // Default appointment confirmation templates
+    const defaultTemplates = [
+      {
+        storeId,
+        type: 'sms',
+        category: 'appointment_confirmation',
+        name: 'Appointment Confirmation SMS',
+        content: 'Hi {customer_name}! Your appointment at {store_name} is confirmed for {appointment_date} at {appointment_time}. Service: {service_name}. Thank you!',
+        variables: ['customer_name', 'store_name', 'appointment_date', 'appointment_time', 'service_name'],
+        isActive: true
+      },
+      {
+        storeId,
+        type: 'email',
+        category: 'appointment_confirmation',
+        name: 'Appointment Confirmation Email',
+        subject: 'Appointment Confirmed - {store_name}',
+        content: `Dear {customer_name},
+
+Your appointment has been confirmed!
+
+📅 Date: {appointment_date}
+🕐 Time: {appointment_time}
+💅 Service: {service_name}
+🏪 Location: {store_name}
+📍 Address: {store_address}
+📞 Contact: {store_phone}
+
+We look forward to seeing you!
+
+Best regards,
+{store_name} Team`,
+        variables: ['customer_name', 'store_name', 'appointment_date', 'appointment_time', 'service_name', 'store_address', 'store_phone'],
+        isActive: true
+      },
+      {
+        storeId,
+        type: 'whatsapp',
+        category: 'appointment_confirmation',
+        name: 'Appointment Confirmation WhatsApp',
+        content: '✨ Hello {customer_name}!\n\nYour appointment is confirmed:\n📅 {appointment_date} at {appointment_time}\n💅 Service: {service_name}\n📍 {store_name}\n\nSee you soon! 😊',
+        variables: ['customer_name', 'appointment_date', 'appointment_time', 'service_name', 'store_name'],
+        isActive: true
+      }
+    ];
+
+    // Check if templates already exist, if not create them
+    for (const template of defaultTemplates) {
+      const existing = await storage.getCommunicationTemplate(storeId, template.type, template.category);
+      if (!existing) {
+        await storage.createCommunicationTemplate(storeId, template);
+        console.log(`Created default ${template.type} template for ${template.category}`);
+      }
+    }
+  } catch (error) {
+    console.error('Error ensuring default templates:', error);
+  }
+}
+
 // Helper function to send appointment-related communications
 export async function sendAppointmentNotification(
   appointmentId: number,
@@ -327,13 +391,19 @@ export async function sendAppointmentNotification(
   try {
     const { storage } = await import('./storage');
     
+    // Ensure default templates exist
+    await ensureDefaultTemplates(storeId);
+    
     const appointment = await storage.getAppointment(appointmentId);
     if (!appointment) return;
 
     // Get customer by phone number since appointments don't link to customer ID directly
     const customers = await storage.getCustomers(storeId);
-    const customer = customers.find(c => c.mobile === appointment.customerMobile);
-    if (!customer) return;
+    const customer = customers.find(c => c.mobile === appointment.customerPhone);
+    if (!customer) {
+      console.log(`No customer found with mobile ${appointment.customerPhone} for store ${storeId}`);
+      return;
+    }
 
     const store = await storage.getStore(storeId);
     if (!store) return;
