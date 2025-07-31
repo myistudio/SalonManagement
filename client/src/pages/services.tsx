@@ -12,8 +12,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Search, Plus, Waves, Edit, Clock } from "lucide-react";
+import { Search, Plus, Waves, Edit, Clock, Trash2 } from "lucide-react";
 import ServiceForm from "@/components/services/service-form";
 import BillingModal from "@/components/billing/billing-modal";
 
@@ -26,6 +27,37 @@ export default function Services() {
   const [showServiceForm, setShowServiceForm] = useState(false);
   const [showBillingModal, setShowBillingModal] = useState(false);
   const [editingService, setEditingService] = useState<any>(null);
+
+  // Delete service mutation
+  const deleteServiceMutation = useMutation({
+    mutationFn: async (serviceId: number) => {
+      const response = await apiRequest("DELETE", `/api/services/${serviceId}`);
+      return response;
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "Service deleted successfully",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/services", selectedStoreId] });
+    },
+    onError: (error: any) => {
+      if (isUnauthorizedError(error)) {
+        toast({
+          title: "Unauthorized",
+          description: "You are logged out. Logging in again...",
+          variant: "destructive",
+        });
+        window.location.href = "/api/login";
+        return;
+      }
+      toast({
+        title: "Error",
+        description: "Failed to delete service",
+        variant: "destructive",
+      });
+    },
+  });
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -179,16 +211,43 @@ export default function Services() {
                                     ₹{parseFloat(service.price).toLocaleString()}
                                   </div>
                                 </div>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => {
-                                    setEditingService(service);
-                                    setShowServiceForm(true);
-                                  }}
-                                >
-                                  <Edit size={16} />
-                                </Button>
+                                <div className="flex space-x-1">
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => {
+                                      setEditingService(service);
+                                      setShowServiceForm(true);
+                                    }}
+                                  >
+                                    <Edit size={16} />
+                                  </Button>
+                                  <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                      <Button variant="ghost" size="sm" className="text-red-600 hover:text-red-700">
+                                        <Trash2 size={16} />
+                                      </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                      <AlertDialogHeader>
+                                        <AlertDialogTitle>Delete Service</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                          Are you sure you want to delete "{service.name}"? This action cannot be undone.
+                                        </AlertDialogDescription>
+                                      </AlertDialogHeader>
+                                      <AlertDialogFooter>
+                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                        <AlertDialogAction
+                                          onClick={() => deleteServiceMutation.mutate(service.id)}
+                                          className="bg-red-600 hover:bg-red-700"
+                                          disabled={deleteServiceMutation.isPending}
+                                        >
+                                          {deleteServiceMutation.isPending ? "Deleting..." : "Delete"}
+                                        </AlertDialogAction>
+                                      </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                  </AlertDialog>
+                                </div>
                               </div>
                               
                               <div className="flex space-x-2">

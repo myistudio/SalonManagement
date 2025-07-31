@@ -491,6 +491,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.delete('/api/services/:id', isAuthenticated, requirePermission(Permission.MANAGE_SERVICES), hasStoreAccess, async (req: any, res) => {
+    try {
+      const serviceId = parseInt(req.params.id);
+      await storage.deleteService(serviceId);
+      res.json({ message: "Service deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting service:", error);
+      res.status(500).json({ message: "Failed to delete service" });
+    }
+  });
+
   // Product category routes
   app.get("/api/product-categories", isAuthenticated, async (req: any, res) => {
     try {
@@ -636,6 +647,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error updating product:", error);
       res.status(500).json({ message: "Failed to update product" });
+    }
+  });
+
+  app.delete('/api/products/:id', isAuthenticated, requirePermission(Permission.MANAGE_INVENTORY), hasStoreAccess, async (req: any, res) => {
+    try {
+      const productId = parseInt(req.params.id);
+      await storage.deleteProduct(productId);
+      res.json({ message: "Product deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting product:", error);
+      res.status(500).json({ message: "Failed to delete product" });
     }
   });
 

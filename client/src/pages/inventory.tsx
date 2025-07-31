@@ -12,8 +12,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Search, Plus, Package, AlertTriangle, QrCode, Edit, Printer, Tag } from "lucide-react";
+import { Search, Plus, Package, AlertTriangle, QrCode, Edit, Printer, Tag, Trash2 } from "lucide-react";
 import ProductForm from "@/components/products/product-form";
 import BillingModal from "@/components/billing/billing-modal";
 import { printBarcode, printQRCode, printBarcodeWithPrice, printGridBarcodes, printGridQRCodes } from "@/lib/barcode-utils";
@@ -38,6 +39,38 @@ export default function Inventory() {
   const [showProductForm, setShowProductForm] = useState(false);
   const [showBillingModal, setShowBillingModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState<any>(null);
+
+  // Delete product mutation
+  const deleteProductMutation = useMutation({
+    mutationFn: async (productId: number) => {
+      const response = await apiRequest("DELETE", `/api/products/${productId}`);
+      return response;
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "Product deleted successfully",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/products", selectedStoreId] });
+      queryClient.invalidateQueries({ queryKey: ["/api/products/low-stock", selectedStoreId] });
+    },
+    onError: (error: any) => {
+      if (isUnauthorizedError(error)) {
+        toast({
+          title: "Unauthorized",
+          description: "You are logged out. Logging in again...",
+          variant: "destructive",
+        });
+        window.location.href = "/api/login";
+        return;
+      }
+      toast({
+        title: "Error",
+        description: "Failed to delete product",
+        variant: "destructive",
+      });
+    },
+  });
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -361,6 +394,31 @@ export default function Inventory() {
                                 >
                                   <Edit size={16} />
                                 </Button>
+                                <AlertDialog>
+                                  <AlertDialogTrigger asChild>
+                                    <Button variant="ghost" size="sm" className="text-red-600 hover:text-red-700">
+                                      <Trash2 size={16} />
+                                    </Button>
+                                  </AlertDialogTrigger>
+                                  <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                      <AlertDialogTitle>Delete Product</AlertDialogTitle>
+                                      <AlertDialogDescription>
+                                        Are you sure you want to delete "{product.name}"? This action cannot be undone.
+                                      </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                      <AlertDialogAction
+                                        onClick={() => deleteProductMutation.mutate(product.id)}
+                                        className="bg-red-600 hover:bg-red-700"
+                                        disabled={deleteProductMutation.isPending}
+                                      >
+                                        {deleteProductMutation.isPending ? "Deleting..." : "Delete"}
+                                      </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                  </AlertDialogContent>
+                                </AlertDialog>
                               </div>
                             </TableCell>
                           </TableRow>
