@@ -103,6 +103,37 @@ const validateInput = (schema: any) => {
 };
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Health check endpoint (no authentication required)
+  app.get("/api/health", async (req, res) => {
+    try {
+      // Check database connection
+      await storage.getStores();
+      
+      const healthStatus = {
+        status: 'healthy',
+        timestamp: new Date().toISOString(),
+        uptime: process.uptime(),
+        memory: process.memoryUsage(),
+        version: '1.0.0',
+        environment: process.env.NODE_ENV || 'development',
+        database: 'connected'
+      };
+      
+      res.status(200).json(healthStatus);
+    } catch (error) {
+      console.error('Health check failed:', error);
+      
+      const healthStatus = {
+        status: 'unhealthy',
+        timestamp: new Date().toISOString(),
+        error: 'Database connection failed',
+        database: 'disconnected'
+      };
+      
+      res.status(503).json(healthStatus);
+    }
+  });
+
   // Auth middleware
   setupBasicAuth(app);
 

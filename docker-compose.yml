@@ -1,0 +1,62 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: salonpro_db
+    environment:
+      POSTGRES_DB: salonpro
+      POSTGRES_USER: salonpro_user
+      POSTGRES_PASSWORD: your_secure_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backups:/backups
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+    networks:
+      - salonpro_network
+
+  # SalonPro Application
+  app:
+    build: .
+    container_name: salonpro_app
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://salonpro_user:your_secure_password@postgres:5432/salonpro
+      PORT: 3000
+      SESSION_SECRET: your_very_secure_session_secret_here
+    ports:
+      - "3000:3000"
+    depends_on:
+      - postgres
+    volumes:
+      - ./uploads:/app/uploads
+      - ./logs:/app/logs
+    restart: unless-stopped
+    networks:
+      - salonpro_network
+
+  # Nginx Reverse Proxy
+  nginx:
+    image: nginx:alpine
+    container_name: salonpro_nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+      - ./ssl:/etc/nginx/ssl
+    depends_on:
+      - app
+    restart: unless-stopped
+    networks:
+      - salonpro_network
+
+volumes:
+  postgres_data:
+
+networks:
+  salonpro_network:
+    driver: bridge
