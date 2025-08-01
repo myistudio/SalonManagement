@@ -170,6 +170,7 @@ echo "4. Check application logs:  pm2 logs salonpro"
 echo "5. Check system logs:       sudo journalctl -u postgresql -f"
 echo "6. Rebuild application:     npm run build && pm2 restart salonpro"
 echo "7. Reset database:          sudo NODE_ENV=production npm run db:push"
+echo "8. Fix 502 error:           curl -sSL https://raw.githubusercontent.com/myistudio/SalonManagement/main/scripts/diagnose-502.sh | bash"
 
 echo ""
 echo "⚠️ Common Issues & Solutions:"
