@@ -13,7 +13,7 @@
 Before starting, collect these details:
 - [ ] VPS IP address: `_______________`
 - [ ] Domain name: `_______________`
-- [ ] Database password: `_______________` 
+- [ ] Database password: `Veenails@2!` (pre-configured) 
 - [ ] Session secret (32+ characters): `_______________`
 - [ ] SendGrid API key: `_______________`
 - [ ] MSG91 API key: `_______________`
@@ -211,7 +211,7 @@ pm2 logs salonpro
 **Database connection failed:**
 ```bash
 sudo systemctl status postgresql
-psql -U salonpro_user -h localhost -d salonpro -c "SELECT version();"
+PGPASSWORD="Veenails@2!" psql -U salonpro_user -h localhost -d salonpro -c "SELECT version();"
 ```
 
 **Nginx configuration error:**
@@ -293,7 +293,7 @@ pm2 restart salonpro
 sudo systemctl status nginx
 
 # Test database connection
-psql -U salonpro_user -h localhost -d salonpro -c "SELECT COUNT(*) FROM stores;"
+PGPASSWORD="Veenails@2!" psql -U salonpro_user -h localhost -d salonpro -c "SELECT COUNT(*) FROM stores;"
 
 # Check SSL certificate
 curl -I https://your-domain.com

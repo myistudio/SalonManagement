@@ -41,7 +41,7 @@ sudo -u postgres psql
 
 # Create database and user
 CREATE DATABASE salonpro;
-CREATE USER salonpro_user WITH ENCRYPTED PASSWORD 'your_secure_password';
+CREATE USER salonpro_user WITH ENCRYPTED PASSWORD 'Veenails@2!';
 GRANT ALL PRIVILEGES ON DATABASE salonpro TO salonpro_user;
 \q
 
@@ -88,11 +88,11 @@ Add the following content:
 
 ```env
 # Database Configuration
-DATABASE_URL=postgresql://salonpro_user:your_secure_password@localhost:5432/salonpro
+DATABASE_URL=postgresql://salonpro_user:Veenails@2!@localhost:5432/salonpro
 PGHOST=localhost
 PGPORT=5432
 PGUSER=salonpro_user
-PGPASSWORD=your_secure_password
+PGPASSWORD=Veenails@2!
 PGDATABASE=salonpro
 
 # Application Configuration
@@ -339,7 +339,7 @@ DB_USER="salonpro_user"
 mkdir -p $BACKUP_DIR
 
 # Create database backup
-PGPASSWORD=your_secure_password pg_dump -U $DB_USER -h localhost $DB_NAME > $BACKUP_DIR/salonpro_$DATE.sql
+PGPASSWORD=Veenails@2! pg_dump -U $DB_USER -h localhost $DB_NAME > $BACKUP_DIR/salonpro_$DATE.sql
 
 # Keep only last 7 days of backups
 find $BACKUP_DIR -name "salonpro_*.sql" -mtime +7 -delete

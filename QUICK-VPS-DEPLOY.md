@@ -8,6 +8,13 @@ Run this single command on your Ubuntu VPS to deploy SalonPro:
 curl -sSL https://raw.githubusercontent.com/myistudio/SalonManagement/main/scripts/deploy.sh | sudo bash
 ```
 
+**Note:** The script uses these pre-configured settings:
+- Database Name: `salonpro`
+- Database User: `salonpro_user` 
+- Database Password: `Veenails@2!`
+- Repository: `https://github.com/myistudio/SalonManagement.git`
+- PostgreSQL Version: 16
+
 ## Before Running
 
 1. **Prepare your VPS:**
@@ -34,8 +41,7 @@ If you want to customize before deployment:
 wget https://raw.githubusercontent.com/myistudio/SalonManagement/main/scripts/deploy.sh
 nano deploy.sh
 
-# Update these variables:
-DB_PASSWORD="your_secure_password"
+# Update this variable (password is already set):
 DOMAIN="your-domain.com"
 
 # Run the script

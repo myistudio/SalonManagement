@@ -11,7 +11,7 @@ APP_DIR="/var/www/salonpro"
 REPO_URL="https://github.com/myistudio/SalonManagement.git"
 DB_NAME="salonpro"
 DB_USER="salonpro_user"
-DB_PASSWORD="your_secure_password"
+DB_PASSWORD="Veenails@2!"
 DOMAIN="your-domain.com"
 
 echo "🚀 Starting SalonPro deployment..."
@@ -25,9 +25,9 @@ echo "📦 Installing Node.js 20..."
 curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
 sudo apt-get install -y nodejs
 
-# Install PostgreSQL
-echo "🗄️ Installing PostgreSQL..."
-sudo apt install postgresql postgresql-contrib -y
+# Install PostgreSQL 16
+echo "🗄️ Installing PostgreSQL 16..."
+sudo apt install postgresql-16 postgresql-contrib-16 -y
 
 # Install Nginx
 echo "🌐 Installing Nginx..."
@@ -46,9 +46,9 @@ sudo -u postgres psql -c "CREATE DATABASE $DB_NAME;" || true
 sudo -u postgres psql -c "CREATE USER $DB_USER WITH ENCRYPTED PASSWORD '$DB_PASSWORD';" || true
 sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE $DB_NAME TO $DB_USER;" || true
 
-# Configure PostgreSQL
-sudo sed -i "s/#listen_addresses = 'localhost'/listen_addresses = '*'/" /etc/postgresql/14/main/postgresql.conf
-echo "host    all             all             0.0.0.0/0               md5" | sudo tee -a /etc/postgresql/14/main/pg_hba.conf
+# Configure PostgreSQL (version 16)
+sudo sed -i "s/#listen_addresses = 'localhost'/listen_addresses = '*'/" /etc/postgresql/16/main/postgresql.conf
+echo "host    all             all             0.0.0.0/0               md5" | sudo tee -a /etc/postgresql/16/main/pg_hba.conf
 sudo systemctl restart postgresql
 sudo systemctl enable postgresql
 
@@ -62,14 +62,65 @@ sudo git clone $REPO_URL . || (cd $APP_DIR && sudo git pull origin main)
 echo "📦 Installing application dependencies..."
 sudo npm install
 
+# Install tsx globally for PM2
+sudo npm install -g tsx
+
 # Build application
 echo "🔨 Building application..."
 sudo npm run build
 
 # Setup environment
 echo "⚙️ Setting up environment..."
-sudo cp .env.production.example .env.production
-echo "⚠️  Please edit /var/www/salonpro/.env.production with your actual configuration!"
+sudo tee $APP_DIR/.env.production > /dev/null <<EOF
+# Production Environment Configuration
+
+# Database Configuration
+DATABASE_URL=postgresql://$DB_USER:$DB_PASSWORD@localhost:5432/$DB_NAME
+PGHOST=localhost
+PGPORT=5432
+PGUSER=$DB_USER
+PGPASSWORD=$DB_PASSWORD
+PGDATABASE=$DB_NAME
+
+# Application Configuration
+NODE_ENV=production
+PORT=3000
+
+# Session Secret (generate a secure random string)
+SESSION_SECRET=$(openssl rand -base64 32)
+
+# Communication API Keys (update these with your actual keys)
+SENDGRID_API_KEY=SG.your_sendgrid_api_key_here
+MSG91_API_KEY=your_msg91_api_key_here
+MSG91_SENDER_ID=your_sender_id
+
+# WhatsApp Business API (Ultramsg)
+WHATSAPP_ACCESS_TOKEN=your_whatsapp_access_token
+WHATSAPP_INSTANCE_ID=your_instance_id
+WHATSAPP_BASE_URL=https://api.ultramsg.com
+
+# SMTP Settings (if not using SendGrid)
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_SECURE=false
+SMTP_USER=your_email@gmail.com
+SMTP_PASSWORD=your_app_password
+
+# File Upload Settings
+MAX_FILE_SIZE=10485760
+UPLOAD_DIR=$APP_DIR/uploads
+
+# Security Settings
+CORS_ORIGIN=https://$DOMAIN
+TRUST_PROXY=true
+
+# Logging
+LOG_LEVEL=info
+LOG_FILE=/var/log/salonpro/app.log
+EOF
+
+echo "✅ Environment file created with database credentials!"
+echo "⚠️  Remember to update API keys in /var/www/salonpro/.env.production after deployment!"
 
 # Setup file permissions
 echo "🔐 Setting up file permissions..."
@@ -140,11 +191,15 @@ fi
 # Setup database migrations
 echo "🗄️ Running database migrations..."
 cd $APP_DIR
-NODE_ENV=production npm run db:push
+sudo NODE_ENV=production npm run db:push
 
-# Create admin user
+# Create admin user (if seed script exists)
 echo "👤 Creating admin user..."
-NODE_ENV=production npm run seed:admin
+if [ -f "scripts/seed-admin.ts" ]; then
+  sudo NODE_ENV=production npx tsx scripts/seed-admin.ts
+else
+  echo "⚠️  Seed script not found, you'll need to create admin user manually"
+fi
 
 # Setup backup cron job
 echo "💾 Setting up database backups..."
@@ -153,13 +208,32 @@ sudo tee /home/backup.sh > /dev/null <<EOF
 DATE=\$(date +%Y%m%d_%H%M%S)
 BACKUP_DIR="/home/backups"
 mkdir -p \$BACKUP_DIR
-PGPASSWORD=$DB_PASSWORD pg_dump -U $DB_USER -h localhost $DB_NAME > \$BACKUP_DIR/salonpro_\$DATE.sql
+PGPASSWORD="$DB_PASSWORD" pg_dump -U $DB_USER -h localhost $DB_NAME > \$BACKUP_DIR/salonpro_\$DATE.sql
 find \$BACKUP_DIR -name "salonpro_*.sql" -mtime +7 -delete
 EOF
 
 sudo chmod +x /home/backup.sh
 echo "0 2 * * * /home/backup.sh" | sudo crontab -
 
+# Test database connection
+echo "🧪 Testing database connection..."
+PGPASSWORD="$DB_PASSWORD" psql -U $DB_USER -h localhost -d $DB_NAME -c "SELECT version();" > /dev/null 2>&1
+if [ $? -eq 0 ]; then
+    echo "✅ Database connection successful!"
+else
+    echo "❌ Database connection failed!"
+fi
+
+# Test application health
+echo "🧪 Testing application health..."
+sleep 5
+if curl -f http://localhost:3000/api/health > /dev/null 2>&1; then
+    echo "✅ Application health check passed!"
+else
+    echo "⚠️  Application health check failed - check PM2 logs"
+fi
+
+echo ""
 echo "✅ Deployment completed successfully!"
 echo ""
 echo "🎉 Your SalonPro application is now running!"
@@ -168,6 +242,12 @@ echo ""
 echo "👤 Admin Login:"
 echo "   Email: admin@salon.com"
 echo "   Password: admin123"
+echo ""
+echo "🔧 Configuration Details:"
+echo "   Database: salonpro (PostgreSQL 16)"
+echo "   User: salonpro_user"
+echo "   Password: Veenails@2!"
+echo "   Repository: https://github.com/myistudio/SalonManagement.git"
 echo ""
 echo "⚙️ Next steps:"
 echo "1. Edit /var/www/salonpro/.env.production with your API keys"
@@ -180,3 +260,7 @@ echo "   pm2 status              - Check application status"
 echo "   pm2 logs salonpro       - View application logs"
 echo "   sudo systemctl status nginx - Check web server"
 echo "   sudo systemctl status postgresql - Check database"
+echo ""
+echo "🧪 Quick verification:"
+echo "   curl http://localhost:3000/api/health"
+echo "   PGPASSWORD=\"Veenails@2!\" psql -U salonpro_user -h localhost -d salonpro -c \"SELECT COUNT(*) FROM pg_tables;\""
