@@ -53,10 +53,24 @@ sudo systemctl restart postgresql
 sudo systemctl enable postgresql
 
 # Clone repository
-echo "📥 Cloning repository..."
+echo "📥 Setting up repository..."
 sudo mkdir -p $APP_DIR
 cd $APP_DIR
-sudo git clone $REPO_URL . || (cd $APP_DIR && sudo git pull origin main)
+
+if [ -d ".git" ]; then
+    echo "🔄 Repository exists, updating..."
+    sudo git fetch origin
+    sudo git reset --hard origin/main
+    sudo git pull origin main
+elif [ "$(ls -A $APP_DIR 2>/dev/null)" ]; then
+    echo "🗑️ Directory not empty, cleaning and cloning..."
+    sudo rm -rf $APP_DIR/*
+    sudo rm -rf $APP_DIR/.* 2>/dev/null || true
+    sudo git clone $REPO_URL .
+else
+    echo "📥 Cloning fresh repository..."
+    sudo git clone $REPO_URL .
+fi
 
 # Install dependencies
 echo "📦 Installing application dependencies..."
