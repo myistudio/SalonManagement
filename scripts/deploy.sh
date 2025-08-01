@@ -33,6 +33,56 @@ sudo apt install postgresql-16 postgresql-contrib-16 -y
 echo "🌐 Installing Nginx..."
 sudo apt install nginx -y
 
+# Configure Nginx
+echo "🌐 Configuring Nginx..."
+sudo tee /etc/nginx/sites-available/salonpro > /dev/null <<'EOF'
+server {
+    listen 80;
+    server_name 173.212.252.179;
+
+    # Security headers
+    add_header X-Content-Type-Options nosniff;
+    add_header X-Frame-Options DENY;
+    add_header X-XSS-Protection "1; mode=block";
+
+    # Client max body size for file uploads
+    client_max_body_size 50M;
+
+    # Proxy to Node.js application
+    location / {
+        proxy_pass http://localhost:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_cache_bypass $http_upgrade;
+        proxy_read_timeout 300;
+        proxy_connect_timeout 300;
+        proxy_send_timeout 300;
+    }
+
+    # Static files (if served directly by Nginx)
+    location /uploads {
+        alias /var/www/salonpro/uploads;
+        expires 30d;
+        add_header Cache-Control "public, immutable";
+    }
+
+    # Error and access logs
+    access_log /var/log/nginx/salonpro.access.log;
+    error_log /var/log/nginx/salonpro.error.log;
+}
+EOF
+
+sudo ln -sf /etc/nginx/sites-available/salonpro /etc/nginx/sites-enabled/
+sudo rm -f /etc/nginx/sites-enabled/default
+sudo nginx -t
+sudo systemctl reload nginx
+sudo systemctl enable nginx
+
 # Install PM2
 echo "⚙️ Installing PM2..."
 sudo npm install -g pm2

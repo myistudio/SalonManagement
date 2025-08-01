@@ -97,6 +97,37 @@ else
 fi
 
 echo ""
+echo "🌐 Nginx Status:"
+echo "---------------"
+echo -n "Nginx Configuration: "
+if sudo nginx -t &> /dev/null; then
+    echo "✅ Valid"
+else
+    echo "❌ Invalid"
+fi
+
+echo -n "SalonPro Site Enabled: "
+if [ -f "/etc/nginx/sites-enabled/salonpro" ]; then
+    echo "✅ Yes"
+else
+    echo "❌ No"
+fi
+
+echo -n "Default Site Disabled: "
+if [ ! -f "/etc/nginx/sites-enabled/default" ]; then
+    echo "✅ Yes"
+else
+    echo "❌ Still enabled"
+fi
+
+echo -n "Proxy Test (localhost:3000): "
+if curl -f http://localhost:3000 &> /dev/null; then
+    echo "✅ Responding"
+else
+    echo "❌ Not responding"
+fi
+
+echo ""
 echo "📁 File System Check:"
 echo "--------------------"
 
