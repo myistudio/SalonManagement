@@ -50,6 +50,7 @@ cd $APP_DIR
 
 # Clone repository
 echo "📥 Cloning repository..."
+sudo git config --global --add safe.directory $APP_DIR
 sudo git clone $REPO_URL .
 
 # Install dependencies

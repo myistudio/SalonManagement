@@ -59,6 +59,7 @@ cd $APP_DIR
 
 if [ -d ".git" ]; then
     echo "🔄 Repository exists, updating..."
+    sudo git config --global --add safe.directory $APP_DIR
     sudo git fetch origin
     sudo git reset --hard origin/main
     sudo git pull origin main
