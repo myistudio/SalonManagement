@@ -135,7 +135,14 @@ fi
 
 # Start application
 echo "🚀 Starting application..."
-pm2 start ecosystem.config.js --env production
+if [ -f "ecosystem.config.cjs" ]; then
+    pm2 start ecosystem.config.cjs --env production
+elif [ -f "ecosystem.config.js" ]; then
+    pm2 start ecosystem.config.js --env production
+else
+    # Manual PM2 start as fallback
+    pm2 start server/index.ts --name salonpro --interpreter tsx --env production
+fi
 pm2 save
 
 # Test application

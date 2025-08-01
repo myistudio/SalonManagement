@@ -147,7 +147,14 @@ sudo chmod 755 $APP_DIR/uploads
 
 # Setup PM2
 echo "⚙️ Setting up PM2..."
-pm2 start ecosystem.config.js --env production
+if [ -f "ecosystem.config.cjs" ]; then
+    pm2 start ecosystem.config.cjs --env production
+elif [ -f "ecosystem.config.js" ]; then
+    pm2 start ecosystem.config.js --env production
+else
+    # Manual PM2 start as fallback
+    pm2 start server/index.ts --name salonpro --interpreter tsx -- --env production
+fi
 pm2 save
 pm2 startup
 

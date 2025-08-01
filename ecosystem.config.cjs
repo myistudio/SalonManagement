@@ -1,3 +1,4 @@
+// PM2 ecosystem configuration
 module.exports = {
   apps: [
     {
@@ -33,7 +34,7 @@ module.exports = {
       ref: 'origin/main',
       repo: 'https://github.com/myistudio/SalonManagement.git',
       path: '/var/www/salonpro',
-      'post-deploy': 'npm install && npm run build && pm2 reload ecosystem.config.js --env production',
+      'post-deploy': 'npm install && npm run build && pm2 reload ecosystem.config.cjs --env production',
       'pre-setup': 'apt update && apt install git -y'
     }
   }
