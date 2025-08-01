@@ -31,7 +31,7 @@ module.exports = {
       user: 'root',
       host: ['your-server-ip'],
       ref: 'origin/main',
-      repo: 'https://github.com/yourusername/salonpro.git',
+      repo: 'https://github.com/myistudio/SalonManagement.git',
       path: '/var/www/salonpro',
       'post-deploy': 'npm install && npm run build && pm2 reload ecosystem.config.js --env production',
       'pre-setup': 'apt update && apt install git -y'

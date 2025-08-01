@@ -66,8 +66,8 @@ sudo systemctl enable postgresql
 sudo mkdir -p /var/www/salonpro
 cd /var/www/salonpro
 
-# Clone your repository (replace with your repo URL)
-git clone https://github.com/yourusername/salonpro.git .
+# Clone your repository
+git clone https://github.com/myistudio/SalonManagement.git .
 
 # Install dependencies
 npm install

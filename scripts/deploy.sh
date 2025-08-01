@@ -8,7 +8,7 @@ set -e
 # Configuration
 APP_NAME="salonpro"
 APP_DIR="/var/www/salonpro"
-REPO_URL="https://github.com/yourusername/salonpro.git"
+REPO_URL="https://github.com/myistudio/SalonManagement.git"
 DB_NAME="salonpro"
 DB_USER="salonpro_user"
 DB_PASSWORD="your_secure_password"

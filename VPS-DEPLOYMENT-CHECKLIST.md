@@ -26,7 +26,7 @@ Before starting, collect these details:
 1. **Upload deployment script to your VPS:**
 ```bash
 # On your VPS
-wget https://your-repo-url/scripts/deploy.sh
+wget https://raw.githubusercontent.com/myistudio/SalonManagement/main/scripts/deploy.sh
 chmod +x deploy.sh
 ```
 
@@ -34,7 +34,7 @@ chmod +x deploy.sh
 ```bash
 nano deploy.sh
 # Update these variables:
-# - REPO_URL="https://github.com/yourusername/salonpro.git"
+# - REPO_URL="https://github.com/myistudio/SalonManagement.git" (already set)
 # - DB_PASSWORD="your_secure_password"
 # - DOMAIN="your-domain.com"
 ```
